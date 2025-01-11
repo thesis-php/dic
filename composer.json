@@ -1,6 +1,6 @@
 {
-    "name": "thesis/template",
-    "description": "Thesis Template",
+    "name": "thesis/di",
+    "description": "Thesis DI",
     "license": "MIT",
     "type": "library",
     "authors": [
@@ -14,23 +14,33 @@
         }
     ],
     "require": {
-        "php": "^8.1"
+        "php": "^8.3"
     },
     "require-dev": {
         "bamarni/composer-bin-plugin": "^1.8.2",
         "ergebnis/composer-normalize": "^2.45.0",
         "phpunit/phpunit": "^10.5.40",
-        "symfony/var-dumper": "^6.4.15 || ^7.1.3"
+        "symfony/var-dumper": "^6.4.15 || ^7.2.0"
     },
     "autoload": {
         "psr-4": {
-            "Thesis\\Template\\": "src/"
+            "Thesis\\DI\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Thesis\\Template\\": "tests/"
-        }
+            "Thesis\\DI\\": "tests/"
+        },
+        "files": [
+            "src/Internal/describeReflectedSymbol.fn.php",
+            "src/Internal/describeReflectedType.fn.php",
+            "src/Constructor.php",
+            "src/DefaultArgument.php",
+            "src/Factory.php",
+            "src/Id.php",
+            "src/ModuleId.php",
+            "src/Value.php"
+        ]
     },
     "config": {
         "allow-plugins": {
@@ -39,7 +49,7 @@
         },
         "bump-after-update": "dev",
         "platform": {
-            "php": "8.1"
+            "php": "8.3"
         },
         "sort-packages": true
     },
