@@ -33,7 +33,7 @@ final readonly class ModuleId implements Definition
      */
     public function toString(): string
     {
-        return $this->module . ':' . $this->id->toString();
+        return $this->module . '@' . $this->id->toString();
     }
 
     public function __toString(): string

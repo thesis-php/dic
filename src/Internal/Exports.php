@@ -18,22 +18,22 @@ final readonly class Exports
     }
 
     /**
-     * @param array<non-empty-string, true> $moduleIdMap
+     * @param array<non-empty-string, true> $exports
      */
     private function __construct(
-        private array $moduleIdMap,
+        private array $exports,
     ) {}
 
     public function has(ModuleId $id): bool
     {
-        return isset($this->moduleIdMap[$id->toString()]);
+        return isset($this->exports[$id->toString()]);
     }
 
     public function with(ModuleId $id): self
     {
-        $moduleIdMap = $this->moduleIdMap;
-        $moduleIdMap[$id->toString()] = true;
+        $exports = $this->exports;
+        $exports[$id->toString()] = true;
 
-        return new self($moduleIdMap);
+        return new self($exports);
     }
 }

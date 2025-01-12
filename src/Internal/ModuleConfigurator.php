@@ -30,12 +30,14 @@ final readonly class ModuleConfigurator implements ModuleConfiguratorI
      * @param class-string<TNewModule> $module
      * @return self<TNewReqs, TNewModule>
      */
-    public static function create(
-        string $module,
-        Exports $exports,
-        Autowiring $autowiring = new Autowiring(),
-    ): self {
-        return new self($module, $exports, $autowiring, ModuleValues::create());
+    public static function create(string $module, Exports $exports, Autowiring $autowiring): self
+    {
+        return new self(
+            module: $module,
+            exports: $exports,
+            autowiring: $autowiring,
+            values: ModuleValues::create(),
+        );
     }
 
     /**
