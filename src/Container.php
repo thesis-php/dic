@@ -63,7 +63,7 @@ final class Container
     private function resolve(mixed $value): mixed
     {
         if ($value instanceof LazyValue) {
-            return $value->function->__invoke(...array_map($this->resolve(...), $value->arguments));
+            return ($value->function)(...array_map($this->resolve(...), $value->arguments));
         }
 
         if ($value instanceof ModuleId) {

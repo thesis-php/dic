@@ -12,7 +12,7 @@ namespace Thesis\DI\Internal;
 final readonly class LazyValue
 {
     /**
-     * @param \Closure(never, never, never, never, never): T $function
+     * @param \Closure(mixed...): T $function
      * @param array<non-empty-string, mixed> $arguments
      */
     public function __construct(

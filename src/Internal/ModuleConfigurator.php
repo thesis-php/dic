@@ -156,6 +156,7 @@ final readonly class ModuleConfigurator implements ModuleConfiguratorI
 
         if ($value instanceof Factory) {
             return new LazyValue(
+                /** @phpstan-ignore argument.type */
                 $value->factory,
                 $this->resolveArguments(
                     function: new \ReflectionFunction($value->factory),
