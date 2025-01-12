@@ -25,6 +25,14 @@ final class Container
     ) {}
 
     /**
+     * @param ModuleId<*, *> $id
+     */
+    public function has(ModuleId $id): bool
+    {
+        return $this->exports->has($id);
+    }
+
+    /**
      * @template T
      * @param ModuleId<covariant TReqs, T> $id
      * @return T
