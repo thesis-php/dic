@@ -19,6 +19,9 @@ final class Container
      */
     private array $resolvedValues = [];
 
+    /**
+     * @internal Thesis\DI
+     */
     public function __construct(
         private readonly Exports $exports,
         private readonly Values $values,
