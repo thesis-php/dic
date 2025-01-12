@@ -58,12 +58,11 @@ final class InvalidConfig extends \LogicException
     /**
      * @param class-string<Module> $module
      */
-    public static function idNotRegistered(string $module, Id $id, Location $location, ?\Throwable $previous = null): self
+    public static function idNotRegistered(string $module, Id $id, Location $location): self
     {
         return new self(
             message: \sprintf('Value with id "%s" is not available in module %s', $id->toString(), $module),
             location: $location,
-            previous: $previous,
         );
     }
 
@@ -90,17 +89,19 @@ final class InvalidConfig extends \LogicException
     }
 
     /**
-     * @param non-empty-string $function
      * @param non-empty-list<array-key> $names
      */
-    public static function functionDoesNotHaveParameters(string $function, array $names, Location $location): self
-    {
+    public static function functionDoesNotHaveParameters(
+        \ReflectionFunctionAbstract $function,
+        array $names,
+        Location $location,
+    ): self {
         $single = \count($names) === 1;
 
         return new self(
             message: \sprintf(
                 '%s does not have parameter%s %s',
-                $function,
+                ReflectionStringifier::stringifySymbol($function),
                 $single ? '' : 's',
                 implode(', ', array_map(
                     static fn(int|string $name): string => \is_int($name) ? (string) $name : '$' . $name,
@@ -111,53 +112,63 @@ final class InvalidConfig extends \LogicException
         );
     }
 
-    /**
-     * @param non-empty-string $function
-     */
-    public static function argumentConfiguredTwice(string $function, int $index, string $name, Location $location): self
-    {
+    public static function argumentConfiguredTwice(
+        \ReflectionFunctionAbstract $function,
+        int $index,
+        string $name,
+        Location $location,
+    ): self {
         return new self(
             message: \sprintf(
                 'Argument %s for %s is configured twice: via index %d and via name %1$s',
                 $name,
-                $function,
+                ReflectionStringifier::stringifySymbol($function),
                 $index,
             ),
             location: $location,
         );
     }
 
-    /**
-     * @param non-empty-string $function
-     */
-    public static function requiredArgumentMissing(string $function, string $parameter, Location $location): self
-    {
-        return new self(
-            message: \sprintf('Argument missing for required parameter $%s of %s', $parameter, $function),
-            location: $location,
-        );
-    }
-
-    /**
-     * @param non-empty-string $function
-     */
-    public static function cannotAutowire(string $function, string $parameter, string $type, Location $location): self
-    {
+    public static function requiredArgumentMissing(
+        \ReflectionFunctionAbstract $function,
+        string $parameter,
+        Location $location,
+    ): self {
         return new self(
             message: \sprintf(
-                'Cannot autowire parameter %s$%s of %s',
-                $type === '' ? '' : $type . ' ',
+                'Argument missing for required parameter $%s of %s',
                 $parameter,
-                $function,
+                ReflectionStringifier::stringifySymbol($function),
             ),
             location: $location,
         );
     }
 
-    public static function cannotInferClassFromType(string $type, Location $location): self
+    public static function cannotAutowire(
+        \ReflectionFunctionAbstract $function,
+        string $parameter,
+        ?\ReflectionType $type,
+        Location $location,
+    ): self {
+        return new self(
+            message: \sprintf(
+                'Cannot autowire parameter %s$%s of %s',
+                $type === null ? '' : ReflectionStringifier::stringifyType($type) . ' ',
+                $parameter,
+                ReflectionStringifier::stringifySymbol($function),
+            ),
+            location: $location,
+        );
+    }
+
+    public static function cannotInferClassFromType(null|string|\ReflectionType $type, Location $location): self
     {
         return new self(
-            message: \sprintf('Cannot infer type from type %s', $type),
+            message: \sprintf('Cannot infer type from type %s', match (true) {
+                $type === null => '',
+                \is_string($type) => $type,
+                default => ReflectionStringifier::stringifyType($type),
+            }),
             location: $location,
         );
     }

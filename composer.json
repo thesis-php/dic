@@ -32,8 +32,6 @@
             "Thesis\\DI\\": "tests/"
         },
         "files": [
-            "src/Internal/describeReflectedSymbol.fn.php",
-            "src/Internal/describeReflectedType.fn.php",
             "src/Constructor.php",
             "src/DefaultArgument.php",
             "src/Factory.php",

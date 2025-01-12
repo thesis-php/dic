@@ -129,7 +129,12 @@ final readonly class ModuleConfigurator implements ModuleConfiguratorI
 
         if ($value instanceof Constructor) {
             $class = $value->class;
-            $reflection = new \ReflectionClass($class);
+
+            try {
+                $reflection = new \ReflectionClass($class);
+            } catch (/** @phpstan-ignore catch.neverThrown */ \ReflectionException $exception) {
+                throw InvalidConfig::classDoesNotExist($class, $value->location, $exception);
+            }
 
             if (!$reflection->isInstantiable()) {
                 throw InvalidConfig::classNotInstantiable($class, $value->location);
@@ -186,11 +191,10 @@ final readonly class ModuleConfigurator implements ModuleConfiguratorI
         bool $autowire,
         Location $location,
     ): array {
-        $functionName = describeReflectedSymbol($function);
         $arguments = [];
 
         foreach ($function->getParameters() as $parameter) {
-            $argument = $this->resolveArgument($functionName, $parameter, $rawArguments, $autowire, $location);
+            $argument = $this->resolveArgument($function, $parameter, $rawArguments, $autowire, $location);
             unset($rawArguments[$parameter->getPosition()], $rawArguments[$parameter->name]);
 
             if ($argument !== defaultArgument) {
@@ -201,18 +205,17 @@ final readonly class ModuleConfigurator implements ModuleConfiguratorI
         }
 
         if ($rawArguments !== []) {
-            throw InvalidConfig::functionDoesNotHaveParameters($functionName, array_keys($rawArguments), $location);
+            throw InvalidConfig::functionDoesNotHaveParameters($function, array_keys($rawArguments), $location);
         }
 
         return $arguments;
     }
 
     /**
-     * @param non-empty-string $function
      * @param array<mixed> $rawArguments
      */
     private function resolveArgument(
-        string $function,
+        \ReflectionFunctionAbstract $function,
         \ReflectionParameter $parameter,
         array $rawArguments,
         bool $autowire,
@@ -249,7 +252,7 @@ final readonly class ModuleConfigurator implements ModuleConfiguratorI
             throw InvalidConfig::cannotAutowire(
                 function: $function,
                 parameter: $name,
-                type: describeReflectedType($parameter->getType()),
+                type: $parameter->getType(),
                 location: $location,
             );
         }

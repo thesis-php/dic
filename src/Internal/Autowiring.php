@@ -46,7 +46,7 @@ final readonly class Autowiring
         $type = $reflection->getReturnType();
 
         if (!$type instanceof \ReflectionNamedType) {
-            throw InvalidConfig::cannotInferClassFromType(describeReflectedType($type), $definition->location);
+            throw InvalidConfig::cannotInferClassFromType($type, $definition->location);
         }
 
         $name = $type->getName();
@@ -58,7 +58,7 @@ final readonly class Autowiring
         };
 
         if ($class === null) {
-            throw InvalidConfig::cannotInferClassFromType(describeReflectedType($type), $definition->location);
+            throw InvalidConfig::cannotInferClassFromType($type, $definition->location);
         }
 
         /** @var Id<T> */
