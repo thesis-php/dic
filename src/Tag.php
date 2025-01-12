@@ -6,6 +6,6 @@ namespace Thesis\DI;
 
 /**
  * @api
- * @template-contravariant T
+ * @template T
  */
 interface Tag {}

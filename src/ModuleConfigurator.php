@@ -13,7 +13,7 @@ interface ModuleConfigurator
 {
     /**
      * @template T
-     * @param Id<covariant T>|ModuleId<covariant TReqs, covariant T>|Value<T>|Constructor<T&object>|Factory<T> $value
+     * @param Id<covariant T>|ModuleId<covariant TReqs, covariant T>|Value<covariant T>|Constructor<covariant T&object>|Factory<covariant T> $value
      * @param null|Id<T>|ModuleId<TModule, T> $as
      * @param-out ModuleId<TModule, T> $ref
      */
@@ -25,7 +25,7 @@ interface ModuleConfigurator
 
     /**
      * @template T
-     * @param Id<covariant T>|ModuleId<covariant TReqs, covariant T>|Value<T>|Constructor<T&object>|Factory<T> $value
+     * @param Id<covariant T>|ModuleId<covariant TReqs, covariant T>|Value<covariant T>|Constructor<covariant T&object>|Factory<covariant T> $value
      * @param null|Id<T>|ModuleId<TModule, T> $as
      * @param-out ModuleId<TModule, T> $ref
      */

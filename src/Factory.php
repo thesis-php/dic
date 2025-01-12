@@ -8,7 +8,7 @@ use Thesis\DI\Internal\Location;
 
 /**
  * @api
- * @template-covariant T
+ * @template T
  * @implements Definition<T>
  */
 final readonly class Factory implements Definition
@@ -23,10 +23,12 @@ final readonly class Factory implements Definition
     /**
      * @param callable(never, never, never, never, never): T $factory
      * @param array<mixed> $arguments
+     * @param list<Tag<contravariant T>> $tags
      */
     public function __construct(
         callable $factory,
         public array $arguments = [],
+        public array $tags = [],
         public bool $autowire = true,
         ?Location $location = null,
     ) {
@@ -40,13 +42,15 @@ final readonly class Factory implements Definition
  * @template T
  * @param callable(never, never, never, never, never): T $factory
  * @param array<mixed> $arguments
+ * @param list<Tag<contravariant T>> $tags
  * @return Factory<T>
  */
-function factory(callable $factory, array $arguments = [], bool $autowire = true): Factory
+function factory(callable $factory, array $arguments = [], array $tags = [], bool $autowire = true): Factory
 {
     return new Factory(
         factory: $factory,
         arguments: $arguments,
+        tags: $tags,
         autowire: $autowire,
         location: Location::caller(),
     );
