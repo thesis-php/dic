@@ -6,6 +6,7 @@ namespace Thesis\DI;
 
 use Thesis\DI\Internal\Exports;
 use Thesis\DI\Internal\LazyValue;
+use Thesis\DI\Internal\Location;
 use Thesis\DI\Internal\Values;
 
 /**
@@ -39,14 +40,25 @@ final class Container
      * @template T
      * @param ModuleId<covariant TReqs, T> $id
      * @return T
+     * @throws ValueIsNotAvailable
      */
     public function get(ModuleId $id): mixed
     {
-        if (!$this->exports->has($id)) {
-            throw new \RuntimeException('TODO');
+        if ($this->exports->has($id)) {
+            return $this->doGet($id);
         }
 
-        return $this->doGet($id);
+        $location = Location::caller();
+
+        if (!$this->values->hasModule($id->module)) {
+            throw ValueIsNotAvailable::moduleIsNotRequired($id->module, $location);
+        }
+
+        if ($this->values->has($id)) {
+            throw ValueIsNotAvailable::idIsNotExported($id, $location);
+        }
+
+        throw ValueIsNotAvailable::idIsNotDefined($id, $location);
     }
 
     /**
@@ -81,7 +93,10 @@ final class Container
             return $this->doGet($value);
         }
 
-        \assert(!$value instanceof Definition, 'TODO');
+        \assert(!$value instanceof Definition, \sprintf(
+            'At this point container value must not be an instance of %s',
+            get_debug_type($value),
+        ));
 
         if (\is_array($value)) {
             return array_map($this->resolve(...), $value);

@@ -33,6 +33,11 @@ final readonly class Values
         return isset($this->values[$module]);
     }
 
+    public function has(ModuleId $id): mixed
+    {
+        return isset($this->values[$id->module]) && $this->values[$id->module]->has($id->id);
+    }
+
     public function get(ModuleId $id): mixed
     {
         if (!isset($this->values[$id->module])) {
