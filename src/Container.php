@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Thesis\DI;
 
-use Thesis\DI\Internal\ApplicationExports;
-use Thesis\DI\Internal\ApplicationValues;
+use Thesis\DI\Internal\Exports;
 use Thesis\DI\Internal\LazyValue;
+use Thesis\DI\Internal\Values;
 
 /**
  * @api
  * @template TReqs of Module
  */
-final class Application
+final class Container
 {
     /**
      * @var array<non-empty-string, mixed>
@@ -20,8 +20,8 @@ final class Application
     private array $resolvedValues = [];
 
     public function __construct(
-        private readonly ApplicationExports $exports,
-        private readonly ApplicationValues $values,
+        private readonly Exports $exports,
+        private readonly Values $values,
     ) {}
 
     /**

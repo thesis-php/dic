@@ -10,7 +10,7 @@ use Thesis\DI\ModuleId;
  * @internal
  * @psalm-internal Thesis\DI
  */
-final readonly class ApplicationExports
+final readonly class Exports
 {
     public static function create(): self
     {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Thesis\DI\ApplicationConfigurator;
+use Thesis\DI\ContainerConfigurator;
 use Thesis\DI\Id;
 use Thesis\DI\Module;
 use Thesis\DI\ModuleId;
@@ -87,13 +87,13 @@ final readonly class MyModule implements Module
     }
 }
 
-$app = ApplicationConfigurator::create()
+$container = ContainerConfigurator::create()
     ->require(new LoggingModule(['app']))
     ->require(new MyModule())
     ->build()
 ;
 
-$my = $app->get(moduleId(MyModule::class, objectId(MyService::class)));
-$another = $app->get(moduleId(MyModule::class, objectId(AnotherService::class)));
+$my = $container->get(moduleId(MyModule::class, objectId(MyService::class)));
+$another = $container->get(moduleId(MyModule::class, objectId(AnotherService::class)));
 
-dd($my, $another);
+dump($my, $another);

@@ -11,7 +11,7 @@ use Thesis\DI\ModuleId;
  * @internal
  * @psalm-internal Thesis\DI
  */
-final readonly class ApplicationValues
+final readonly class Values
 {
     public static function create(): self
     {

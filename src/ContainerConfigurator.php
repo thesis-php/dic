@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace Thesis\DI;
 
-use Thesis\DI\Internal\ApplicationExports;
-use Thesis\DI\Internal\ApplicationValues;
 use Thesis\DI\Internal\Autowiring;
+use Thesis\DI\Internal\Exports;
 use Thesis\DI\Internal\InvalidConfig;
 use Thesis\DI\Internal\Location;
-use Thesis\DI\Internal\ModuleBuilder;
+use Thesis\DI\Internal\ModuleConfigurator;
+use Thesis\DI\Internal\Values;
 
 /**
  * @api
  * @template TReqs of Module
  */
-final readonly class ApplicationConfigurator
+final readonly class ContainerConfigurator
 {
     /**
      * @return self<never>
@@ -25,15 +25,15 @@ final readonly class ApplicationConfigurator
         /** @var self<never> */
         return new self(
             autowiring: new Autowiring(),
-            exports: ApplicationExports::create(),
-            values: ApplicationValues::create(),
+            exports: Exports::create(),
+            values: Values::create(),
         );
     }
 
     private function __construct(
         private Autowiring $autowiring,
-        private ApplicationExports $exports,
-        private ApplicationValues $values,
+        private Exports $exports,
+        private Values $values,
     ) {}
 
     /**
@@ -56,7 +56,7 @@ final readonly class ApplicationConfigurator
         }
 
         $moduleBuilder = $module->configureModule(
-            ModuleBuilder::create(
+            ModuleConfigurator::create(
                 module: $moduleClass,
                 exports: $this->exports,
                 autowiring: $this->autowiring,
@@ -72,11 +72,11 @@ final readonly class ApplicationConfigurator
     }
 
     /**
-     * @return Application<TReqs>
+     * @return Container<TReqs>
      */
-    public function build(): Application
+    public function build(): Container
     {
-        /** @var Application<TReqs> */
-        return new Application($this->exports, $this->values);
+        /** @var Container<TReqs> */
+        return new Container($this->exports, $this->values);
     }
 }

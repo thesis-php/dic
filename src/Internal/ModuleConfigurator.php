@@ -9,7 +9,7 @@ use Thesis\DI\Definition;
 use Thesis\DI\Factory;
 use Thesis\DI\Id;
 use Thesis\DI\Module;
-use Thesis\DI\ModuleConfigurator;
+use Thesis\DI\ModuleConfigurator as ModuleConfiguratorI;
 use Thesis\DI\ModuleId;
 use Thesis\DI\Value;
 use function Thesis\DI\moduleId;
@@ -20,9 +20,9 @@ use const Thesis\DI\defaultArgument;
  * @psalm-internal Thesis\DI
  * @template TReqs of Module
  * @template TModule of Module<TReqs>
- * @implements ModuleConfigurator<TReqs, TModule>
+ * @implements ModuleConfiguratorI<TReqs, TModule>
  */
-final readonly class ModuleBuilder implements ModuleConfigurator
+final readonly class ModuleConfigurator implements ModuleConfiguratorI
 {
     /**
      * @template TNewReqs of Module
@@ -32,7 +32,7 @@ final readonly class ModuleBuilder implements ModuleConfigurator
      */
     public static function create(
         string $module,
-        ApplicationExports $exports,
+        Exports $exports,
         Autowiring $autowiring = new Autowiring(),
     ): self {
         return new self($module, $exports, $autowiring, ModuleValues::create());
@@ -43,7 +43,7 @@ final readonly class ModuleBuilder implements ModuleConfigurator
      */
     private function __construct(
         private string $module,
-        public ApplicationExports $exports,
+        public Exports $exports,
         private Autowiring $autowiring,
         public ModuleValues $values,
     ) {}
