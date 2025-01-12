@@ -38,7 +38,7 @@ final class Container
 
     /**
      * @template T
-     * @param ModuleId<covariant TReqs, T> $id
+     * @param ModuleId<TReqs, T> $id
      * @return T
      * @throws ValueIsNotAvailable
      */
@@ -92,11 +92,6 @@ final class Container
         if ($value instanceof ModuleId) {
             return $this->doGet($value);
         }
-
-        \assert(!$value instanceof Definition, \sprintf(
-            'At this point container value must not be an instance of %s',
-            get_debug_type($value),
-        ));
 
         if (\is_array($value)) {
             return array_map($this->resolve(...), $value);

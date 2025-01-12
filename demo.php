@@ -43,7 +43,7 @@ final readonly class LoggingModule implements Module
     public function configureModule(ModuleConfigurator $module): ModuleConfigurator
     {
         foreach ($this->channels as $channel) {
-            $module = $module->export(constructor(NullLogger::class), as: self::channelId($channel));
+            $module = $module->exportAs(constructor(NullLogger::class), self::channelId($channel)->id);
         }
 
         return $module;
@@ -80,7 +80,7 @@ final readonly class MyModule implements Module
     public function configureModule(ModuleConfigurator $module): ModuleConfigurator
     {
         return $module
-            ->define(LoggingModule::channelId('app'), as: objectId(Logger::class))
+            ->importAs(LoggingModule::channelId('app'), objectId(Logger::class))
             ->export(constructor(MyService::class))
             ->export(factory(AnotherService::create(...)))
         ;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Thesis\DI;
 
 /**
- * @api
+ * @api This interface must not be implemented in userland.
  * @template TReqs of Module
  * @template TModule of Module<TReqs>
  */
@@ -13,25 +13,38 @@ interface ModuleConfigurator
 {
     /**
      * @template T
-     * @param Id<covariant T>|ModuleId<covariant TReqs, covariant T>|Value<covariant T>|Constructor<covariant T&object>|Factory<covariant T> $value
-     * @param null|Id<T>|ModuleId<TModule, T> $as
-     * @param-out ModuleId<TModule, T> $ref
+     * @param ModuleId<TReqs, covariant T> $id
+     * @param Id<T> $as
      */
-    public function define(
-        Id|ModuleId|Value|Constructor|Factory $value,
-        null|Id|ModuleId $as = null,
-        ?ModuleId &$ref = null,
-    ): static;
+    public function importAs(ModuleId $id, Id $as): static;
+
+    /**
+     * @template T of object
+     * @param Value<T>|Constructor<T>|Factory<T> $value
+     * @param-out Id<T> $inferredId
+     */
+    public function define(Value|Constructor|Factory $value, ?Id &$inferredId = null): static;
 
     /**
      * @template T
-     * @param Id<covariant T>|ModuleId<covariant TReqs, covariant T>|Value<covariant T>|Constructor<covariant T&object>|Factory<covariant T> $value
-     * @param null|Id<T>|ModuleId<TModule, T> $as
-     * @param-out ModuleId<TModule, T> $ref
+     * @param Id<covariant T>|Value<T>|Constructor<T>|Factory<T> $value
+     * @param Id<T> $as
+     * @phpstan-ignore generics.notSubtype
      */
-    public function export(
-        Id|ModuleId|Value|Constructor|Factory $value,
-        null|Id|ModuleId $as = null,
-        ?ModuleId &$ref = null,
-    ): static;
+    public function defineAs(Id|Value|Constructor|Factory $value, Id $as): static;
+
+    /**
+     * @template T of object
+     * @param Value<T>|Constructor<T>|Factory<T> $value
+     * @param-out Id<T> $inferredId
+     */
+    public function export(Value|Constructor|Factory $value, ?Id &$inferredId = null): static;
+
+    /**
+     * @template T
+     * @param Id<covariant T>|Value<T>|Constructor<T>|Factory<T> $value
+     * @param Id<T> $as
+     * @phpstan-ignore generics.notSubtype
+     */
+    public function exportAs(Id|Value|Constructor|Factory $value, Id $as): static;
 }

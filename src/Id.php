@@ -10,9 +10,8 @@ use Thesis\DI\Internal\Location;
 /**
  * @api
  * @template T
- * @implements Definition<T>
  */
-final readonly class Id implements Definition
+final readonly class Id
 {
     public Location $location;
 

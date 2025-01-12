@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Thesis\DI\Internal;
 
 use Thesis\DI\Constructor;
-use Thesis\DI\Definition;
 use Thesis\DI\Factory;
 use Thesis\DI\Id;
 use Thesis\DI\Value;
@@ -19,34 +18,31 @@ final readonly class Autowiring
 {
     /**
      * @template T
-     * @param Definition<T> $definition
+     * @param Value<T>|Constructor<T>|Factory<T> $value
      * @return Id<T>
+     * @phpstan-ignore generics.notSubtype
      */
-    public function identify(Definition $definition): Id
+    public function identify(Value|Constructor|Factory $value): Id
     {
-        if ($definition instanceof Value) {
-            if (\is_object($definition->value)) {
-                /** @var Id<T> */
-                return objectId($definition->value::class);
+        if ($value instanceof Value) {
+            if (\is_object($value->value)) {
+                /** @phpstan-ignore return.type, argument.type, argument.templateType */
+                return objectId($value->value::class);
             }
 
-            throw InvalidConfig::cannotInferClassFromType(get_debug_type($definition), $definition->location);
+            throw InvalidConfig::cannotInferClassFromType(get_debug_type($value), $value->location);
         }
 
-        if ($definition instanceof Constructor) {
-            /** @var Id<T> */
-            return objectId($definition->class);
+        if ($value instanceof Constructor) {
+            /** @phpstan-ignore return.type, argument.type, argument.templateType */
+            return objectId($value->class);
         }
 
-        if (!$definition instanceof Factory) {
-            throw new \LogicException();
-        }
-
-        $reflection = new \ReflectionFunction($definition->factory);
+        $reflection = new \ReflectionFunction($value->factory);
         $type = $reflection->getReturnType();
 
         if (!$type instanceof \ReflectionNamedType) {
-            throw InvalidConfig::cannotInferClassFromType($type, $definition->location);
+            throw InvalidConfig::cannotInferClassFromType($type, $value->location);
         }
 
         $name = $type->getName();
@@ -58,7 +54,7 @@ final readonly class Autowiring
         };
 
         if ($class === null) {
-            throw InvalidConfig::cannotInferClassFromType($type, $definition->location);
+            throw InvalidConfig::cannotInferClassFromType($type, $value->location);
         }
 
         /** @var Id<T> */

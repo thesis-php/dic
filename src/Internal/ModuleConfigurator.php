@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Thesis\DI\Internal;
 
 use Thesis\DI\Constructor;
-use Thesis\DI\Definition;
 use Thesis\DI\Factory;
 use Thesis\DI\Id;
 use Thesis\DI\Module;
@@ -50,77 +49,66 @@ final readonly class ModuleConfigurator implements ModuleConfiguratorI
         public ModuleValues $values,
     ) {}
 
-    public function define(Id|ModuleId|Value|Constructor|Factory $value, null|Id|ModuleId $as = null, ?ModuleId &$ref = null): static
+    public function importAs(ModuleId $id, Id $as): static
     {
-        if ($as instanceof Id) {
-            $as = moduleId($this->module, $as);
-        }
-
-        $resolved = $this->resolve($value);
-
-        if ($resolved instanceof ModuleId) {
-            if ($resolved->module === $this->module && ($as === null || $resolved->id->equals($as->id))) {
-                /** @phpstan-ignore paramOut.type */
-                $ref = $resolved;
-
-                return $this;
-            }
-
-            $ref = $as ??= moduleId($this->module, $resolved->id);
-        } else {
-            $ref = $as ??= moduleId($this->module, $this->autowiring->identify($value));
-        }
-
         /** @var self<TReqs, TModule> */
         return new self(
             module: $this->module,
             exports: $this->exports,
             autowiring: $this->autowiring,
-            values: $this->values->with($as->id, $resolved),
+            values: $this->values->with($as, $this->resolveModuleId($id)),
         );
     }
 
-    public function export(Id|ModuleId|Value|Constructor|Factory $value, null|ModuleId|Id $as = null, ?ModuleId &$ref = null): static
+    public function define(Value|Factory|Constructor $value, ?Id &$inferredId = null): static
     {
-        $builder = $this->define($value, $as, $ref);
+        $inferredId = $this->autowiring->identify($value);
 
+        return $this->defineAs($value, $inferredId);
+    }
+
+    public function defineAs(Value|Id|Factory|Constructor $value, Id $as): static
+    {
         /** @var self<TReqs, TModule> */
         return new self(
             module: $this->module,
-            exports: $this->exports->with($ref),
+            exports: $this->exports,
             autowiring: $this->autowiring,
-            values: $builder->values,
+            values: $this->values->with($as, $this->resolveValue($value)),
         );
     }
 
-    private function resolve(mixed $value): mixed
+    public function export(Value|Factory|Constructor $value, ?Id &$inferredId = null): static
+    {
+        $inferredId = $this->autowiring->identify($value);
+
+        return $this->exportAs($value, $inferredId);
+    }
+
+    public function exportAs(Value|Id|Factory|Constructor $value, Id $as): static
+    {
+        /** @var self<TReqs, TModule> */
+        return new self(
+            module: $this->module,
+            exports: $this->exports->with(moduleId($this->module, $as)),
+            autowiring: $this->autowiring,
+            values: $this->values->with($as, $this->resolveValue($value)),
+        );
+    }
+
+    private function resolveValue(mixed $value): mixed
     {
         if ($value === defaultArgument) {
             return defaultArgument;
         }
 
         if ($value instanceof Id) {
-            if ($this->values->has($value)) {
-                return moduleId($this->module, $value);
-            }
-
-            throw InvalidConfig::idNotRegistered($this->module, $value, $value->location);
+            return $this->resolveId($value);
         }
 
         if ($value instanceof ModuleId) {
-            if ($value->module === $this->module) {
-                if ($this->values->has($value->id)) {
-                    return $value;
-                }
-
-                throw InvalidConfig::idNotRegistered($value->module, $value->id, $value->location);
-            }
-
-            if ($this->exports->has($value)) {
-                return $value;
-            }
-
-            throw InvalidConfig::idNotRegistered($this->module, $value->id, $value->location);
+            /** @phpstan-ignore argument.templateType */
+            return $this->resolveModuleId($value);
         }
 
         if ($value instanceof Value) {
@@ -128,57 +116,114 @@ final readonly class ModuleConfigurator implements ModuleConfiguratorI
         }
 
         if ($value instanceof Constructor) {
-            $class = $value->class;
-
-            try {
-                $reflection = new \ReflectionClass($class);
-            } catch (/** @phpstan-ignore catch.neverThrown */ \ReflectionException $exception) {
-                throw InvalidConfig::classDoesNotExist($class, $value->location, $exception);
-            }
-
-            if (!$reflection->isInstantiable()) {
-                throw InvalidConfig::classNotInstantiable($class, $value->location);
-            }
-
-            $constructor = $reflection->getConstructor();
-
-            if ($constructor === null) {
-                if ($value->arguments !== []) {
-                    throw InvalidConfig::classDoesNotHaveConstructor($class, $value->location);
-                }
-
-                return new LazyValue(static fn(): object => new $class());
-            }
-
-            return new LazyValue(
-                static fn(mixed ...$arguments): object => new $class(...$arguments),
-                $this->resolveArguments(
-                    function: $constructor,
-                    rawArguments: $value->arguments,
-                    autowire: $value->autowire,
-                    location: $value->location,
-                ),
-            );
+            return $this->resolveConstructor($value);
         }
 
         if ($value instanceof Factory) {
-            return new LazyValue(
-                /** @phpstan-ignore argument.type */
-                $value->factory,
-                $this->resolveArguments(
-                    function: new \ReflectionFunction($value->factory),
-                    rawArguments: $value->arguments,
-                    autowire: $value->autowire,
-                    location: $value->location,
-                ),
-            );
+            return $this->resolveFactory($value);
         }
 
-        if ($value instanceof Definition) {
-            throw new \LogicException('TODO');
+        if (\is_array($value)) {
+            return array_map($this->resolveValue(...), $value);
         }
 
         return $value;
+    }
+
+    /**
+     * @template T
+     * @param Id<T> $id
+     * @return ModuleId<TModule, T>
+     */
+    private function resolveId(Id $id): ModuleId
+    {
+        if ($this->values->has($id)) {
+            return moduleId($this->module, $id);
+        }
+
+        throw InvalidConfig::idNotRegistered($this->module, $id, $id->location);
+    }
+
+    /**
+     * @template TModuleId of ModuleId<*, *>
+     * @param TModuleId $id
+     * @return TModuleId
+     */
+    private function resolveModuleId(ModuleId $id): ModuleId
+    {
+        if ($id->module === $this->module) {
+            if ($this->values->has($id->id)) {
+                return $id;
+            }
+
+            throw InvalidConfig::idNotRegistered($id->module, $id->id, $id->location);
+        }
+
+        if ($this->exports->has($id)) {
+            return $id;
+        }
+
+        throw InvalidConfig::idNotRegistered($this->module, $id->id, $id->location);
+    }
+
+    /**
+     * @template T of object
+     * @param Constructor<T> $constructor
+     * @return LazyValue<T>
+     */
+    private function resolveConstructor(Constructor $constructor): LazyValue
+    {
+        $class = $constructor->class;
+        $location = $constructor->location;
+
+        try {
+            $classReflection = new \ReflectionClass($class);
+        } catch (/** @phpstan-ignore catch.neverThrown */ \ReflectionException $exception) {
+            throw InvalidConfig::classDoesNotExist($class, $location, $exception);
+        }
+
+        if (!$classReflection->isInstantiable()) {
+            throw InvalidConfig::classNotInstantiable($class, $location);
+        }
+
+        $constructorReflection = $classReflection->getConstructor();
+
+        if ($constructorReflection === null) {
+            if ($constructor->arguments !== []) {
+                throw InvalidConfig::classDoesNotHaveConstructor($class, $location);
+            }
+
+            return new LazyValue(static fn(): object => new $class());
+        }
+
+        return new LazyValue(
+            static fn(mixed ...$arguments): object => new $class(...$arguments),
+            $this->resolveArguments(
+                function: $constructorReflection,
+                rawArguments: $constructor->arguments,
+                autowire: $constructor->autowire,
+                location: $location,
+            ),
+        );
+    }
+
+    /**
+     * @template T
+     * @param Factory<T> $factory
+     * @return LazyValue<T>
+     */
+    private function resolveFactory(Factory $factory): LazyValue
+    {
+        return new LazyValue(
+            /** @phpstan-ignore argument.type */
+            $factory->factory,
+            $this->resolveArguments(
+                function: new \ReflectionFunction($factory->factory),
+                rawArguments: $factory->arguments,
+                autowire: $factory->autowire,
+                location: $factory->location,
+            ),
+        );
     }
 
     /**
@@ -229,11 +274,11 @@ final readonly class ModuleConfigurator implements ModuleConfiguratorI
                 throw InvalidConfig::argumentConfiguredTwice($function, $index, $name, $location);
             }
 
-            return $this->resolve($rawArguments[$index]);
+            return $this->resolveValue($rawArguments[$index]);
         }
 
         if (\array_key_exists($name, $rawArguments)) {
-            return $this->resolve($rawArguments[$name]);
+            return $this->resolveValue($rawArguments[$name]);
         }
 
         if ($autowire) {

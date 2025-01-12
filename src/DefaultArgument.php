@@ -6,9 +6,8 @@ namespace Thesis\DI;
 
 /**
  * @api
- * @implements Definition<mixed>
  */
-enum DefaultArgument implements Definition
+enum DefaultArgument
 {
     case Value;
 }

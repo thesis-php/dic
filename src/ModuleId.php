@@ -8,11 +8,10 @@ use Thesis\DI\Internal\Location;
 
 /**
  * @api
- * @template TModule of Module
+ * @template-covariant TModule of Module
  * @template T
- * @implements Definition<T>
  */
-final readonly class ModuleId implements Definition
+final readonly class ModuleId
 {
     public Location $location;
 
