@@ -20,7 +20,6 @@ final readonly class NullLogger implements Logger {}
 
 /**
  * @api
- * @implements Module<never>
  */
 final readonly class LoggingModule implements Module
 {

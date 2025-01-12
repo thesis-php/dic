@@ -6,7 +6,7 @@ namespace Thesis\DI;
 
 /**
  * @api
- * @template-covariant TReqs of Module
+ * @template-covariant TReqs of Module = never
  */
 interface Module
 {
