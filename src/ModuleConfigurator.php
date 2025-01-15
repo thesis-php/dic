@@ -21,30 +21,36 @@ interface ModuleConfigurator
     /**
      * @template T of object
      * @param Value<T>|Constructor<T>|Factory<T> $value
+     * @param list<Tag<T>> $tags
      * @param-out Id<T> $inferredId
      */
-    public function define(Value|Constructor|Factory $value, ?Id &$inferredId = null): static;
+    public function define(Value|Constructor|Factory $value, array $tags = [], ?Id &$inferredId = null): static;
 
     /**
-     * @template T
+     * @template T of TTagValue
+     * @template TTagValue
      * @param Id<covariant T>|Value<T>|Constructor<T>|Factory<T> $value
      * @param Id<T> $as
+     * @param list<Tag<TTagValue>> $tags
      * @phpstan-ignore generics.notSubtype
      */
-    public function defineAs(Id|Value|Constructor|Factory $value, Id $as): static;
+    public function defineAs(Id|Value|Constructor|Factory $value, Id $as, array $tags = []): static;
 
     /**
      * @template T of object
      * @param Value<T>|Constructor<T>|Factory<T> $value
+     * @param list<Tag<T>> $tags
      * @param-out Id<T> $inferredId
      */
-    public function export(Value|Constructor|Factory $value, ?Id &$inferredId = null): static;
+    public function export(Value|Constructor|Factory $value, array $tags = [], ?Id &$inferredId = null): static;
 
     /**
-     * @template T
+     * @template T of TTagValue
+     * @template TTagValue
      * @param Id<covariant T>|Value<T>|Constructor<T>|Factory<T> $value
      * @param Id<T> $as
+     * @param list<Tag<TTagValue>> $tags
      * @phpstan-ignore generics.notSubtype
      */
-    public function exportAs(Id|Value|Constructor|Factory $value, Id $as): static;
+    public function exportAs(Id|Value|Constructor|Factory $value, Id $as, array $tags = []): static;
 }

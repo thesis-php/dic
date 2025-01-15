@@ -29,12 +29,13 @@ final readonly class ModuleConfigurator implements ModuleConfiguratorI
      * @param class-string<TNewModule> $module
      * @return self<TNewReqs, TNewModule>
      */
-    public static function create(string $module, Exports $exports, Autowiring $autowiring): self
+    public static function create(Autowiring $autowiring, Exports $exports, Tagged $tags, string $module): self
     {
         return new self(
-            module: $module,
-            exports: $exports,
             autowiring: $autowiring,
+            exports: $exports,
+            tagged: $tags,
+            module: $module,
             values: ModuleValues::create(),
         );
     }
@@ -43,9 +44,10 @@ final readonly class ModuleConfigurator implements ModuleConfiguratorI
      * @param class-string<TModule> $module
      */
     private function __construct(
-        private string $module,
-        public Exports $exports,
         private Autowiring $autowiring,
+        public Exports $exports,
+        public Tagged $tagged,
+        private string $module,
         public ModuleValues $values,
     ) {}
 
@@ -53,45 +55,52 @@ final readonly class ModuleConfigurator implements ModuleConfiguratorI
     {
         /** @var self<TReqs, TModule> */
         return new self(
-            module: $this->module,
-            exports: $this->exports,
             autowiring: $this->autowiring,
+            exports: $this->exports,
+            tagged: $this->tagged,
+            module: $this->module,
             values: $this->values->with($as, $this->resolveModuleId($id)),
         );
     }
 
-    public function define(Value|Factory|Constructor $value, ?Id &$inferredId = null): static
+    public function define(Value|Factory|Constructor $value, array $tags = [], ?Id &$inferredId = null): static
     {
         $inferredId = $this->autowiring->identify($value);
 
         return $this->defineAs($value, $inferredId);
     }
 
-    public function defineAs(Value|Id|Factory|Constructor $value, Id $as): static
+    public function defineAs(Value|Id|Factory|Constructor $value, Id $as, array $tags = []): static
     {
+        $moduleId = moduleId($this->module, $as);
+
         /** @var self<TReqs, TModule> */
         return new self(
-            module: $this->module,
-            exports: $this->exports,
             autowiring: $this->autowiring,
+            exports: $this->exports,
+            tagged: /** @phpstan-ignore argument.type */ $this->tagged->with($moduleId, $tags),
+            module: $this->module,
             values: $this->values->with($as, $this->resolveValue($value)),
         );
     }
 
-    public function export(Value|Factory|Constructor $value, ?Id &$inferredId = null): static
+    public function export(Value|Factory|Constructor $value, array $tags = [], ?Id &$inferredId = null): static
     {
         $inferredId = $this->autowiring->identify($value);
 
         return $this->exportAs($value, $inferredId);
     }
 
-    public function exportAs(Value|Id|Factory|Constructor $value, Id $as): static
+    public function exportAs(Value|Id|Factory|Constructor $value, Id $as, array $tags = []): static
     {
+        $moduleId = moduleId($this->module, $as);
+
         /** @var self<TReqs, TModule> */
         return new self(
-            module: $this->module,
-            exports: $this->exports->with(moduleId($this->module, $as)),
             autowiring: $this->autowiring,
+            exports: $this->exports->with($moduleId),
+            tagged: /** @phpstan-ignore argument.type */ $this->tagged->with($moduleId, $tags),
+            module: $this->module,
             values: $this->values->with($as, $this->resolveValue($value)),
         );
     }

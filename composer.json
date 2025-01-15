@@ -37,6 +37,7 @@
             "src/Factory.php",
             "src/Id.php",
             "src/ModuleId.php",
+            "src/TaggedList.php",
             "src/Value.php"
         ]
     },

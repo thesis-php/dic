@@ -9,6 +9,7 @@ use Thesis\DI\Internal\Exports;
 use Thesis\DI\Internal\InvalidConfig;
 use Thesis\DI\Internal\Location;
 use Thesis\DI\Internal\ModuleConfigurator;
+use Thesis\DI\Internal\Tagged;
 use Thesis\DI\Internal\Values;
 
 /**
@@ -27,6 +28,7 @@ final readonly class ContainerConfigurator
             autowiring: new Autowiring(),
             exports: Exports::create(),
             values: Values::create(),
+            tagged: Tagged::create(),
         );
     }
 
@@ -34,6 +36,7 @@ final readonly class ContainerConfigurator
         private Autowiring $autowiring,
         private Exports $exports,
         private Values $values,
+        private Tagged $tagged,
     ) {}
 
     /**
@@ -57,9 +60,10 @@ final readonly class ContainerConfigurator
 
         $moduleBuilder = $module->configureModule(
             ModuleConfigurator::create(
-                module: $moduleClass,
-                exports: $this->exports,
                 autowiring: $this->autowiring,
+                exports: $this->exports,
+                tags: $this->tagged,
+                module: $moduleClass,
             ),
         );
 
@@ -68,6 +72,7 @@ final readonly class ContainerConfigurator
             autowiring: $this->autowiring,
             exports: $moduleBuilder->exports,
             values: $this->values->with($moduleClass, $moduleBuilder->values),
+            tagged: $moduleBuilder->tagged,
         );
     }
 
@@ -77,6 +82,6 @@ final readonly class ContainerConfigurator
     public function build(): Container
     {
         /** @var Container<TReqs> */
-        return new Container($this->exports, $this->values);
+        return new Container($this->exports, $this->tagged, $this->values);
     }
 }

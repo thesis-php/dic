@@ -7,16 +7,36 @@ use Thesis\DI\Id;
 use Thesis\DI\Module;
 use Thesis\DI\ModuleId;
 use Thesis\DI\ModuleConfigurator;
+use Thesis\DI\Tag;
 use function Thesis\DI\moduleId;
 use function Thesis\DI\objectId;
 use function Thesis\DI\constructor;
 use function Thesis\DI\factory;
+use function Thesis\DI\taggedList;
 
 require_once __DIR__ . '/vendor/autoload.php';
 
 interface Logger {}
 
+/**
+ * @implements Tag<Logger>
+ */
+enum ChannelTag implements Tag
+{
+    case Tag;
+}
+
 final readonly class NullLogger implements Logger {}
+
+final readonly class Channels
+{
+    /**
+     * @param list<Logger> $loggers
+     */
+    public function __construct(
+        public array $loggers,
+    ) {}
+}
 
 /**
  * @api
@@ -43,10 +63,14 @@ final readonly class LoggingModule implements Module
     public function configureModule(ModuleConfigurator $module): ModuleConfigurator
     {
         foreach ($this->channels as $channel) {
-            $module = $module->exportAs(constructor(NullLogger::class), self::channelId($channel)->id);
+            $module = $module->exportAs(
+                value: constructor(NullLogger::class),
+                as: self::channelId($channel)->id,
+                tags: [ChannelTag::Tag]
+            );
         }
 
-        return $module;
+        return $module->export(constructor(Channels::class, [taggedList(ChannelTag::class)]));
     }
 }
 
@@ -88,12 +112,8 @@ final readonly class MyModule implements Module
 }
 
 $container = ContainerConfigurator::create()
-    ->require(new LoggingModule(['app']))
+    ->require(new LoggingModule(['app', 'messaging']))
     ->require(new MyModule())
-    ->build()
-;
+    ->build();
 
-$my = $container->get(moduleId(MyModule::class, objectId(MyService::class)));
-$another = $container->get(moduleId(MyModule::class, objectId(AnotherService::class)));
-
-dump($my, $another);
+dump($container->get(moduleId(LoggingModule::class, objectId(Channels::class))));
