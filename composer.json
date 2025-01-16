@@ -32,13 +32,7 @@
             "Thesis\\DI\\": "tests/"
         },
         "files": [
-            "src/Constructor.php",
-            "src/DefaultArgument.php",
-            "src/Factory.php",
-            "src/Id.php",
-            "src/ModuleId.php",
-            "src/TaggedList.php",
-            "src/Value.php"
+            "src/recipes.php"
         ]
     },
     "config": {

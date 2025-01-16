@@ -10,8 +10,9 @@ use Thesis\DI\Internal\Location;
 /**
  * @api
  * @template T
+ * @implements Recipe<T>
  */
-final readonly class Id
+final readonly class Id implements Recipe
 {
     public Location $location;
 
@@ -29,6 +30,12 @@ final readonly class Id
         }
     }
 
+    public function equals(mixed $value): bool
+    {
+        return $value instanceof self
+            && $this->id === $value->id;
+    }
+
     /**
      * @return non-empty-string
      */
@@ -44,22 +51,4 @@ final readonly class Id
     {
         return $this->id;
     }
-
-    public function equals(mixed $value): bool
-    {
-        return $value instanceof self
-            && $this->id === $value->id;
-    }
-}
-
-/**
- * @api
- * @template T of object
- * @param class-string<T> $class
- * @return Id<T>
- */
-function objectId(string $class): Id
-{
-    /** @var Id<T> */
-    return new Id($class, Location::caller());
 }

@@ -4,145 +4,83 @@ declare(strict_types=1);
 
 namespace Thesis\DI\Internal;
 
-use Thesis\DI\Constructor;
-use Thesis\DI\Factory;
 use Thesis\DI\Id;
 use Thesis\DI\Module;
-use Thesis\DI\ModuleConfigurator as ModuleConfiguratorI;
 use Thesis\DI\ModuleId;
-use Thesis\DI\Value;
 use function Thesis\DI\moduleId;
 use const Thesis\DI\defaultArgument;
 
 /**
  * @internal
- * @psalm-internal Thesis\DI
- * @template TReqs of Module
- * @template TModule of Module<TReqs>
- * @implements ModuleConfiguratorI<TReqs, TModule>
  */
-final readonly class ModuleConfigurator implements ModuleConfiguratorI
+final readonly class RecipeResolver
 {
     /**
-     * @template TNewReqs of Module
-     * @template TNewModule of Module<TNewReqs>
-     * @param class-string<TNewModule> $module
-     * @return self<TNewReqs, TNewModule>
+     * @param class-string<Module> $module
      */
-    public static function create(Autowiring $autowiring, Exports $exports, Tagged $tags, string $module): self
-    {
-        return new self(
+    public static function resolve(
+        Autowiring $autowiring,
+        Exports $exports,
+        ModuleValues $values,
+        string $module,
+        mixed $recipe,
+    ): mixed {
+        return (new self(
             autowiring: $autowiring,
             exports: $exports,
-            tagged: $tags,
+            values: $values,
             module: $module,
-            values: ModuleValues::create(),
-        );
+        ))->doResolve($recipe);
     }
 
     /**
-     * @param class-string<TModule> $module
+     * @param class-string<Module> $module
      */
     private function __construct(
         private Autowiring $autowiring,
-        public Exports $exports,
-        public Tagged $tagged,
+        private Exports $exports,
+        private ModuleValues $values,
         private string $module,
-        public ModuleValues $values,
     ) {}
 
-    public function importAs(ModuleId $id, Id $as): static
+    private function doResolve(mixed $recipe): mixed
     {
-        /** @var self<TReqs, TModule> */
-        return new self(
-            autowiring: $this->autowiring,
-            exports: $this->exports,
-            tagged: $this->tagged,
-            module: $this->module,
-            values: $this->values->with($as, $this->resolveModuleId($id)),
-        );
-    }
-
-    public function define(Value|Factory|Constructor $value, array $tags = [], ?Id &$inferredId = null): static
-    {
-        $inferredId = $this->autowiring->identify($value);
-
-        return $this->defineAs($value, $inferredId);
-    }
-
-    public function defineAs(Value|Id|Factory|Constructor $value, Id $as, array $tags = []): static
-    {
-        $moduleId = moduleId($this->module, $as);
-
-        /** @var self<TReqs, TModule> */
-        return new self(
-            autowiring: $this->autowiring,
-            exports: $this->exports,
-            tagged: /** @phpstan-ignore argument.type */ $this->tagged->with($moduleId, $tags),
-            module: $this->module,
-            values: $this->values->with($as, $this->resolveValue($value)),
-        );
-    }
-
-    public function export(Value|Factory|Constructor $value, array $tags = [], ?Id &$inferredId = null): static
-    {
-        $inferredId = $this->autowiring->identify($value);
-
-        return $this->exportAs($value, $inferredId);
-    }
-
-    public function exportAs(Value|Id|Factory|Constructor $value, Id $as, array $tags = []): static
-    {
-        $moduleId = moduleId($this->module, $as);
-
-        /** @var self<TReqs, TModule> */
-        return new self(
-            autowiring: $this->autowiring,
-            exports: $this->exports->with($moduleId),
-            tagged: /** @phpstan-ignore argument.type */ $this->tagged->with($moduleId, $tags),
-            module: $this->module,
-            values: $this->values->with($as, $this->resolveValue($value)),
-        );
-    }
-
-    private function resolveValue(mixed $value): mixed
-    {
-        if ($value === defaultArgument) {
+        if ($recipe === defaultArgument) {
             return defaultArgument;
         }
 
-        if ($value instanceof Id) {
-            return $this->resolveId($value);
+        if ($recipe instanceof Id) {
+            return $this->resolveId($recipe);
         }
 
-        if ($value instanceof ModuleId) {
+        if ($recipe instanceof ModuleId) {
             /** @phpstan-ignore argument.templateType */
-            return $this->resolveModuleId($value);
+            return $this->resolveModuleId($recipe);
         }
 
-        if ($value instanceof Value) {
-            return $value->value;
+        if ($recipe instanceof Value) {
+            return $recipe->value;
         }
 
-        if ($value instanceof Constructor) {
-            return $this->resolveConstructor($value);
+        if ($recipe instanceof Construct) {
+            return $this->resolveConstructor($recipe);
         }
 
-        if ($value instanceof Factory) {
-            return $this->resolveFactory($value);
+        if ($recipe instanceof Call) {
+            return $this->resolveFactory($recipe);
         }
 
-        if (\is_array($value)) {
-            return array_map($this->resolveValue(...), $value);
+        if (\is_array($recipe)) {
+            return array_map($this->doResolve(...), $recipe);
         }
 
-        return $value;
+        return $recipe;
     }
 
     /**
-     * @template T
-     * @param Id<T> $id
-     * @return ModuleId<TModule, T>
+     * @template TValue
+     * @param Id<TValue> $id
+     * @return ModuleId<*, TValue>
      */
     private function resolveId(Id $id): ModuleId
     {
@@ -177,13 +115,13 @@ final readonly class ModuleConfigurator implements ModuleConfiguratorI
 
     /**
      * @template T of object
-     * @param Constructor<T> $constructor
+     * @param Construct<T> $constructor
      * @return LazyValue<T>
      */
-    private function resolveConstructor(Constructor $constructor): LazyValue
+    private function resolveConstructor(Construct $constructor): LazyValue
     {
         $class = $constructor->class;
-        $location = $constructor->location;
+        $location = Location::current();
 
         try {
             $classReflection = new \ReflectionClass($class);
@@ -198,7 +136,7 @@ final readonly class ModuleConfigurator implements ModuleConfiguratorI
         $constructorReflection = $classReflection->getConstructor();
 
         if ($constructorReflection === null) {
-            if ($constructor->arguments !== []) {
+            if ($constructor->args !== []) {
                 throw InvalidConfig::classDoesNotHaveConstructor($class, $location);
             }
 
@@ -206,10 +144,10 @@ final readonly class ModuleConfigurator implements ModuleConfiguratorI
         }
 
         return new LazyValue(
-            static fn(mixed ...$arguments): object => new $class(...$arguments),
+            static fn(mixed ...$args): object => new $class(...$args),
             $this->resolveArguments(
                 function: $constructorReflection,
-                rawArguments: $constructor->arguments,
+                rawArguments: $constructor->args,
                 autowire: $constructor->autowire,
                 location: $location,
             ),
@@ -218,19 +156,19 @@ final readonly class ModuleConfigurator implements ModuleConfiguratorI
 
     /**
      * @template T
-     * @param Factory<T> $factory
+     * @param Call<T> $factory
      * @return LazyValue<T>
      */
-    private function resolveFactory(Factory $factory): LazyValue
+    private function resolveFactory(Call $factory): LazyValue
     {
         return new LazyValue(
             /** @phpstan-ignore argument.type */
-            $factory->factory,
+            $factory->function,
             $this->resolveArguments(
-                function: new \ReflectionFunction($factory->factory),
-                rawArguments: $factory->arguments,
+                function: new \ReflectionFunction($factory->function),
+                rawArguments: $factory->args,
                 autowire: $factory->autowire,
-                location: $factory->location,
+                location: Location::current(),
             ),
         );
     }
@@ -283,11 +221,11 @@ final readonly class ModuleConfigurator implements ModuleConfiguratorI
                 throw InvalidConfig::argumentConfiguredTwice($function, $index, $name, $location);
             }
 
-            return $this->resolveValue($rawArguments[$index]);
+            return $this->doResolve($rawArguments[$index]);
         }
 
         if (\array_key_exists($name, $rawArguments)) {
-            return $this->resolveValue($rawArguments[$name]);
+            return $this->doResolve($rawArguments[$name]);
         }
 
         if ($autowire) {

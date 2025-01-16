@@ -8,7 +8,6 @@ use Thesis\DI\Id;
 
 /**
  * @internal
- * @psalm-internal Thesis\DI
  */
 final class ModuleValues
 {

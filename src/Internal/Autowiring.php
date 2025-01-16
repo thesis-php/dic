@@ -4,45 +4,34 @@ declare(strict_types=1);
 
 namespace Thesis\DI\Internal;
 
-use Thesis\DI\Constructor;
-use Thesis\DI\Factory;
 use Thesis\DI\Id;
-use Thesis\DI\Value;
 use function Thesis\DI\objectId;
 
 /**
  * @internal
- * @psalm-internal Thesis\DI
  */
 final readonly class Autowiring
 {
     /**
-     * @template T
-     * @param Value<T>|Constructor<T>|Factory<T> $value
+     * @template T of object
+     * @param Value<T>|Construct<T>|Call<T> $recipe
      * @return Id<T>
-     * @phpstan-ignore generics.notSubtype
      */
-    public function identify(Value|Constructor|Factory $value): Id
+    public function identify(Value|Construct|Call $recipe): Id
     {
-        if ($value instanceof Value) {
-            if (\is_object($value->value)) {
-                /** @phpstan-ignore return.type, argument.type, argument.templateType */
-                return objectId($value->value::class);
-            }
-
-            throw InvalidConfig::cannotInferClassFromType(get_debug_type($value), $value->location);
+        if ($recipe instanceof Value) {
+            return objectId($recipe->value::class);
         }
 
-        if ($value instanceof Constructor) {
-            /** @phpstan-ignore return.type, argument.type, argument.templateType */
-            return objectId($value->class);
+        if ($recipe instanceof Construct) {
+            return objectId($recipe->class);
         }
 
-        $reflection = new \ReflectionFunction($value->factory);
+        $reflection = new \ReflectionFunction($recipe->function);
         $type = $reflection->getReturnType();
 
         if (!$type instanceof \ReflectionNamedType) {
-            throw InvalidConfig::cannotInferClassFromType($type, $value->location);
+            throw InvalidConfig::cannotInferClassFromType($type, Location::current());
         }
 
         $name = $type->getName();
@@ -54,7 +43,7 @@ final readonly class Autowiring
         };
 
         if ($class === null) {
-            throw InvalidConfig::cannotInferClassFromType($type, $value->location);
+            throw InvalidConfig::cannotInferClassFromType($type, Location::current());
         }
 
         /** @var Id<T> */

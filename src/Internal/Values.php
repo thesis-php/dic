@@ -9,7 +9,6 @@ use Thesis\DI\ModuleId;
 
 /**
  * @internal
- * @psalm-internal Thesis\DI
  */
 final readonly class Values
 {

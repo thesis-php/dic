@@ -8,6 +8,7 @@ use Thesis\DI\Internal\Exports;
 use Thesis\DI\Internal\LazyValue;
 use Thesis\DI\Internal\Location;
 use Thesis\DI\Internal\Tagged;
+use Thesis\DI\Internal\TaggedList;
 use Thesis\DI\Internal\Values;
 
 /**
@@ -119,12 +120,12 @@ final class Container
      * @template T
      * @template TTag of Tag<T>
      * @param class-string<Module> $module
-     * @param TaggedList<T, TTag> $definition
+     * @param TaggedList<T, TTag> $recipe
      * @return list<T>
      */
-    private function resolveTaggedList(string $module, TaggedList $definition): array
+    private function resolveTaggedList(string $module, TaggedList $recipe): array
     {
-        $tags = $this->tagged->get($definition->tag);
+        $tags = $this->tagged->get($recipe->tag);
         $values = [];
 
         foreach ($tags as [$taggedModuleId]) {
@@ -133,10 +134,6 @@ final class Container
             }
         }
 
-        if ($definition->priority === null) {
-            return $values;
-        }
-
-        throw new \LogicException('TODO sort');
+        return $values;
     }
 }

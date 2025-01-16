@@ -6,14 +6,13 @@ namespace Thesis\DI;
 
 /**
  * @api
- * @template-covariant TReqs of Module = never
+ * @template TReqs of Module = never
  */
 interface Module
 {
     /**
-     * @template TConfigurator of ModuleConfigurator<TReqs, static>
-     * @param TConfigurator $module
-     * @return TConfigurator
+     * @param ModuleConfig<TReqs> $config
+     * @return ModuleConfig<TReqs>
      */
-    public function configureModule(ModuleConfigurator $module): ModuleConfigurator;
+    public function configureModule(ModuleConfig $config): ModuleConfig;
 }

@@ -10,8 +10,9 @@ use Thesis\DI\Internal\Location;
  * @api
  * @template-covariant TModule of Module
  * @template T
+ * @implements Recipe<T>
  */
-final readonly class ModuleId
+final readonly class ModuleId implements Recipe
 {
     public Location $location;
 
@@ -27,6 +28,13 @@ final readonly class ModuleId
         $this->location = $location ?? Location::caller();
     }
 
+    public function equals(mixed $value): bool
+    {
+        return $value instanceof self
+            && $this->module === $value->module
+            && $this->id->equals($value->id);
+    }
+
     /**
      * @return non-empty-string
      */
@@ -39,24 +47,4 @@ final readonly class ModuleId
     {
         return $this->toString();
     }
-
-    public function equals(mixed $value): bool
-    {
-        return $value instanceof self
-            && $this->module === $value->module
-            && $this->id->equals($value->id);
-    }
-}
-
-/**
- * @api
- * @template TModule of Module
- * @template T
- * @param class-string<TModule> $module
- * @param Id<T> $id
- * @return ModuleId<TModule, T>
- */
-function moduleId(string $module, Id $id): ModuleId
-{
-    return new ModuleId($module, $id);
 }

@@ -9,7 +9,6 @@ use Thesis\DI\Module;
 
 /**
  * @internal
- * @psalm-internal Thesis\DI
  */
 final class InvalidConfig extends \LogicException
 {
@@ -19,7 +18,7 @@ final class InvalidConfig extends \LogicException
     public static function invalidId(string $id, Location $location): self
     {
         return new self(
-            message: \sprintf('Definition id "%s" is invalid', $id),
+            message: \sprintf('Id "%s" is invalid', $id),
             location: $location,
         );
     }

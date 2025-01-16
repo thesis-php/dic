@@ -8,7 +8,8 @@ use Thesis\DI\Internal\Autowiring;
 use Thesis\DI\Internal\Exports;
 use Thesis\DI\Internal\InvalidConfig;
 use Thesis\DI\Internal\Location;
-use Thesis\DI\Internal\ModuleConfigurator;
+use Thesis\DI\Internal\ModuleConfig;
+use Thesis\DI\Internal\ModuleValues;
 use Thesis\DI\Internal\Tagged;
 use Thesis\DI\Internal\Values;
 
@@ -16,7 +17,7 @@ use Thesis\DI\Internal\Values;
  * @api
  * @template TReqs of Module
  */
-final readonly class ContainerConfigurator
+final readonly class ContainerConfig
 {
     /**
      * @return self<never>
@@ -26,21 +27,21 @@ final readonly class ContainerConfigurator
         /** @var self<never> */
         return new self(
             autowiring: new Autowiring(),
-            exports: Exports::create(),
             values: Values::create(),
+            exports: Exports::create(),
             tagged: Tagged::create(),
         );
     }
 
     private function __construct(
         private Autowiring $autowiring,
-        private Exports $exports,
         private Values $values,
+        private Exports $exports,
         private Tagged $tagged,
     ) {}
 
     /**
-     * @template TModule of Module<TReqs>
+     * @template TModule of Module<covariant TReqs>
      * @param TModule $module
      * @return self<TReqs|TModule>
      */
@@ -58,21 +59,22 @@ final readonly class ContainerConfigurator
             throw InvalidConfig::moduleClassMustBeFinal($moduleClass, Location::caller());
         }
 
-        $moduleBuilder = $module->configureModule(
-            ModuleConfigurator::create(
-                autowiring: $this->autowiring,
-                exports: $this->exports,
-                tags: $this->tagged,
-                module: $moduleClass,
-            ),
+        /** @var ModuleConfig<TReqs> */
+        $moduleConfig = new ModuleConfig(
+            autowiring: $this->autowiring,
+            exports: $this->exports,
+            tagged: $this->tagged,
+            values: ModuleValues::create(),
+            module: $moduleClass,
         );
+        [$exports, $tagged, $moduleValues] = $module->configureModule($moduleConfig)();
 
         /** @var self<TReqs|TModule> */
         return new self(
             autowiring: $this->autowiring,
-            exports: $moduleBuilder->exports,
-            values: $this->values->with($moduleClass, $moduleBuilder->values),
-            tagged: $moduleBuilder->tagged,
+            values: $this->values->with($moduleClass, $moduleValues),
+            exports: $exports,
+            tagged: $tagged,
         );
     }
 

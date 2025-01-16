@@ -6,7 +6,6 @@ namespace Thesis\DI\Internal;
 
 /**
  * @internal
- * @psalm-internal Thesis\DI
  * @template-covariant T
  */
 final readonly class LazyValue
