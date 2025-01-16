@@ -9,8 +9,8 @@ use Thesis\DI\Internal\Location;
 /**
  * @api
  * @template-covariant TModule of Module
- * @template T
- * @implements Recipe<T>
+ * @template TValue
+ * @implements Recipe<TValue>
  */
 final readonly class ModuleId implements Recipe
 {
@@ -18,7 +18,7 @@ final readonly class ModuleId implements Recipe
 
     /**
      * @param class-string<TModule> $module
-     * @param Id<T> $id
+     * @param Id<TValue> $id
      */
     public function __construct(
         public string $module,

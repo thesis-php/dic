@@ -8,7 +8,6 @@ use Thesis\DI\FunctionRecipe;
 use Thesis\DI\Id;
 use Thesis\DI\Internal\ModuleConfig;
 use Thesis\DI\Module;
-use Thesis\DI\ModuleConfig as ModuleConfigI;
 use Thesis\DI\ModuleId;
 use Thesis\DI\Recipe;
 use Thesis\DI\Tag;
@@ -66,7 +65,7 @@ final class CallAndConstructConfig implements ValueConfig
         return $config;
     }
 
-    public function import(ModuleId $moduleId, string|Id $as): ModuleConfigI
+    public function import(ModuleId $moduleId, string|Id $as): ModuleConfig
     {
         return $this->moduleConfig()->import($moduleId, $as);
     }

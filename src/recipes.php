@@ -13,9 +13,9 @@ use Thesis\DI\Internal\Value;
 
 /**
  * @api
- * @template T
- * @param T $value
- * @return Recipe<T>
+ * @template TValue
+ * @param TValue $value
+ * @return Recipe<TValue>
  */
 function value(mixed $value): Recipe
 {
@@ -35,9 +35,9 @@ function call(callable $factory): FunctionRecipe
 
 /**
  * @api
- * @template T of object
- * @param class-string<T> $class
- * @return FunctionRecipe<T>
+ * @template TValue of object
+ * @param class-string<TValue> $class
+ * @return FunctionRecipe<TValue>
  */
 function construct(string $class): FunctionRecipe
 {
@@ -47,10 +47,10 @@ function construct(string $class): FunctionRecipe
 /**
  * @api
  * @template TModule of Module
- * @template T
+ * @template TValue
  * @param class-string<TModule> $module
- * @param Id<T> $id
- * @return ModuleId<TModule, T>
+ * @param Id<TValue> $id
+ * @return ModuleId<TModule, TValue>
  */
 function moduleId(string $module, Id $id): ModuleId
 {
@@ -59,22 +59,22 @@ function moduleId(string $module, Id $id): ModuleId
 
 /**
  * @api
- * @template T of object
- * @param class-string<T> $class
- * @return Id<T>
+ * @template TValue of object
+ * @param class-string<TValue> $class
+ * @return Id<TValue>
  */
 function objectId(string $class): Id
 {
-    /** @var Id<T> */
+    /** @var Id<TValue> */
     return new Id($class, Location::caller());
 }
 
 /**
  * @api
- * @template T
- * @template TTag of Tag<T>
+ * @template TValue
+ * @template TTag of Tag<TValue>
  * @param class-string<TTag> $tag
- * @return Recipe<list<T>>
+ * @return Recipe<list<TValue>>
  */
 function taggedList(string $tag): Recipe
 {

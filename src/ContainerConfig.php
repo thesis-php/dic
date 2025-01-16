@@ -9,13 +9,12 @@ use Thesis\DI\Internal\Exports;
 use Thesis\DI\Internal\InvalidConfig;
 use Thesis\DI\Internal\Location;
 use Thesis\DI\Internal\ModuleConfig;
-use Thesis\DI\Internal\ModuleValues;
-use Thesis\DI\Internal\Tagged;
+use Thesis\DI\Internal\Tags;
 use Thesis\DI\Internal\Values;
 
 /**
  * @api
- * @template TReqs of Module
+ * @template TReqs of Module = never
  */
 final readonly class ContainerConfig
 {
@@ -24,12 +23,11 @@ final readonly class ContainerConfig
      */
     public static function create(): self
     {
-        /** @var self<never> */
         return new self(
             autowiring: new Autowiring(),
-            values: Values::create(),
-            exports: Exports::create(),
-            tagged: Tagged::create(),
+            values: new Values(),
+            exports: new Exports(),
+            tags: new Tags(),
         );
     }
 
@@ -37,7 +35,7 @@ final readonly class ContainerConfig
         private Autowiring $autowiring,
         private Values $values,
         private Exports $exports,
-        private Tagged $tagged,
+        private Tags $tags,
     ) {}
 
     /**
@@ -63,8 +61,7 @@ final readonly class ContainerConfig
         $moduleConfig = new ModuleConfig(
             autowiring: $this->autowiring,
             exports: $this->exports,
-            tagged: $this->tagged,
-            values: ModuleValues::create(),
+            tags: $this->tags,
             module: $moduleClass,
         );
         [$exports, $tagged, $moduleValues] = $module->configureModule($moduleConfig)();
@@ -74,7 +71,7 @@ final readonly class ContainerConfig
             autowiring: $this->autowiring,
             values: $this->values->with($moduleClass, $moduleValues),
             exports: $exports,
-            tagged: $tagged,
+            tags: $tagged,
         );
     }
 
@@ -84,6 +81,6 @@ final readonly class ContainerConfig
     public function build(): Container
     {
         /** @var Container<TReqs> */
-        return new Container($this->exports, $this->tagged, $this->values);
+        return new Container($this->exports, $this->tags, $this->values);
     }
 }

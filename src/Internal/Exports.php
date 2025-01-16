@@ -11,16 +11,11 @@ use Thesis\DI\ModuleId;
  */
 final readonly class Exports
 {
-    public static function create(): self
-    {
-        return new self([]);
-    }
-
     /**
      * @param array<non-empty-string, true> $exports
      */
-    private function __construct(
-        private array $exports,
+    public function __construct(
+        private array $exports = [],
     ) {}
 
     public function has(ModuleId $id): bool

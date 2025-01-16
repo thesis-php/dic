@@ -6,12 +6,12 @@ namespace Thesis\DI\Internal;
 
 /**
  * @internal
- * @template-covariant T
+ * @template-covariant TValue
  */
 final readonly class LazyValue
 {
     /**
-     * @param \Closure(mixed...): T $function
+     * @param \Closure(mixed...): TValue $function
      * @param array<non-empty-string, mixed> $arguments
      */
     public function __construct(

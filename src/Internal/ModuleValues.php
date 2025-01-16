@@ -11,16 +11,11 @@ use Thesis\DI\Id;
  */
 final class ModuleValues
 {
-    public static function create(): self
-    {
-        return new self([]);
-    }
-
     /**
      * @param array<non-empty-string, mixed> $values
      */
-    private function __construct(
-        private array $values,
+    public function __construct(
+        private array $values = [],
     ) {}
 
     public function isEmpty(): bool

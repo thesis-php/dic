@@ -12,16 +12,11 @@ use Thesis\DI\ModuleId;
  */
 final readonly class Values
 {
-    public static function create(): self
-    {
-        return new self([]);
-    }
-
     /**
      * @param array<class-string<Module>, ModuleValues> $values
      */
-    private function __construct(
-        private array $values,
+    public function __construct(
+        private array $values = [],
     ) {}
 
     /**

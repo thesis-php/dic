@@ -9,9 +9,9 @@ use Thesis\DI\Tag;
 
 /**
  * @internal
- * @template T
- * @template TTag of Tag<T>
- * @implements Recipe<list<T>>
+ * @template TValue
+ * @template TTag of Tag<TValue>
+ * @implements Recipe<list<TValue>>
  */
 final readonly class TaggedList implements Recipe
 {

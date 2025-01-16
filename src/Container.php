@@ -7,8 +7,8 @@ namespace Thesis\DI;
 use Thesis\DI\Internal\Exports;
 use Thesis\DI\Internal\LazyValue;
 use Thesis\DI\Internal\Location;
-use Thesis\DI\Internal\Tagged;
 use Thesis\DI\Internal\TaggedList;
+use Thesis\DI\Internal\Tags;
 use Thesis\DI\Internal\Values;
 
 /**
@@ -27,7 +27,7 @@ final class Container
      */
     public function __construct(
         private readonly Exports $exports,
-        private readonly Tagged $tagged,
+        private readonly Tags $tags,
         private readonly Values $values,
     ) {}
 
@@ -40,9 +40,9 @@ final class Container
     }
 
     /**
-     * @template T
-     * @param ModuleId<TReqs, T> $id
-     * @return T
+     * @template TValue
+     * @param ModuleId<TReqs, TValue> $id
+     * @return TValue
      * @throws ValueIsNotAvailable
      */
     public function get(ModuleId $id): mixed
@@ -65,20 +65,20 @@ final class Container
     }
 
     /**
-     * @template T
-     * @param ModuleId<*, T> $id
-     * @return T
+     * @template TValue
+     * @param ModuleId<*, TValue> $id
+     * @return TValue
      */
     private function doGet(ModuleId $id): mixed
     {
         $key = $id->toString();
 
         if (\array_key_exists($key, $this->resolvedValues)) {
-            /** @var T */
+            /** @var TValue */
             return $this->resolvedValues[$key];
         }
 
-        /** @var T */
+        /** @var TValue */
         $value = $this->resolve($id->module, $this->values->get($id));
         $this->resolvedValues[$key] = $value;
         $this->values->remove($id);
@@ -117,15 +117,15 @@ final class Container
     }
 
     /**
-     * @template T
-     * @template TTag of Tag<T>
+     * @template TValue
+     * @template TTag of Tag<TValue>
      * @param class-string<Module> $module
-     * @param TaggedList<T, TTag> $recipe
-     * @return list<T>
+     * @param TaggedList<TValue, TTag> $recipe
+     * @return list<TValue>
      */
     private function resolveTaggedList(string $module, TaggedList $recipe): array
     {
-        $tags = $this->tagged->get($recipe->tag);
+        $tags = $this->tags->get($recipe->tag);
         $values = [];
 
         foreach ($tags as [$taggedModuleId]) {

@@ -28,9 +28,9 @@ final readonly class ModuleConfig implements ModuleConfigI
     public function __construct(
         private Autowiring $autowiring,
         private Exports $exports,
-        private Tagged $tagged,
-        private ModuleValues $values,
+        private Tags $tags,
         private string $module,
+        private ModuleValues $values = new ModuleValues(),
     ) {}
 
     /**
@@ -49,9 +49,9 @@ final readonly class ModuleConfig implements ModuleConfigI
         return new self(
             autowiring: $this->autowiring,
             exports: $this->exports,
-            tagged: $this->tagged,
-            values: $this->values->with($as, $moduleId),
+            tags: $this->tags,
             module: $this->module,
+            values: $this->values->with($as, $moduleId),
         );
     }
 
@@ -91,7 +91,7 @@ final readonly class ModuleConfig implements ModuleConfigI
     {
         return [
             $this->exports,
-            $this->tagged,
+            $this->tags,
             $this->values,
         ];
     }
@@ -111,7 +111,8 @@ final readonly class ModuleConfig implements ModuleConfigI
         return new self(
             autowiring: $this->autowiring,
             exports: $export ? $this->exports->with($moduleId) : $this->exports,
-            tagged: $this->tagged->with($moduleId, $tags),
+            tags: $this->tags->with($moduleId, $tags),
+            module: $this->module,
             values: $this->values->with($id, RecipeResolver::resolve(
                 autowiring: $this->autowiring,
                 exports: $this->exports,
@@ -119,7 +120,6 @@ final readonly class ModuleConfig implements ModuleConfigI
                 module: $this->module,
                 recipe: $recipe,
             )),
-            module: $this->module,
         );
     }
 }

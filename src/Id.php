@@ -9,8 +9,8 @@ use Thesis\DI\Internal\Location;
 
 /**
  * @api
- * @template T
- * @implements Recipe<T>
+ * @template TValue
+ * @implements Recipe<TValue>
  */
 final readonly class Id implements Recipe
 {

@@ -10,36 +10,31 @@ use Thesis\DI\Tag;
 /**
  * @internal
  */
-final readonly class Tagged
+final readonly class Tags
 {
-    public static function create(): self
-    {
-        return new self([]);
-    }
-
     /**
      * @param array<class-string<Tag>, non-empty-list<array{ModuleId, Tag}>> $data
      */
-    private function __construct(
-        private array $data,
+    public function __construct(
+        private array $data = [],
     ) {}
 
     /**
-     * @template T
-     * @template TTag of Tag<T>
+     * @template TValue
+     * @template TTag of Tag<TValue>
      * @param class-string<TTag> $tag
-     * @return list<array{ModuleId<*, T>, TTag}>
+     * @return list<array{ModuleId<*, TValue>, TTag}>
      */
     public function get(string $tag): array
     {
-        /** @var list<array{ModuleId<*, T>, TTag}> */
+        /** @var list<array{ModuleId<*, TValue>, TTag}> */
         return $this->data[$tag] ?? [];
     }
 
     /**
-     * @template T of TTagValue
+     * @template TValue of TTagValue
      * @template TTagValue
-     * @param ModuleId<*, T> $id
+     * @param ModuleId<*, TValue> $id
      * @param list<Tag<TTagValue>> $tags
      */
     public function with(ModuleId $id, array $tags): self

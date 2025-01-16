@@ -114,9 +114,9 @@ final readonly class RecipeResolver
     }
 
     /**
-     * @template T of object
-     * @param Construct<T> $constructor
-     * @return LazyValue<T>
+     * @template TValue of object
+     * @param Construct<TValue> $constructor
+     * @return LazyValue<TValue>
      */
     private function resolveConstructor(Construct $constructor): LazyValue
     {
@@ -155,9 +155,9 @@ final readonly class RecipeResolver
     }
 
     /**
-     * @template T
-     * @param Call<T> $factory
-     * @return LazyValue<T>
+     * @template TValue
+     * @param Call<TValue> $factory
+     * @return LazyValue<TValue>
      */
     private function resolveFactory(Call $factory): LazyValue
     {

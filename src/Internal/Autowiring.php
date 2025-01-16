@@ -13,9 +13,9 @@ use function Thesis\DI\objectId;
 final readonly class Autowiring
 {
     /**
-     * @template T of object
-     * @param Value<T>|Construct<T>|Call<T> $recipe
-     * @return Id<T>
+     * @template TValue of object
+     * @param Value<TValue>|Construct<TValue>|Call<TValue> $recipe
+     * @return Id<TValue>
      */
     public function identify(Value|Construct|Call $recipe): Id
     {
@@ -46,7 +46,7 @@ final readonly class Autowiring
             throw InvalidConfig::cannotInferClassFromType($type, Location::current());
         }
 
-        /** @var Id<T> */
+        /** @var Id<TValue> */
         return objectId($class);
     }
 

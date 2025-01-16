@@ -8,7 +8,7 @@ use Thesis\DI\Config\DefineIdConfig;
 use Thesis\DI\Config\DefineObjectConfig;
 use Thesis\DI\Internal\Exports;
 use Thesis\DI\Internal\ModuleValues;
-use Thesis\DI\Internal\Tagged;
+use Thesis\DI\Internal\Tags;
 
 /**
  * @api This interface must not be implemented in userland.
@@ -40,7 +40,7 @@ interface ModuleConfig
 
     /**
      * @internal
-     * @return array{Exports, Tagged, ModuleValues}
+     * @return array{Exports, Tags, ModuleValues}
      */
     public function __invoke(): array;
 }
