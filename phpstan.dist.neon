@@ -1,16 +1,25 @@
 includes:
-    - tools/phpstan/vendor/phpstan/phpstan-deprecation-rules/rules.neon
+    - /composer/vendor/phpstan/phpstan-strict-rules/rules.neon
+    - /composer/vendor/phpstan/phpstan-phpunit/extension.neon
+    - /composer/vendor/phpstan/phpstan-phpunit/rules.neon
 
 parameters:
     level: max
     paths:
+        - examples
         - src
         - tests
-        - demo.php
+    tmpDir: var/phpstan
+    editorUrl: ''
+    editorUrlTitle: '%%relFile%%:%%line%%'
+
+    # strict rules
     checkBenevolentUnionTypes: true
-    ignoreErrors:
-        -
-            identifier: missingType.generics
-    editorUrl: '=>'
-    editorUrlTitle: '%%file%%:%%line%%'
-    tmpDir: ./var/phpstan
+    checkMissingCallableSignature: true
+    # checkMissingOverrideMethodAttribute: true
+    checkUninitializedProperties: true
+    # rememberPossiblyImpureFunctionValues: false
+    reportAlwaysTrueInLastCondition: true
+    reportAnyTypeWideningInVarTag: true
+    reportPossiblyNonexistentConstantArrayOffset: true
+    reportPossiblyNonexistentGeneralArrayOffset: true

@@ -1,3 +1,3 @@
-# Thesis DI
+# Thesis DI Container
 
-See [demo.php](demo.php).
+Documentation coming soon! For now check out [examples/app.php](examples/app.php).

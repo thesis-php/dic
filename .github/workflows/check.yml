@@ -1,9 +1,0 @@
-on:
-  push:
-    branches: ['main', '*.*.x']
-  pull_request: ~
-
-jobs:
-  check:
-    uses: thesisphp/.github/.github/workflows/check.yml@main
-    secrets: inherit
