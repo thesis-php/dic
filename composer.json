@@ -14,26 +14,24 @@
         }
     ],
     "require": {
-        "php": "^8.4"
+        "php": "^8.4",
+        "typhoon/formatter": "^0.1@dev"
     },
     "require-dev": {
         "monolog/monolog": "^3.10",
         "phpunit/phpunit": "^13.0",
-        "psr/clock": "^1.0",
         "psr/log": "^3.0",
         "symfony/var-dumper": "^8.0.4"
     },
     "autoload": {
         "psr-4": {
             "Thesis\\": "src/"
-        },
-        "files": [
-            "src/DIC/Arg.php"
-        ]
+        }
     },
     "autoload-dev": {
         "psr-4": {
-            "Thesis\\": "tests/"
+            "Thesis\\": "tests/",
+            "Project\\": "examples/Project/"
         }
     },
     "config": {

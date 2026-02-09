@@ -4,135 +4,165 @@ declare(strict_types=1);
 
 namespace Thesis;
 
-use Thesis\DIC\FactoryConfigurator;
 use Thesis\DIC\Internal\Autowiring;
-use Thesis\DIC\Internal\Factory;
-use Thesis\DIC\Internal\Resolvable;
-use Thesis\DIC\Internal\TaggedList;
+use Thesis\DIC\Internal\RewindableGenerator;
+use Thesis\DIC\Internal\ServiceTag;
 use Thesis\DIC\Internal\Tags;
-use Thesis\DIC\Service;
 use Thesis\DIC\Tag;
-use Thesis\DIC\ValueConfigurator;
 
+/**
+ * @phpstan-type Arguments = array<non-negative-int|non-empty-string, mixed>
+ */
 final readonly class DIC
 {
     /**
      * @template T
-     * @param callable(self): T $app
+     * @param callable(never, never, never, never, never, never): T $app
+     * @param Arguments $arguments
      * @return T
      */
-    public static function setup(callable $app): mixed
+    public static function install(callable $app, array $arguments = []): mixed
     {
-        /** @var \SplObjectStorage<Resolvable<*, *>, Autowiring> */
-        $resolvables = new \SplObjectStorage();
-        $dic = new self($resolvables);
-
-        $result = $app($dic);
-
-        $tags = new Tags();
-
-        foreach ($resolvables as $resolvable) {
-            $resolvable->register($resolvables->getInfo(), $tags);
-        }
-
-        foreach ($resolvables as $resolvable) {
-            $resolvable->resolve($resolvables->getInfo(), $tags);
-        }
-
-        return $result;
+        return new self()->require($app, $arguments);
     }
 
-    private Autowiring $autowiring;
-
-    /**
-     * @param \SplObjectStorage<Resolvable<*, *>, Autowiring> $resolvables
-     */
     private function __construct(
-        private \SplObjectStorage $resolvables,
-    ) {
-        $this->autowiring = new Autowiring();
-    }
+        private Autowiring $autowiring = new Autowiring(),
+        private Tags $tags = new Tags(),
+    ) {}
 
     /**
      * @template T
-     * @param callable(self): T $component
+     * @param callable(never, never, never, never, never, never): T $component
+     * @param Arguments $arguments
      * @return T
      */
-    public function require(callable $component): mixed
+    public function require(callable $component, array $arguments = []): mixed
     {
-        return $component(new self($this->resolvables));
+        $autowiring = clone $this->autowiring;
+        $autowiring->qualifyObject(new self(tags: $this->tags));
+
+        $arguments = $autowiring->resolveArguments(
+            function: new \ReflectionFunction($component(...)),
+            arguments: $arguments,
+        );
+
+        return $component(...$arguments); // @phpstan-ignore argument.type
     }
 
     /**
-     * @template TAs of object
-     * @template T of TAs
-     * @param class-string<TAs> $class
-     * @param T|Service<T> $service
+     * @param ?class-string $class
      */
-    public function bind(string $class, object $service): void
+    public function bindObject(object $object, ?string $class = null, string|\UnitEnum $qualifier = ''): void
     {
-        $this->autowiring->register($service, [$class]);
+        $this->autowiring->qualifyObject($object, $class, $qualifier);
     }
 
     /**
-     * @template T
-     * @param T $value
-     * @return ValueConfigurator<T>
+     * @param non-empty-string|\UnitEnum $qualifier
      */
-    public function value(mixed $value): ValueConfigurator
+    public function bind(mixed $value, string|\UnitEnum $qualifier): void
     {
-        return $this->register(new DIC\Internal\Value($value));
+        $this->autowiring->qualify($value, $qualifier);
     }
 
     /**
      * @template T of object
      * @param class-string<T> $class
-     * @return FactoryConfigurator<T>
-     */
-    public function object(string $class): FactoryConfigurator
-    {
-        return $this->register(Factory::object($class));
-    }
-
-    /**
-     * @template T of object
-     * @param class-string<T> $class
-     * @return FactoryConfigurator<T>
-     */
-    public function bindObject(string $class): FactoryConfigurator
-    {
-        return $this->object($class)->bindAs($class);
-    }
-
-    /**
-     * @template T
-     * @param callable(never, never, never, never, never, never): T $factory
-     * @return FactoryConfigurator<T>
-     */
-    public function factory(callable $factory): FactoryConfigurator
-    {
-        return $this->register(Factory::factory($factory));
-    }
-
-    /**
-     * @template T
-     * @param class-string<Tag<T>>|Tag<T> $tag
-     * @return Service<list<T>>
-     */
-    public function taggedList(string|Tag $tag): Service
-    {
-        return $this->register(new TaggedList($tag));
-    }
-
-    /**
-     * @template T of Resolvable<*, *>
-     * @param T $definition
+     * @param Arguments $arguments
+     * @param list<Tag<T>> $tags
      * @return T
      */
-    private function register(Resolvable $definition): Resolvable
+    public function object(string $class, array $arguments = [], array $tags = []): object
     {
-        $this->resolvables[$definition] = $this->autowiring;
+        $reflection = new \ReflectionClass($class);
 
-        return $definition;
+        if (!$reflection->isInstantiable()) {
+            throw new \LogicException('Not instantiable');
+        }
+
+        $constructor = $reflection->getConstructor();
+
+        if ($constructor === null) {
+            if ($arguments !== []) {
+                throw new \LogicException('No constructor');
+            }
+        } else {
+            $arguments = $this->autowiring->resolveArguments($constructor, $arguments);
+        }
+
+        $object = $reflection->newLazyProxy(static fn() => new $class(...$arguments));
+
+        $this->tag($object, ...$tags);
+
+        return $object;
+    }
+
+    /**
+     * @template T
+     * @param callable(never, never, never, never, never, never): T $function
+     * @param Arguments $arguments
+     * @return \Closure(): T
+     */
+    public function apply(callable $function, array $arguments = []): \Closure
+    {
+        $arguments = $this->autowiring->resolveArguments(
+            function: new \ReflectionFunction($function(...)),
+            arguments: $arguments,
+        );
+
+        return static fn() => $function(...$arguments); // @phpstan-ignore argument.type
+    }
+
+    /**
+     * @template T
+     * @param callable(never, never, never, never, never, never): T $function
+     * @param Arguments $arguments
+     * @return T
+     */
+    public function call(callable $function, array $arguments = []): mixed
+    {
+        return $this->apply($function, $arguments)();
+    }
+
+    /**
+     * @no-named-arguments
+     * @template T
+     * @param T $service
+     * @param Tag<T> ...$tags
+     */
+    public function tag(mixed $service, Tag ...$tags): void
+    {
+        foreach ($tags as $tag) {
+            $this->tags->add(new ServiceTag($service, $tag));
+        }
+    }
+
+    /**
+     * @template T
+     * @param class-string<T>|Tag<T> $tag
+     * @return iterable<T>
+     */
+    public function taggedIterator(string|Tag $tag): iterable
+    {
+        $tags = $this->tags;
+
+        if (\is_string($tag)) {
+            return new RewindableGenerator(static function () use ($tags, $tag): \Generator {
+                foreach ($tags as $serviceTag) {
+                    if ($serviceTag->tag instanceof $tag) {
+                        yield $serviceTag->service;
+                    }
+                }
+            });
+        }
+
+        return new RewindableGenerator(static function () use ($tags, $tag): \Generator {
+            foreach ($tags as $serviceTag) {
+                if ($serviceTag->tag === $tag) {
+                    yield $serviceTag->service;
+                }
+            }
+        });
     }
 }

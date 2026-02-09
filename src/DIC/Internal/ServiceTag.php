@@ -2,24 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Thesis\DIC\Internal\Tags;
+namespace Thesis\DIC\Internal;
 
-use Thesis\DIC\Service;
 use Thesis\DIC\Tag;
 
 /**
- * @internal
- *
  * @template T
  */
-final readonly class Pair
+final readonly class ServiceTag
 {
     /**
-     * @param Service<T> $service
+     * @param T $service
      * @param Tag<T> $tag
      */
     public function __construct(
-        public Service $service,
+        public mixed $service,
         public Tag $tag,
     ) {}
 }
