@@ -10,22 +10,22 @@ use Monolog\Processor\PsrLogMessageProcessor;
 use Project\HttpServer\Server;
 use Psr\Log\LoggerInterface;
 use Thesis\DIC;
+use function Typhoon\Type\objectT;
 
 final class App
 {
     public function __invoke(DIC $dic): Server
     {
-        $dic->bindObject(
-            object: new Logger(
-                name: 'message_bus',
+        $dic
+            ->register(new Logger(
+                name: 'app',
                 handlers: [new StreamHandler(STDOUT)],
                 processors: [new PsrLogMessageProcessor()],
-            ),
-            class: LoggerInterface::class,
-        );
+            ))
+            ->bind(objectT(LoggerInterface::class));
 
-        $dic->require(new Authentication\Component());
+        $dic->require(new Authentication\Module()); // @phpstan-ignore argument.type
 
-        return $dic->require(new HttpServer\Component());
+        return $dic->require(new HttpServer\Module()); // @phpstan-ignore argument.type
     }
 }

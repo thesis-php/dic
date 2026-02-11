@@ -9,27 +9,43 @@ use Psr\Log\NullLogger;
 use function Typhoon\Formatter\formatFunction;
 
 /**
- * @phpstan-type Controller = callable(Request): Response
+ * @phpstan-type Action = callable(Request): Response
  */
 final readonly class Server
 {
     /**
-     * @param iterable<Controller> $controllers
+     * @param array<string, Action>|\ArrayAccess<string, Action> $actions
      */
     public function __construct(
+        private array|\ArrayAccess $actions = [],
         private LoggerInterface $logger = new NullLogger(),
-        private iterable $controllers = [],
     ) {}
 
-    public function run(): void
+    public function handle(Request $request): Response
     {
-        $this->logger->debug('Server started');
-        $this->logger->debug('Just for demo purposes I will invoke every controller');
+        $action = $this->actions[$request->path] ?? null;
 
-        foreach ($this->controllers as $controller) {
-            $this->logger->debug('Invoking controller ' . formatFunction($controller));
+        if ($action === null) {
+            $this->logger->debug('No action for path {path}', [
+                'path' => $request->path,
+            ]);
 
-            $controller(new Request());
+            return new Response(404);
         }
+
+        $this->logger->debug('Matched action {action} for path {path}', [
+            'action' => formatFunction($action),
+            'path' => $request->path,
+        ]);
+
+        $response = $action($request);
+
+        $this->logger->debug('Action {action} responded {status}', [
+            'action' => formatFunction($action),
+            'status' => $response->status,
+            'body' => $response->body,
+        ]);
+
+        return $response;
     }
 }

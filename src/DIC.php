@@ -4,76 +4,82 @@ declare(strict_types=1);
 
 namespace Thesis;
 
+use Psr\Container\ContainerInterface;
 use Thesis\DIC\Internal\Autowiring;
-use Thesis\DIC\Internal\RewindableGenerator;
-use Thesis\DIC\Internal\ServiceTag;
-use Thesis\DIC\Internal\Tags;
+use Thesis\DIC\Internal\ModuleMetadata;
+use Thesis\DIC\Internal\TaggedContainer;
+use Thesis\DIC\Internal\TaggedValues;
+use Thesis\DIC\Register;
 use Thesis\DIC\Tag;
+use Thesis\DIC\TaggedValue;
 
 /**
+ * @api
+ *
  * @phpstan-type Arguments = array<non-negative-int|non-empty-string, mixed>
  */
 final readonly class DIC
 {
     /**
      * @template T
-     * @param callable(never, never, never, never, never, never): T $app
+     * @param callable(): T $app
      * @param Arguments $arguments
      * @return T
      */
     public static function install(callable $app, array $arguments = []): mixed
     {
-        return new self()->require($app, $arguments);
+        return new self(
+            autowiring: new Autowiring(),
+            taggedValues: new TaggedValues(),
+        )->require($app, $arguments);
     }
 
     private function __construct(
-        private Autowiring $autowiring = new Autowiring(),
-        private Tags $tags = new Tags(),
+        private Autowiring $autowiring,
+        private TaggedValues $taggedValues,
     ) {}
 
     /**
      * @template T
-     * @param callable(never, never, never, never, never, never): T $component
+     * @param callable(): T $module
      * @param Arguments $arguments
      * @return T
      */
-    public function require(callable $component, array $arguments = []): mixed
+    public function require(callable $module, array $arguments = []): mixed
     {
-        $autowiring = clone $this->autowiring;
-        $autowiring->qualifyObject(new self(tags: $this->tags));
+        $metadata = new ModuleMetadata($module);
 
-        $arguments = $autowiring->resolveArguments(
-            function: new \ReflectionFunction($component(...)),
+        $arguments = $this->autowiring->resolveModuleArguments(
+            module: $metadata->reflection,
+            dic: new self(
+                autowiring: $metadata->inheritAutowiring ? clone $this->autowiring : new Autowiring(),
+                taggedValues: $this->taggedValues,
+            ),
             arguments: $arguments,
         );
 
-        return $component(...$arguments); // @phpstan-ignore argument.type
+        return $module(...$arguments);
     }
 
     /**
-     * @param ?class-string $class
+     * @template T
+     * @param T $value
+     * @return Register<T>
      */
-    public function bindObject(object $object, ?string $class = null, string|\UnitEnum $qualifier = ''): void
+    public function register(mixed $value): Register
     {
-        $this->autowiring->qualifyObject($object, $class, $qualifier);
-    }
+        $this->taggedValues->registerFromAttributes($value);
 
-    /**
-     * @param non-empty-string|\UnitEnum $qualifier
-     */
-    public function bind(mixed $value, string|\UnitEnum $qualifier): void
-    {
-        $this->autowiring->qualify($value, $qualifier);
+        return new Register($value, $this->autowiring, $this->taggedValues);
     }
 
     /**
      * @template T of object
      * @param class-string<T> $class
      * @param Arguments $arguments
-     * @param list<Tag<T>> $tags
      * @return T
      */
-    public function object(string $class, array $arguments = [], array $tags = []): object
+    public function new(string $class, array $arguments = []): object
     {
         $reflection = new \ReflectionClass($class);
 
@@ -91,16 +97,46 @@ final readonly class DIC
             $arguments = $this->autowiring->resolveArguments($constructor, $arguments);
         }
 
-        $object = $reflection->newLazyProxy(static fn() => new $class(...$arguments));
+        return $reflection->newLazyProxy(static fn() => new $class(...$arguments));
+    }
 
-        $this->tag($object, ...$tags);
+    /**
+     * @template T of object
+     * @param callable(): T $factory
+     * @return T
+     */
+    public function objectFrom(callable $factory): object
+    {
+        $factory = $factory(...);
+        $factoryReflection = new \ReflectionFunction($factory);
 
-        return $object;
+        $returnType = $factoryReflection->getReturnType();
+
+        if (!$returnType instanceof \ReflectionNamedType) {
+            throw new \LogicException();
+        }
+
+        $class = $returnType->getName();
+
+        if (!class_exists($class)) {
+            throw new \LogicException();
+        }
+
+        /** @var class-string<T> $class */
+        $classReflection = new \ReflectionClass($class);
+
+        if (!$classReflection->isInstantiable()) {
+            throw new \LogicException('Not instantiable');
+        }
+
+        $arguments = $this->autowiring->resolveArguments($factoryReflection);
+
+        return $classReflection->newLazyProxy(static fn() => $factory(...$arguments));
     }
 
     /**
      * @template T
-     * @param callable(never, never, never, never, never, never): T $function
+     * @param callable(): T $function
      * @param Arguments $arguments
      * @return \Closure(): T
      */
@@ -111,58 +147,25 @@ final readonly class DIC
             arguments: $arguments,
         );
 
-        return static fn() => $function(...$arguments); // @phpstan-ignore argument.type
+        return static fn() => $function(...$arguments);
     }
 
     /**
-     * @template T
-     * @param callable(never, never, never, never, never, never): T $function
-     * @param Arguments $arguments
-     * @return T
+     * @template TValue
+     * @template TTag of Tag<TValue>
+     * @template TKey of array-key = non-negative-int
+     * @param class-string<TTag>|TTag $tag
+     * @param ?callable(TaggedValue<TValue, TTag>): (-1|0|1) $sort
+     * @param ?callable(TaggedValue<TValue, TTag>): TKey $key
+     * @param ?callable(TaggedValue<TValue, TTag>): bool $filter
+     * @return \Traversable<TKey, TValue>&\ArrayAccess<TKey, TValue>&\Countable&ContainerInterface
      */
-    public function call(callable $function, array $arguments = []): mixed
-    {
-        return $this->apply($function, $arguments)();
-    }
-
-    /**
-     * @no-named-arguments
-     * @template T
-     * @param T $service
-     * @param Tag<T> ...$tags
-     */
-    public function tag(mixed $service, Tag ...$tags): void
-    {
-        foreach ($tags as $tag) {
-            $this->tags->add(new ServiceTag($service, $tag));
-        }
-    }
-
-    /**
-     * @template T
-     * @param class-string<T>|Tag<T> $tag
-     * @return iterable<T>
-     */
-    public function taggedIterator(string|Tag $tag): iterable
-    {
-        $tags = $this->tags;
-
-        if (\is_string($tag)) {
-            return new RewindableGenerator(static function () use ($tags, $tag): \Generator {
-                foreach ($tags as $serviceTag) {
-                    if ($serviceTag->tag instanceof $tag) {
-                        yield $serviceTag->service;
-                    }
-                }
-            });
-        }
-
-        return new RewindableGenerator(static function () use ($tags, $tag): \Generator {
-            foreach ($tags as $serviceTag) {
-                if ($serviceTag->tag === $tag) {
-                    yield $serviceTag->service;
-                }
-            }
-        });
+    public function tagged(
+        string|Tag $tag,
+        ?callable $sort = null,
+        ?callable $key = null,
+        ?callable $filter = null,
+    ): \Traversable {
+        return new TaggedContainer($this->taggedValues, $tag, $sort, $key, $filter);
     }
 }

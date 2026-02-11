@@ -6,13 +6,20 @@ namespace Project\Authentication;
 
 use Project\HttpServer\Request;
 use Project\HttpServer\Response;
+use Project\HttpServer\Route;
+use Psr\Log\LoggerInterface;
 
 final readonly class Authenticate
 {
+    public function __construct(
+        private LoggerInterface $logger,
+    ) {}
+
+    #[Route('/authenticate')]
     public function __invoke(Request $request): Response
     {
-        dump($this);
+        $this->logger->debug('Authenticating...');
 
-        return new Response();
+        return new Response(body: 'Authenticated!');
     }
 }

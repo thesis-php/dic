@@ -5,37 +5,54 @@ declare(strict_types=1);
 namespace Thesis\DIC\Internal;
 
 use Thesis\DIC;
-use Thesis\DIC\Qualifier;
+use Typhoon\Type;
 use function Typhoon\Formatter\formatReflectedParameter;
-use function Typhoon\Formatter\formatReflectedType;
-
-const UNDEFINED = new \stdClass();
 
 /**
  * @internal
+ *
  * @phpstan-import-type Arguments from DIC
  */
 final class Autowiring
 {
     /**
-     * @var array<non-empty-string, mixed>
+     * @var list<array{ParameterSignature<*>, mixed}>
      */
     private array $bindings = [];
 
     /**
-     * @param ?class-string $class
+     * @template T
+     * @param T $value
+     * @param ?Type<contravariant T> $type
+     * @param null|non-empty-string|\UnitEnum $qualifier
+     * @param ?non-empty-string $name
      */
-    public function qualifyObject(object $object, ?string $class = null, string|\UnitEnum $qualifier = ''): void
-    {
-        $this->bindings[self::bindingKey($class ?? $object::class, $qualifier)] = $object;
+    public function bind(
+        mixed $value,
+        ?Type $type = null,
+        null|string|\UnitEnum $qualifier = null,
+        ?string $name = null,
+    ): void {
+        $this->bindings[] = [
+            new ParameterSignature(
+                type: $type ?? self::typeOf($value),
+                qualifier: $qualifier,
+                name: $name,
+            ),
+            $value,
+        ];
     }
 
     /**
-     * @param non-empty-string|\UnitEnum $qualifier
+     * @param Arguments $arguments
+     * @return array<non-empty-string, mixed>
      */
-    public function qualify(mixed $value, string|\UnitEnum $qualifier): void
+    public function resolveModuleArguments(\ReflectionFunctionAbstract $module, DIC $dic, array $arguments = []): array
     {
-        $this->bindings[self::bindingKey(get_debug_type($value), $qualifier)] = $value;
+        $autowiring = clone $this;
+        $autowiring->bind($dic);
+
+        return $autowiring->resolveArguments($module, $arguments);
     }
 
     /**
@@ -77,78 +94,38 @@ final class Autowiring
 
     private function resolveArgument(\ReflectionParameter $parameter): mixed
     {
-        $type = $parameter->getType();
+        $values = array_filter(
+            $this->bindings,
+            static fn(array $binding) => $binding[0]->matches($parameter),
+        );
 
-        if ($type !== null) {
-            $qualifier = self::resolveQualifier($parameter->getAttributes(Qualifier::class));
-            $value = $this->autowire($type, $qualifier);
-
-            if ($value !== UNDEFINED) {
-                return $value;
-            }
-        }
-
-        if ($parameter->isDefaultValueAvailable()) {
-            return $parameter->getDefaultValue();
-        }
-
-        throw new \LogicException(\sprintf('Failed to autowire %s', formatReflectedParameter($parameter)));
-    }
-
-    private function autowire(\ReflectionType $type, string|\UnitEnum $qualifier): mixed
-    {
-        if ($type instanceof \ReflectionNamedType) {
-            $key = self::bindingKey($type->getName(), $qualifier);
-
-            if (\array_key_exists($key, $this->bindings)) {
-                return $this->bindings[$key];
-            }
-
-            return UNDEFINED;
-        }
-
-        if ($type instanceof \ReflectionUnionType) {
-            $values = array_filter(
-                array_map(
-                    fn(\ReflectionType $type) => $this->autowire($type, $qualifier),
-                    $type->getTypes(),
-                ),
-                static fn(mixed $value): bool => $value !== UNDEFINED,
-            );
-
-            return match (\count($values)) {
-                0 => UNDEFINED,
-                1 => $values[array_key_first($values)],
-                default => throw new \LogicException('Ambiguous'),
-            };
-        }
-
-        // todo
-
-        throw new \LogicException(\sprintf('Cannot autowire %s', formatReflectedType($type)));
-    }
-
-    /**
-     * @param list<\ReflectionAttribute<Qualifier>> $attributes
-     */
-    private static function resolveQualifier(array $attributes): string|\UnitEnum
-    {
-        return match (\count($attributes)) {
-            0 => '',
-            1 => $attributes[0]->newInstance()->qualifier,
-            default => throw new \LogicException(),
+        return match (\count($values)) {
+            0 => $parameter->isDefaultValueAvailable()
+                ? $parameter->getDefaultValue()
+                : throw new \LogicException(\sprintf('Failed to autowire %s', formatReflectedParameter($parameter))),
+            1 => $values[array_key_first($values)][1],
+            default => throw new \LogicException('Ambiguous autowiring'),
         };
     }
 
     /**
-     * @return non-empty-string
+     * @template T
+     * @param T $value
+     * @return Type<T>
      */
-    private static function bindingKey(string $type, string|\UnitEnum $qualifier): string
+    private static function typeOf(mixed $value): Type
     {
-        if ($qualifier instanceof \UnitEnum) {
-            $qualifier = $qualifier::class . '::' . $qualifier->name;
-        }
-
-        return $type . '@' . $qualifier;
+        // @phpstan-ignore match.unhandled, return.type
+        return match (true) {
+            $value === null => Type\nullT,
+            $value === true => Type\trueT,
+            $value === false => Type\falseT,
+            \is_int($value) => Type\intT,
+            \is_float($value) => Type\floatT,
+            \is_string($value) => Type\stringT,
+            \is_array($value) => Type\arrayT,
+            \is_object($value) => Type\objectT($value::class), // @phpstan-ignore argument.type, argument.templateType
+            \is_resource($value) => Type\resourceT,
+        };
     }
 }

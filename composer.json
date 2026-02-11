@@ -15,7 +15,9 @@
     ],
     "require": {
         "php": "^8.4",
-        "typhoon/formatter": "^0.1@dev"
+        "psr/container": "^2.0",
+        "typhoon/formatter": "^0.1@dev",
+        "typhoon/type": "^0.8@dev"
     },
     "require-dev": {
         "monolog/monolog": "^3.10",
@@ -30,8 +32,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Thesis\\": "tests/",
-            "Project\\": "examples/Project/"
+            "Project\\": "examples/Project/",
+            "Thesis\\": "tests/"
         }
     },
     "config": {
