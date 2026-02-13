@@ -7,17 +7,17 @@ namespace Thesis\DIC;
 /**
  * @api
  *
- * @template TValue
- * @template TTag of Tag<TValue>
+ * @template T
+ * @template TTag of Tag<T>
  */
-final readonly class TaggedValue
+final readonly class TaggedReference
 {
     /**
-     * @param TValue $value
+     * @param Reference<T> $reference
      * @param TTag $tag
      */
     public function __construct(
-        public mixed $value,
+        public Reference $reference,
         public Tag $tag,
     ) {}
 }

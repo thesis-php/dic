@@ -15,20 +15,31 @@
     ],
     "require": {
         "php": "^8.4",
-        "psr/container": "^2.0",
         "typhoon/formatter": "^0.1@dev",
         "typhoon/type": "^0.8@dev"
     },
     "require-dev": {
+        "ext-pcntl": "*",
+        "amphp/amp": "^3.1",
+        "amphp/byte-stream": "^2.1",
+        "amphp/http-server": "^3.4",
+        "amphp/http-server-router": "^2.0",
+        "amphp/log": "^2.0",
+        "amphp/postgres": "^2.1",
         "monolog/monolog": "^3.10",
         "phpunit/phpunit": "^13.0",
         "psr/log": "^3.0",
-        "symfony/var-dumper": "^8.0.4"
+        "ramsey/uuid": "^4.9",
+        "symfony/var-dumper": "^8.0.4",
+        "thesis/orm": "^0.2.0"
     },
     "autoload": {
         "psr-4": {
             "Thesis\\": "src/"
-        }
+        },
+        "files": [
+            "src/autoload.files.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

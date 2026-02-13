@@ -4,11 +4,18 @@ declare(strict_types=1);
 
 namespace Project;
 
-use Project\HttpServer\Request;
+use Amp\Http\Server\DefaultErrorHandler;
 use Thesis\DIC;
+use function Amp\trapSignal;
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-$server = DIC::install(new App()); // @phpstan-ignore argument.type
+[$server, $router] = DIC::install(new App());
 
-$server->handle(new Request('/authenticate'));
+$server->expose('0.0.0.0:1337');
+
+$server->start($router, new DefaultErrorHandler());
+
+trapSignal([SIGINT, SIGTERM]);
+
+$server->stop();

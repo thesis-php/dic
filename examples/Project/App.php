@@ -4,28 +4,34 @@ declare(strict_types=1);
 
 namespace Project;
 
-use Monolog\Handler\StreamHandler;
-use Monolog\Logger;
-use Monolog\Processor\PsrLogMessageProcessor;
-use Project\HttpServer\Server;
-use Psr\Log\LoggerInterface;
+use Amp\Http\Server\Router;
+use Amp\Http\Server\SocketHttpServer;
+use Project\HttpServer\RouterComponent;
+use Project\Logger\LoggerFactory;
 use Thesis\DIC;
-use function Typhoon\Type\objectT;
+use Thesis\DIC\Reference;
 
 final class App
 {
-    public function __invoke(DIC $dic): Server
+    /**
+     * @return Reference<array{SocketHttpServer, Router}>
+     */
+    public function __invoke(DIC $dic): Reference
     {
-        $dic
-            ->register(new Logger(
-                name: 'app',
-                handlers: [new StreamHandler(STDOUT)],
-                processors: [new PsrLogMessageProcessor()],
-            ))
-            ->bind(objectT(LoggerInterface::class));
+        $logger = $dic
+            ->factory(LoggerFactory::stdOut(...))
+            ->bind();
 
-        $dic->require(new Authentication\Module()); // @phpstan-ignore argument.type
+        /** @phpstan-ignore argument.type */
+        $server = $dic->factory(SocketHttpServer::createForDirectAccess(...));
 
-        return $dic->require(new HttpServer\Module()); // @phpstan-ignore argument.type
+        $router = $dic->require(new RouterComponent($server, $logger));
+
+        $dic->require(new Authentication\Module());
+
+        return $dic
+            /** @phpstan-ignore argument.type */
+            ->factory(static fn(SocketHttpServer $server, Router $router) => [$server, $router])
+            ->args([$server, $router]);
     }
 }

@@ -4,168 +4,185 @@ declare(strict_types=1);
 
 namespace Thesis;
 
-use Psr\Container\ContainerInterface;
+use Thesis\DIC\Configurator\Factory;
+use Thesis\DIC\Configurator\Func;
+use Thesis\DIC\Configurator\Tagged;
+use Thesis\DIC\Configurator\Value;
 use Thesis\DIC\Internal\Autowiring;
-use Thesis\DIC\Internal\ModuleMetadata;
-use Thesis\DIC\Internal\TaggedContainer;
-use Thesis\DIC\Internal\TaggedValues;
-use Thesis\DIC\Register;
+use Thesis\DIC\Internal\Binding;
+use Thesis\DIC\Internal\Container;
+use Thesis\DIC\Internal\Container\Subscriber;
+use Thesis\DIC\Internal\Tagger;
+use Thesis\DIC\Location;
+use Thesis\DIC\Reference;
+use Thesis\DIC\Scoped;
 use Thesis\DIC\Tag;
-use Thesis\DIC\TaggedValue;
+use Thesis\DIC\Tags;
+use Typhoon\Type;
 
 /**
  * @api
  *
- * @phpstan-type Arguments = array<non-negative-int|non-empty-string, mixed>
+ * @phpstan-type Args = array<non-negative-int|non-empty-string, mixed>
  */
 final readonly class DIC
 {
     /**
      * @template T
-     * @param callable(): T $app
-     * @param Arguments $arguments
+     * @param callable(self): Reference<T> $app
      * @return T
      */
-    public static function install(callable $app, array $arguments = []): mixed
+    public static function install(callable $app): mixed
     {
-        return new self(
-            autowiring: new Autowiring(),
-            taggedValues: new TaggedValues(),
-        )->require($app, $arguments);
+        return Container::assemble(
+            static fn(Subscriber $subscriber, Tagger $tagger) => $app(new self(
+                subscriber: $subscriber,
+                tagger: $tagger,
+            )),
+        );
     }
 
+    private Autowiring $autowiring;
+
     private function __construct(
-        private Autowiring $autowiring,
-        private TaggedValues $taggedValues,
-    ) {}
+        private Subscriber $subscriber,
+        private Tagger $tagger,
+        private Autowiring $parentAutowiring = new Autowiring(),
+    ) {
+        $this->autowiring = new Autowiring();
+    }
+
+    public function inheritAutowiring(): void
+    {
+        $this->autowiring->inheritAutowiringFrom($this->parentAutowiring);
+    }
 
     /**
      * @template T
-     * @param callable(): T $module
-     * @param Arguments $arguments
+     * @param Reference<T> $reference
+     * @param Type<contravariant T> $type
+     */
+    public function bind(Reference $reference, Type $type, string|\Stringable|\UnitEnum $qualifier = ''): void
+    {
+        $this->autowiring->addBinding(new Binding($reference, $type, $qualifier));
+    }
+
+    /**
+     * @template T
+     * @param callable(self): T $module
      * @return T
      */
-    public function require(callable $module, array $arguments = []): mixed
+    public function require(callable $module): mixed
     {
-        $metadata = new ModuleMetadata($module);
-
-        $arguments = $this->autowiring->resolveModuleArguments(
-            module: $metadata->reflection,
-            dic: new self(
-                autowiring: $metadata->inheritAutowiring ? clone $this->autowiring : new Autowiring(),
-                taggedValues: $this->taggedValues,
-            ),
-            arguments: $arguments,
-        );
-
-        return $module(...$arguments);
+        return $module(new self(
+            subscriber: $this->subscriber,
+            tagger: $this->tagger,
+            parentAutowiring: $this->autowiring,
+        ));
     }
 
     /**
      * @template T
      * @param T $value
-     * @return Register<T>
+     * @return Value<T>
      */
-    public function register(mixed $value): Register
+    public function value(mixed $value): Value
     {
-        $this->taggedValues->registerFromAttributes($value);
+        return Value::value(
+            value: $value,
+            declaredAt: Location::fromBacktrace(-1),
+            subscriber: $this->subscriber,
+            tagger: $this->tagger,
+            autowiring: $this->autowiring,
+        );
+    }
 
-        return new Register($value, $this->autowiring, $this->taggedValues);
+    /**
+     * @template T
+     * @param callable(): T $factory
+     * @return Factory<T>
+     */
+    public function factory(callable $factory): Factory
+    {
+        return Factory::factory(
+            factory: $factory,
+            declaredAt: Location::fromBacktrace(-1),
+            subscriber: $this->subscriber,
+            tagger: $this->tagger,
+            autowiring: $this->autowiring,
+        );
     }
 
     /**
      * @template T of object
      * @param class-string<T> $class
-     * @param Arguments $arguments
-     * @return T
+     * @return Factory<T>
      */
-    public function new(string $class, array $arguments = []): object
+    public function object(string $class): Factory
     {
-        $reflection = new \ReflectionClass($class);
-
-        if (!$reflection->isInstantiable()) {
-            throw new \LogicException('Not instantiable');
-        }
-
-        $constructor = $reflection->getConstructor();
-
-        if ($constructor === null) {
-            if ($arguments !== []) {
-                throw new \LogicException('No constructor');
-            }
-        } else {
-            $arguments = $this->autowiring->resolveArguments($constructor, $arguments);
-        }
-
-        return $reflection->newLazyProxy(static fn() => new $class(...$arguments));
-    }
-
-    /**
-     * @template T of object
-     * @param callable(): T $factory
-     * @return T
-     */
-    public function objectFrom(callable $factory): object
-    {
-        $factory = $factory(...);
-        $factoryReflection = new \ReflectionFunction($factory);
-
-        $returnType = $factoryReflection->getReturnType();
-
-        if (!$returnType instanceof \ReflectionNamedType) {
-            throw new \LogicException();
-        }
-
-        $class = $returnType->getName();
-
-        if (!class_exists($class)) {
-            throw new \LogicException();
-        }
-
-        /** @var class-string<T> $class */
-        $classReflection = new \ReflectionClass($class);
-
-        if (!$classReflection->isInstantiable()) {
-            throw new \LogicException('Not instantiable');
-        }
-
-        $arguments = $this->autowiring->resolveArguments($factoryReflection);
-
-        return $classReflection->newLazyProxy(static fn() => $factory(...$arguments));
+        return Factory::object(
+            class: $class,
+            declaredAt: Location::fromBacktrace(-1),
+            subscriber: $this->subscriber,
+            tagger: $this->tagger,
+            autowiring: $this->autowiring,
+        );
     }
 
     /**
      * @template T
-     * @param callable(): T $function
-     * @param Arguments $arguments
-     * @return \Closure(): T
+     * @param Reference<T> $value
+     * @return Value<Scoped<T>>
      */
-    public function apply(callable $function, array $arguments = []): \Closure
+    public function scoped(Reference $value): Value
     {
-        $arguments = $this->autowiring->resolveArguments(
-            function: new \ReflectionFunction($function(...)),
-            arguments: $arguments,
+        return Value::scoped(
+            value: $value,
+            declaredAt: Location::fromBacktrace(-1),
+            subscriber: $this->subscriber,
+            tagger: $this->tagger,
+            autowiring: $this->autowiring,
         );
-
-        return static fn() => $function(...$arguments);
     }
 
     /**
-     * @template TValue
-     * @template TTag of Tag<TValue>
-     * @template TKey of array-key = non-negative-int
-     * @param class-string<TTag>|TTag $tag
-     * @param ?callable(TaggedValue<TValue, TTag>): (-1|0|1) $sort
-     * @param ?callable(TaggedValue<TValue, TTag>): TKey $key
-     * @param ?callable(TaggedValue<TValue, TTag>): bool $filter
-     * @return \Traversable<TKey, TValue>&\ArrayAccess<TKey, TValue>&\Countable&ContainerInterface
+     * @param Reference<object> $object
+     * @param non-empty-string $name
+     * @return Func<mixed>
      */
-    public function tagged(
-        string|Tag $tag,
-        ?callable $sort = null,
-        ?callable $key = null,
-        ?callable $filter = null,
-    ): \Traversable {
-        return new TaggedContainer($this->taggedValues, $tag, $sort, $key, $filter);
+    public function method(Reference $object, string $name): Func
+    {
+        return Func::method(
+            object: $object,
+            name: $name,
+            declaredAt: Location::fromBacktrace(-1),
+            subscriber: $this->subscriber,
+            tagger: $this->tagger,
+            autowiring: $this->autowiring,
+        );
+    }
+
+    /**
+     * @template T
+     * @param class-string<Tag<T>>|Tag<T> $tag
+     * @return Tagged<list<T>>
+     */
+    public function taggedList(string|Tag $tag): Tagged
+    {
+        return Tagged::list(
+            tag: $tag,
+            declaredAt: Location::fromBacktrace(-1),
+            subscriber: $this->subscriber,
+            tagger: $this->tagger,
+            autowiring: $this->autowiring,
+        );
+    }
+
+    /**
+     * @param callable(Tags): void $listener
+     */
+    public function onResolveTags(callable $listener): void
+    {
+        $this->subscriber->onResolveTags($listener);
     }
 }
