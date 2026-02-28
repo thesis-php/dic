@@ -13,7 +13,7 @@ interface Tags
      * @template T
      * @template TTag of Tag<T>
      * @param class-string<TTag>|TTag $tag
-     * @return list<TaggedReference<T, TTag>>
+     * @return list<TaggedRef<T, TTag>>
      */
     public function taggedBy(Tag|string $tag): array;
 }

@@ -14,23 +14,23 @@ use function Thesis\DIC\Internal\Type\nativeTypeOf;
  * @api
  *
  * @template T
- * @implements Reference<T>
+ * @implements Ref<T>
  */
-abstract class Configurator implements Reference
+abstract class Configurator implements Ref
 {
     /**
      * @template V
-     * @param Reference<V> $reference
+     * @param Ref<V> $ref
      * @return ?Type<contravariant V>
      */
-    final public static function referenceType(Reference $reference): ?Type
+    final public static function refType(Ref $ref): ?Type
     {
-        if ($reference instanceof self) {
-            return $reference->nativeType;
+        if ($ref instanceof self) {
+            return $ref->nativeType;
         }
 
-        if ($reference instanceof Value) {
-            return nativeTypeOf($reference->value);
+        if ($ref instanceof Value) {
+            return nativeTypeOf($ref->value);
         }
 
         return null;
@@ -55,7 +55,7 @@ abstract class Configurator implements Reference
     {
         $this->autowiring->addBinding(
             new Binding(
-                reference: $this,
+                ref: $this,
                 type: $type ?? $this->nativeType ?? throw new \LogicException(),
                 qualifier: $qualifier,
             ),

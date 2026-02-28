@@ -12,7 +12,7 @@ use Thesis\DIC\Internal\Container\Subscriber;
 use Thesis\DIC\Internal\Tagger;
 use Thesis\DIC\Lifetime;
 use Thesis\DIC\Location;
-use Thesis\DIC\Reference;
+use Thesis\DIC\Ref;
 use Thesis\DIC\Tag;
 use Thesis\DIC\Tags;
 use Typhoon\Type;
@@ -50,20 +50,20 @@ final class Tagged extends Configurator
             tagger: $tagger,
         );
 
-        /** @var list<Reference<V>> */
-        $references = [];
+        /** @var list<Ref<V>> */
+        $refs = [];
 
         $subscriber->onResolveTags(
-            static function (Tags $tags) use ($tag, &$references): void {
-                $references = array_column($tags->taggedBy($tag), 'reference');
+            static function (Tags $tags) use ($tag, &$refs): void {
+                $refs = array_column($tags->taggedBy($tag), 'ref');
             },
         );
 
         $subscriber->onBeforeAssemble(
-            static function (ServiceRegistrar $registrar) use (&$references, $configurator): void {
+            static function (ServiceRegistrar $registrar) use (&$refs, $configurator): void {
                 $registrar->register(
-                    reference: $configurator,
-                    factory: static fn(Container $container) => array_map($container->get(...), $references),
+                    ref: $configurator,
+                    factory: static fn(Container $container) => array_map($container->get(...), $refs),
                     lifetime: $configurator->lifetime,
                 );
             },

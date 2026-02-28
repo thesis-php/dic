@@ -10,7 +10,7 @@ use Thesis\DIC\Internal\Container\ServiceRegistrar;
 use Thesis\DIC\Internal\Container\Singletons;
 use Thesis\DIC\Internal\Container\Subscriber;
 use Thesis\DIC\Internal\Container\Transients;
-use Thesis\DIC\Reference;
+use Thesis\DIC\Ref;
 use Thesis\DIC\Value;
 
 /**
@@ -20,7 +20,7 @@ final readonly class Container
 {
     /**
      * @template T
-     * @param callable(Subscriber, Tagger): Reference<T> $app
+     * @param callable(Subscriber, Tagger): Ref<T> $app
      * @return T
      */
     public static function assemble(callable $app): mixed
@@ -57,37 +57,37 @@ final readonly class Container
 
     /**
      * @template T
-     * @param Reference<T> $reference
+     * @param Ref<T> $ref
      * @return T
      */
-    public function get(Reference $reference): mixed
+    public function get(Ref $ref): mixed
     {
-        if ($reference instanceof Value) {
-            return $reference->value;
+        if ($ref instanceof Value) {
+            return $ref->value;
         }
 
         try {
-            if ($this->singletons->has($reference)) {
-                return $this->singletons->get($reference, $this);
+            if ($this->singletons->has($ref)) {
+                return $this->singletons->get($ref, $this);
             }
 
-            if ($this->scopeds->has($reference)) {
-                return $this->scopeds->get($reference, $this);
+            if ($this->scopeds->has($ref)) {
+                return $this->scopeds->get($ref, $this);
             }
 
-            if ($this->transients->has($reference)) {
-                return $this->transients->get($reference, $this);
+            if ($this->transients->has($ref)) {
+                return $this->transients->get($ref, $this);
             }
         } catch (\Throwable $exception) {
-            throw new \LogicException("Invalid declaration of {$reference}", previous: $exception);
+            throw new \LogicException("Invalid declaration of {$ref}", previous: $exception);
         }
 
-        throw new \LogicException("Invalid reference for {$reference}");
+        throw new \LogicException("Invalid reference for {$ref}");
     }
 
     public function resolve(mixed $value): mixed
     {
-        if ($value instanceof Reference) {
+        if ($value instanceof Ref) {
             return $this->get($value);
         }
 

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Thesis\DIC\Internal;
 
 use Thesis\DIC\Internal\Autowiring\MatchBindingType;
-use Thesis\DIC\Reference;
+use Thesis\DIC\Ref;
 use Typhoon\Type;
 
 /**
@@ -36,18 +36,18 @@ final class Autowiring
     /**
      * @template T
      * @param Type<T> $type
-     * @return list<Reference<T>>
+     * @return list<Ref<T>>
      */
     public function autowire(Type $type, string|\Stringable|\UnitEnum $qualifier): array
     {
-        /** @var list<Reference<T>> */
+        /** @var list<Ref<T>> */
         $candidates = array_unique(
             array_column(
                 array_filter(
                     $this->bindingsByQualifier[self::stringifyQualifier($qualifier)] ?? [],
                     static fn(Binding $binding) => $type->accept(new MatchBindingType($binding->type)),
                 ),
-                'reference',
+                'ref',
             ),
             SORT_REGULAR,
         );

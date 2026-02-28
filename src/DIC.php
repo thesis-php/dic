@@ -14,7 +14,7 @@ use Thesis\DIC\Internal\Container;
 use Thesis\DIC\Internal\Container\Subscriber;
 use Thesis\DIC\Internal\Tagger;
 use Thesis\DIC\Location;
-use Thesis\DIC\Reference;
+use Thesis\DIC\Ref;
 use Thesis\DIC\Scoped;
 use Thesis\DIC\Tag;
 use Thesis\DIC\Tags;
@@ -29,7 +29,7 @@ final readonly class DIC
 {
     /**
      * @template T
-     * @param callable(self): Reference<T> $app
+     * @param callable(self): Ref<T> $app
      * @return T
      */
     public static function install(callable $app): mixed
@@ -59,12 +59,12 @@ final readonly class DIC
 
     /**
      * @template T
-     * @param Reference<T> $reference
+     * @param Ref<T> $ref
      * @param Type<contravariant T> $type
      */
-    public function bind(Reference $reference, Type $type, string|\Stringable|\UnitEnum $qualifier = ''): void
+    public function bind(Ref $ref, Type $type, string|\Stringable|\UnitEnum $qualifier = ''): void
     {
-        $this->autowiring->addBinding(new Binding($reference, $type, $qualifier));
+        $this->autowiring->addBinding(new Binding($ref, $type, $qualifier));
     }
 
     /**
@@ -131,10 +131,10 @@ final readonly class DIC
 
     /**
      * @template T
-     * @param Reference<T> $value
+     * @param Ref<T> $value
      * @return Value<Scoped<T>>
      */
-    public function scoped(Reference $value): Value
+    public function scoped(Ref $value): Value
     {
         return Value::scoped(
             value: $value,
@@ -146,11 +146,11 @@ final readonly class DIC
     }
 
     /**
-     * @param Reference<object> $object
+     * @param Ref<object> $object
      * @param non-empty-string $name
      * @return Func<mixed>
      */
-    public function method(Reference $object, string $name): Func
+    public function method(Ref $object, string $name): Func
     {
         return Func::method(
             object: $object,

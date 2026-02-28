@@ -10,9 +10,9 @@ use function Typhoon\Formatter\format;
  * @api
  *
  * @template-covariant T
- * @implements Reference<T>
+ * @implements Ref<T>
  */
-final readonly class Value implements Reference
+final readonly class Value implements Ref
 {
     public Location $declaredAt;
 

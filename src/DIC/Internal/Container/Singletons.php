@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Thesis\DIC\Internal\Container;
 
 use Thesis\DIC\Internal\Container;
-use Thesis\DIC\Reference;
+use Thesis\DIC\Ref;
 
 /**
  * @internal
@@ -24,7 +24,7 @@ final readonly class Singletons
     }
 
     /**
-     * @param \WeakMap<Reference<*>, mixed> $values
+     * @param \WeakMap<Ref<*>, mixed> $values
      */
     private function __construct(
         private \WeakMap $values,
@@ -32,34 +32,34 @@ final readonly class Singletons
 
     /**
      * @template T
-     * @param Reference<T> $reference
+     * @param Ref<T> $ref
      * @param callable(Container): T $factory
      */
-    public function with(Reference $reference, callable $factory): self
+    public function with(Ref $ref, callable $factory): self
     {
         $copy = clone $this;
 
-        $copy->values->offsetSet($reference, new Factory($factory));
+        $copy->values->offsetSet($ref, new Factory($factory));
 
         return $copy;
     }
 
     /**
-     * @param Reference<*> $reference
+     * @param Ref<*> $ref
      */
-    public function has(Reference $reference): bool
+    public function has(Ref $ref): bool
     {
-        return $this->values->offsetExists($reference);
+        return $this->values->offsetExists($ref);
     }
 
     /**
      * @template T
-     * @param Reference<T> $reference
+     * @param Ref<T> $ref
      * @return T
      */
-    public function get(Reference $reference, Container $container): mixed
+    public function get(Ref $ref, Container $container): mixed
     {
-        $value = $this->values[$reference];
+        $value = $this->values[$ref];
 
         if ($value instanceof Factory) {
             $value = $value($container);
@@ -68,7 +68,7 @@ final readonly class Singletons
                 $value = NULL_;
             }
 
-            $this->values->offsetSet($reference, $value);
+            $this->values->offsetSet($ref, $value);
 
             return $value;
         }

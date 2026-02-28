@@ -24,10 +24,10 @@ final class Scoped
     /**
      * @internal
      *
-     * @param Reference<T> $reference
+     * @param Ref<T> $ref
      */
     public function __construct(
-        private readonly Reference $reference,
+        private readonly Ref $ref,
         private Container $container {
             get {
                 if ($this->bindings !== []) {
@@ -45,7 +45,7 @@ final class Scoped
      * @phpstan-ignore generics.variance
      */
     public mixed $value {
-        get => $this->container->get($this->reference);
+        get => $this->container->get($this->ref);
     }
 
     /**
@@ -58,7 +58,7 @@ final class Scoped
         $scoped = clone $this;
 
         $scoped->bindings[] = new Binding(
-            reference: new Value($value, Location::fromBacktrace(-1)),
+            ref: new Value($value, Location::fromBacktrace(-1)),
             type: $type ?? nativeTypeOf($value),
             qualifier: $qualifier,
         );

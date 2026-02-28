@@ -66,7 +66,7 @@ final class Factory extends Configurator
                 }
 
                 $registrar->register(
-                    reference: $configurator,
+                    ref: $configurator,
                     factory: $factory,
                     lifetime: $configurator->lifetime,
                 );
@@ -107,7 +107,7 @@ final class Factory extends Configurator
                 }
 
                 $registrar->register(
-                    reference: $configurator,
+                    ref: $configurator,
                     factory: $factory,
                     lifetime: $configurator->lifetime,
                 );

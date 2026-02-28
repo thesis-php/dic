@@ -7,7 +7,7 @@ namespace Thesis\DIC\Internal\Container;
 use Thesis\DIC\Internal\AutowirableFunction;
 use Thesis\DIC\Internal\Autowiring;
 use Thesis\DIC\Internal\Container;
-use Thesis\DIC\Reference;
+use Thesis\DIC\Ref;
 
 /**
  * @internal
@@ -21,12 +21,12 @@ final readonly class Scopeds
     }
 
     /**
-     * @var \SplObjectStorage<Reference<*>, mixed>
+     * @var \SplObjectStorage<Ref<*>, mixed>
      */
     private \SplObjectStorage $values;
 
     /**
-     * @param \SplObjectStorage<Reference<*>, callable(Container): mixed> $factories
+     * @param \SplObjectStorage<Ref<*>, callable(Container): mixed> $factories
      */
     private function __construct(
         private \SplObjectStorage $factories,
@@ -36,15 +36,15 @@ final readonly class Scopeds
 
     /**
      * @template T
-     * @param Reference<T> $reference
+     * @param Ref<T> $ref
      * @param callable(Container): T $factory
      */
-    public function with(Reference $reference, callable $factory): self
+    public function with(Ref $ref, callable $factory): self
     {
         $copy = clone $this;
 
-        $copy->factories->offsetSet($reference, $factory);
-        $copy->values->offsetUnset($reference);
+        $copy->factories->offsetSet($ref, $factory);
+        $copy->values->offsetUnset($ref);
 
         return $copy;
     }
@@ -53,11 +53,11 @@ final readonly class Scopeds
     {
         $factories = clone $this->factories;
 
-        foreach ($factories as $reference) {
-            $factory = $factories[$reference];
+        foreach ($factories as $ref) {
+            $factory = $factories[$ref];
 
             if ($factory instanceof AutowirableFunction) {
-                $factories[$reference] = $factory->autowire($autowiring);
+                $factories[$ref] = $factory->autowire($autowiring);
             }
         }
 
@@ -65,26 +65,26 @@ final readonly class Scopeds
     }
 
     /**
-     * @param Reference<*> $reference
+     * @param Ref<*> $ref
      */
-    public function has(Reference $reference): bool
+    public function has(Ref $ref): bool
     {
-        return $this->factories->offsetExists($reference);
+        return $this->factories->offsetExists($ref);
     }
 
     /**
      * @template T
-     * @param Reference<T> $reference
+     * @param Ref<T> $ref
      * @return T
      */
-    public function get(Reference $reference, Container $container): mixed
+    public function get(Ref $ref, Container $container): mixed
     {
-        if ($this->values->offsetExists($reference)) {
-            return $this->values[$reference];
+        if ($this->values->offsetExists($ref)) {
+            return $this->values[$ref];
         }
 
-        $value = ($this->factories[$reference])($container);
-        $this->values->offsetSet($reference, $value);
+        $value = ($this->factories[$ref])($container);
+        $this->values->offsetSet($ref, $value);
 
         return $value;
     }

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Thesis\DIC\Internal;
 
-use Thesis\DIC\Reference;
+use Thesis\DIC\Ref;
 use Thesis\DIC\Tag;
-use Thesis\DIC\TaggedReference;
+use Thesis\DIC\TaggedRef;
 use Thesis\DIC\Tags;
 
 /**
@@ -15,24 +15,24 @@ use Thesis\DIC\Tags;
 final class Tagger implements Tags
 {
     /**
-     * @var list<TaggedReference<*, *>>
+     * @var list<TaggedRef<*, *>>
      */
-    private array $taggedReferences = [];
+    private array $taggedRefs = [];
 
     private bool $closed = false;
 
     /**
      * @template T
-     * @param Reference<T> $reference
+     * @param Ref<T> $ref
      * @param Tag<T> $tag
      */
-    public function tag(Reference $reference, Tag $tag): void
+    public function tag(Ref $ref, Tag $tag): void
     {
         if ($this->closed) {
             throw new \LogicException('Cannot add tags anymore');
         }
 
-        $this->taggedReferences[] = new TaggedReference($reference, $tag);
+        $this->taggedRefs[] = new TaggedRef($ref, $tag);
     }
 
     public function taggedBy(Tag|string $tag): array
@@ -40,10 +40,10 @@ final class Tagger implements Tags
         /** @phpstan-ignore return.type */
         return array_values(
             array_filter(
-                $this->taggedReferences,
+                $this->taggedRefs,
                 \is_string($tag)
-                    ? static fn(TaggedReference $tr) => $tr->tag instanceof $tag
-                    : static fn(TaggedReference $tr) => $tr->tag === $tag,
+                    ? static fn(TaggedRef $tr) => $tr->tag instanceof $tag
+                    : static fn(TaggedRef $tr) => $tr->tag === $tag,
             ),
         );
     }

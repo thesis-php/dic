@@ -7,7 +7,7 @@ namespace Thesis\DIC\Internal\Container;
 use Thesis\DIC\Internal\AutowirableFunction;
 use Thesis\DIC\Internal\Autowiring;
 use Thesis\DIC\Internal\Container;
-use Thesis\DIC\Reference;
+use Thesis\DIC\Ref;
 
 /**
  * @internal
@@ -21,7 +21,7 @@ final readonly class Transients
     }
 
     /**
-     * @param \SplObjectStorage<Reference<*>, callable(Container): mixed> $factories
+     * @param \SplObjectStorage<Ref<*>, callable(Container): mixed> $factories
      */
     private function __construct(
         private \SplObjectStorage $factories,
@@ -29,13 +29,13 @@ final readonly class Transients
 
     /**
      * @template T
-     * @param Reference<T> $reference
+     * @param Ref<T> $ref
      * @param callable(Container): T $factory
      */
-    public function with(Reference $reference, callable $factory): self
+    public function with(Ref $ref, callable $factory): self
     {
         $copy = clone $this;
-        $copy->factories->offsetSet($reference, $factory);
+        $copy->factories->offsetSet($ref, $factory);
 
         return $copy;
     }
@@ -44,11 +44,11 @@ final readonly class Transients
     {
         $factories = clone $this->factories;
 
-        foreach ($factories as $reference) {
-            $factory = $factories[$reference];
+        foreach ($factories as $ref) {
+            $factory = $factories[$ref];
 
             if ($factory instanceof AutowirableFunction) {
-                $factories[$reference] = $factory->autowire($autowiring);
+                $factories[$ref] = $factory->autowire($autowiring);
             }
         }
 
@@ -56,21 +56,21 @@ final readonly class Transients
     }
 
     /**
-     * @param Reference<*> $reference
+     * @param Ref<*> $ref
      */
-    public function has(Reference $reference): bool
+    public function has(Ref $ref): bool
     {
-        return $this->factories->offsetExists($reference);
+        return $this->factories->offsetExists($ref);
     }
 
     /**
      * @template T
-     * @param Reference<T> $reference
+     * @param Ref<T> $ref
      * @return T
      */
-    public function get(Reference $reference, Container $container): mixed
+    public function get(Ref $ref, Container $container): mixed
     {
-        return ($this->factories[$reference])($container);
+        return ($this->factories[$ref])($container);
     }
 
     public function __clone(): void

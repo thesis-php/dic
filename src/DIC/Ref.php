@@ -7,7 +7,7 @@ namespace Thesis\DIC;
 /**
  * @template-covariant T
  */
-interface Reference
+interface Ref
 {
     public Location $declaredAt { get; }
 

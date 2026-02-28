@@ -10,14 +10,14 @@ namespace Thesis\DIC;
  * @template T
  * @template TTag of Tag<T>
  */
-final readonly class TaggedReference
+final readonly class TaggedRef
 {
     /**
-     * @param Reference<T> $reference
+     * @param Ref<T> $ref
      * @param TTag $tag
      */
     public function __construct(
-        public Reference $reference,
+        public Ref $ref,
         public Tag $tag,
     ) {}
 }

@@ -8,7 +8,7 @@ use Thesis\DIC\Internal\AutowirableFunction\Argument;
 use Thesis\DIC\Internal\AutowirableFunction\Parameter;
 use Thesis\DIC\Internal\Autowiring;
 use Thesis\DIC\Internal\Container;
-use Thesis\DIC\Reference;
+use Thesis\DIC\Ref;
 use const Typhoon\Type\mixedT;
 
 /**
@@ -17,7 +17,7 @@ use const Typhoon\Type\mixedT;
 final readonly class Autowired extends Argument
 {
     /**
-     * @param list<Reference<mixed>> $candidates
+     * @param list<Ref<mixed>> $candidates
      */
     protected function __construct(
         Parameter $parameter,

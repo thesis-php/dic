@@ -13,7 +13,7 @@ use Thesis\DIC\Internal\Container\Subscriber;
 use Thesis\DIC\Internal\Tagger;
 use Thesis\DIC\Lifetime;
 use Thesis\DIC\Location;
-use Thesis\DIC\Reference;
+use Thesis\DIC\Ref;
 use Typhoon\Type;
 use const Thesis\DIC\scoped;
 use const Thesis\DIC\singleton;
@@ -51,7 +51,7 @@ final class Func extends Configurator
         $subscriber->onBeforeAssemble(
             static function (ServiceRegistrar $registrar) use ($configurator): void {
                 $registrar->register(
-                    reference: $configurator,
+                    ref: $configurator,
                     factory: $configurator->function->autowire($configurator->autowiring)->apply(...),
                     lifetime: $configurator->lifetime,
                 );
@@ -64,19 +64,19 @@ final class Func extends Configurator
     /**
      * @internal
      *
-     * @param Reference<object> $object
+     * @param Ref<object> $object
      * @param non-empty-string $name
      * @return self<mixed>
      */
     public static function method(
-        Reference $object,
+        Ref $object,
         string $name,
         Location $declaredAt,
         Subscriber $subscriber,
         Tagger $tagger,
         Autowiring $autowiring,
     ): self {
-        $type = self::referenceType($object) ?? throw new \LogicException();
+        $type = self::refType($object) ?? throw new \LogicException();
 
         if (!$type instanceof Type\NamedObjectT) {
             throw new \LogicException("{$object} is not a named object reference");
@@ -106,7 +106,7 @@ final class Func extends Configurator
         $subscriber->onBeforeAssemble(
             static function (ServiceRegistrar $registrar) use ($configurator): void {
                 $registrar->register(
-                    reference: $configurator,
+                    ref: $configurator,
                     factory: $configurator->function->autowire($configurator->autowiring)->apply(...),
                     lifetime: $configurator->lifetime,
                 );

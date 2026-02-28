@@ -9,14 +9,14 @@ use Amp\Http\Server\SocketHttpServer;
 use Project\HttpServer\RouterComponent;
 use Project\Logger\LoggerFactory;
 use Thesis\DIC;
-use Thesis\DIC\Reference;
+use Thesis\DIC\Ref;
 
 final class App
 {
     /**
-     * @return Reference<array{SocketHttpServer, Router}>
+     * @return Ref<array{SocketHttpServer, Router}>
      */
-    public function __invoke(DIC $dic): Reference
+    public function __invoke(DIC $dic): Ref
     {
         $logger = $dic
             ->factory(LoggerFactory::stdOut(...))

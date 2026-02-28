@@ -9,7 +9,7 @@ use Thesis\DIC\Internal\AutowirableFunction\Parameter;
 use Thesis\DIC\Internal\Autowiring;
 use Thesis\DIC\Internal\Container;
 use Thesis\DIC\Mapping\DoNotAutowire;
-use Thesis\DIC\Reference;
+use Thesis\DIC\Ref;
 use Thesis\DIC\Value;
 
 /**
@@ -34,14 +34,14 @@ final readonly class Defined extends Argument
         return $value;
     }
 
-    private static function hasReferences(mixed $value): bool
+    private static function hasRefs(mixed $value): bool
     {
-        if ($value instanceof Reference) {
+        if ($value instanceof Ref) {
             return true;
         }
 
         if (\is_array($value)) {
-            return array_any($value, self::hasReferences(...));
+            return array_any($value, self::hasRefs(...));
         }
 
         return false;
@@ -49,14 +49,14 @@ final readonly class Defined extends Argument
 
     private mixed $value;
 
-    private bool $hasReferences;
+    private bool $hasRefs;
 
     protected function __construct(
         Parameter $parameter,
         mixed $value,
     ) {
         $this->value = self::processValue($value);
-        $this->hasReferences = self::hasReferences($this->value);
+        $this->hasRefs = self::hasRefs($this->value);
 
         parent::__construct($parameter);
     }
@@ -70,7 +70,7 @@ final readonly class Defined extends Argument
 
     public function resolve(Container $container): mixed
     {
-        if ($this->hasReferences) {
+        if ($this->hasRefs) {
             return $container->resolve($this->value);
         }
 

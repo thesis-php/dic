@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Thesis\DIC\Internal;
 
 use Thesis\DIC\Internal\Autowiring\ValidateBindingType;
-use Thesis\DIC\Reference;
+use Thesis\DIC\Ref;
 use Typhoon\Type;
 
 /**
@@ -16,11 +16,11 @@ use Typhoon\Type;
 final class Binding
 {
     /**
-     * @param Reference<T> $reference
+     * @param Ref<T> $ref
      * @param Type<contravariant T> $type
      */
     public function __construct(
-        public Reference $reference,
+        public Ref $ref,
         public Type $type,
         public string|\Stringable|\UnitEnum $qualifier,
     ) {

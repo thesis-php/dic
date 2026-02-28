@@ -13,24 +13,24 @@ use Amp\Http\Server\Router;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Thesis\DIC;
-use Thesis\DIC\Reference;
-use Thesis\DIC\TaggedReference;
+use Thesis\DIC\Ref;
+use Thesis\DIC\TaggedRef;
 
 final readonly class RouterComponent
 {
     /**
-     * @param Reference<HttpServer> $httpServer
-     * @param Reference<LoggerInterface> $logger
+     * @param Ref<HttpServer> $httpServer
+     * @param Ref<LoggerInterface> $logger
      */
     public function __construct(
-        private Reference $httpServer,
-        private Reference $logger = new DIC\Value(new NullLogger()),
+        private Ref $httpServer,
+        private Ref $logger = new DIC\Value(new NullLogger()),
     ) {}
 
     /**
-     * @return Reference<Router>
+     * @return Ref<Router>
      */
-    public function __invoke(DIC $dic): Reference
+    public function __invoke(DIC $dic): Ref
     {
         $router = $dic
             /** @phpstan-ignore argument.type */
@@ -42,7 +42,7 @@ final readonly class RouterComponent
 
         $dic->onResolveTags(static function (DIC\Tags $tags) use ($router): void {
             $router->arg('actions', array_map(
-                static fn(TaggedReference $tr) => [$tr->reference, $tr->tag],
+                static fn(TaggedRef $tr) => [$tr->ref, $tr->tag],
                 $tags->taggedBy(Route::class),
             ));
         });

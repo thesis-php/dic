@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Project\ThesisORM;
 
 use Thesis\DIC;
-use Thesis\DIC\Reference;
+use Thesis\DIC\Ref;
 use Thesis\ORM\EntityManager;
 
 /**
@@ -14,16 +14,16 @@ use Thesis\ORM\EntityManager;
 final readonly class Module
 {
     /**
-     * @param Reference<callable(): TTransaction> $transactionFactory
+     * @param Ref<callable(): TTransaction> $transactionFactory
      */
     public function __construct(
-        private Reference $transactionFactory,
+        private Ref $transactionFactory,
     ) {}
 
     /**
-     * @return Reference<EntityManager<TTransaction>>
+     * @return Ref<EntityManager<TTransaction>>
      */
-    public function __invoke(DIC $dic): Reference
+    public function __invoke(DIC $dic): Ref
     {
         /** @phpstan-ignore return.type */
         return $dic

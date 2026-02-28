@@ -11,7 +11,7 @@ use Thesis\DIC\Internal\Container\ServiceRegistrar;
 use Thesis\DIC\Internal\Container\Subscriber;
 use Thesis\DIC\Internal\Tagger;
 use Thesis\DIC\Location;
-use Thesis\DIC\Reference;
+use Thesis\DIC\Ref;
 use Thesis\DIC\Scoped;
 use Typhoon\Type;
 use function Thesis\DIC\Internal\Type\nativeTypeOf;
@@ -48,7 +48,7 @@ final class Value extends Configurator
         $subscriber->onBeforeAssemble(
             static function (ServiceRegistrar $registrar) use ($value, $configurator): void {
                 $registrar->register(
-                    reference: $configurator,
+                    ref: $configurator,
                     factory: static fn() => $value,
                 );
             },
@@ -61,11 +61,11 @@ final class Value extends Configurator
      * @internal
      *
      * @template V
-     * @param Reference<V> $value
+     * @param Ref<V> $value
      * @return self<Scoped<V>>
      */
     public static function scoped(
-        Reference $value,
+        Ref $value,
         Location $declaredAt,
         Subscriber $subscriber,
         Tagger $tagger,
@@ -82,7 +82,7 @@ final class Value extends Configurator
         $subscriber->onBeforeAssemble(
             static function (ServiceRegistrar $registrar) use ($value, $configurator): void {
                 $registrar->register(
-                    reference: $configurator,
+                    ref: $configurator,
                     factory: static fn(Container $container) => new Scoped($value, $container),
                 );
             },
