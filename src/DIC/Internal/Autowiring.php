@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Thesis\DIC\Internal;
 
+use Thesis\DIC\Internal\AutowireableFactory\Parameter;
 use Thesis\DIC\Internal\Autowiring\MatchBindingType;
-use Thesis\DIC\Ref;
-use Typhoon\Type;
+use const Typhoon\Type\mixedT;
 
 /**
  * @internal
@@ -34,29 +34,29 @@ final class Autowiring
     }
 
     /**
-     * @template T
-     * @param Type<T> $type
-     * @return list<Ref<T>>
+     * @return list<mixed>
      */
-    public function autowire(Type $type, string|\Stringable|\UnitEnum $qualifier): array
+    public function autowire(Parameter $parameter): array
     {
-        /** @var list<Ref<T>> */
+        $qualifier = $parameter->qualifier;
+        $type = $parameter->type ?? mixedT;
+
         $candidates = array_unique(
             array_column(
                 array_filter(
                     $this->bindingsByQualifier[self::stringifyQualifier($qualifier)] ?? [],
                     static fn(Binding $binding) => $type->accept(new MatchBindingType($binding->type)),
                 ),
-                'ref',
+                'value',
             ),
             SORT_REGULAR,
         );
 
         if ($candidates === [] && $this->parent !== null) {
-            return $this->parent->autowire($type, $qualifier);
+            return $this->parent->autowire($parameter);
         }
 
-        return $candidates;
+        return array_values($candidates);
     }
 
     private static function stringifyQualifier(string|\Stringable|\UnitEnum $qualifier): string

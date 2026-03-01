@@ -24,9 +24,8 @@ final class Dispatcher implements Subscriber
 
     public function resolveTags(Tagger $tagger): void
     {
-        foreach ($this->onResolveTags as $key => $listener) {
+        while (null !== $listener = array_shift($this->onResolveTags)) {
             $listener($tagger);
-            unset($this->onResolveTags[$key]);
         }
     }
 
@@ -42,9 +41,8 @@ final class Dispatcher implements Subscriber
 
     public function beforeAssemble(ServiceRegistrar $registrar): void
     {
-        foreach ($this->onBeforeAssemble as $key => $listener) {
+        while (null !== $listener = array_shift($this->onBeforeAssemble)) {
             $listener($registrar);
-            unset($this->onBeforeAssemble[$key]);
         }
     }
 
@@ -60,9 +58,8 @@ final class Dispatcher implements Subscriber
 
     public function afterAssemble(): void
     {
-        foreach ($this->onAfterAssemble as $key => $listener) {
+        while (null !== $listener = array_shift($this->onAfterAssemble)) {
             $listener();
-            unset($this->onAfterAssemble[$key]);
         }
     }
 }

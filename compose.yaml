@@ -12,3 +12,21 @@ services:
     volumes:
       - .:/workspace:cached
     working_dir: /workspace
+
+  postgres:
+    image: postgres:18.2-bookworm
+    healthcheck:
+      test: pg_isready -d thesis -U thesis
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    environment:
+      POSTGRES_USER: thesis
+      POSTGRES_PASSWORD: thesis
+    volumes:
+      - postgres:/var/lib/postgresql:delegated
+    ports:
+      - '5432:5432'
+
+volumes:
+  postgres: ~

@@ -16,13 +16,13 @@ use Typhoon\Type;
 final class Binding
 {
     /**
-     * @param Ref<T> $ref
      * @param Type<contravariant T> $type
+     * @param T|Ref<T> $value
      */
     public function __construct(
-        public Ref $ref,
         public Type $type,
         public string|\Stringable|\UnitEnum $qualifier,
+        public mixed $value,
     ) {
         if (!$type->accept(new ValidateBindingType())) {
             throw new \LogicException(\sprintf(

@@ -15,5 +15,5 @@ interface Tags
      * @param class-string<TTag>|TTag $tag
      * @return list<TaggedRef<T, TTag>>
      */
-    public function taggedBy(Tag|string $tag): array;
+    public function tagged(Tag|string $tag): array;
 }

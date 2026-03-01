@@ -35,7 +35,7 @@ final class Tagger implements Tags
         $this->taggedRefs[] = new TaggedRef($ref, $tag);
     }
 
-    public function taggedBy(Tag|string $tag): array
+    public function tagged(Tag|string $tag): array
     {
         /** @phpstan-ignore return.type */
         return array_values(

@@ -11,7 +11,6 @@ use Thesis\DIC\Internal\Container\Singletons;
 use Thesis\DIC\Internal\Container\Subscriber;
 use Thesis\DIC\Internal\Container\Transients;
 use Thesis\DIC\Ref;
-use Thesis\DIC\Value;
 
 /**
  * @internal
@@ -62,9 +61,7 @@ final readonly class Container
      */
     public function get(Ref $ref): mixed
     {
-        if ($ref instanceof Value) {
-            return $ref->value;
-        }
+        $previous = null;
 
         try {
             if ($this->singletons->has($ref)) {
@@ -78,11 +75,10 @@ final readonly class Container
             if ($this->transients->has($ref)) {
                 return $this->transients->get($ref, $this);
             }
-        } catch (\Throwable $exception) {
-            throw new \LogicException("Invalid declaration of {$ref}", previous: $exception);
+        } catch (\Throwable $previous) {
         }
 
-        throw new \LogicException("Invalid reference for {$ref}");
+        throw new \LogicException("Invalid reference {$ref}", previous: $previous);
     }
 
     public function resolve(mixed $value): mixed
@@ -98,15 +94,8 @@ final readonly class Container
         return $value;
     }
 
-    /**
-     * @param list<Binding<*>> $bindings
-     */
-    public function scoped(array $bindings = []): self
+    public function scoped(Autowiring $autowiring): self
     {
-        $autowiring = new Autowiring();
-
-        array_map($autowiring->addBinding(...), $bindings);
-
         return new self(
             singletons: $this->singletons,
             scopeds: $this->scopeds->autowire($autowiring),

@@ -7,8 +7,8 @@ namespace Thesis\DIC;
 /**
  * @api
  *
- * @template T
- * @template TTag of Tag<T>
+ * @template-covariant T
+ * @template-covariant TTag of Tag<T>
  */
 final readonly class TaggedRef
 {

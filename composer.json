@@ -22,16 +22,19 @@
         "ext-pcntl": "*",
         "amphp/amp": "^3.1",
         "amphp/byte-stream": "^2.1",
+        "amphp/http": "^2.1",
         "amphp/http-server": "^3.4",
-        "amphp/http-server-router": "^2.0",
         "amphp/log": "^2.0",
         "amphp/postgres": "^2.1",
+        "amphp/socket": "^2.3",
         "monolog/monolog": "^3.10",
         "phpunit/phpunit": "^13.0",
         "psr/log": "^3.0",
         "ramsey/uuid": "^4.9",
         "symfony/var-dumper": "^8.0.4",
-        "thesis/orm": "^0.2.0"
+        "thesis/orm": "^0.2.0",
+        "thesis/transaction": "^0.1.0",
+        "wilaak/radix-router": "^3.6"
     },
     "autoload": {
         "psr-4": {

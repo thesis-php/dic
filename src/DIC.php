@@ -6,7 +6,9 @@ namespace Thesis;
 
 use Thesis\DIC\Configurator\Factory;
 use Thesis\DIC\Configurator\Func;
-use Thesis\DIC\Configurator\Tagged;
+use Thesis\DIC\Configurator\Obj;
+use Thesis\DIC\Configurator\Scope;
+use Thesis\DIC\Configurator\TaggedList;
 use Thesis\DIC\Configurator\Value;
 use Thesis\DIC\Internal\Autowiring;
 use Thesis\DIC\Internal\Binding;
@@ -15,8 +17,8 @@ use Thesis\DIC\Internal\Container\Subscriber;
 use Thesis\DIC\Internal\Tagger;
 use Thesis\DIC\Location;
 use Thesis\DIC\Ref;
-use Thesis\DIC\Scoped;
 use Thesis\DIC\Tag;
+use Thesis\DIC\TaggedRef;
 use Thesis\DIC\Tags;
 use Typhoon\Type;
 
@@ -59,16 +61,6 @@ final readonly class DIC
 
     /**
      * @template T
-     * @param Ref<T> $ref
-     * @param Type<contravariant T> $type
-     */
-    public function bind(Ref $ref, Type $type, string|\Stringable|\UnitEnum $qualifier = ''): void
-    {
-        $this->autowiring->addBinding(new Binding($ref, $type, $qualifier));
-    }
-
-    /**
-     * @template T
      * @param callable(self): T $module
      * @return T
      */
@@ -88,12 +80,11 @@ final readonly class DIC
      */
     public function value(mixed $value): Value
     {
-        return Value::value(
+        return new Value(
             value: $value,
             declaredAt: Location::fromBacktrace(-1),
             subscriber: $this->subscriber,
             tagger: $this->tagger,
-            autowiring: $this->autowiring,
         );
     }
 
@@ -104,7 +95,7 @@ final readonly class DIC
      */
     public function factory(callable $factory): Factory
     {
-        return Factory::factory(
+        return new Factory(
             factory: $factory,
             declaredAt: Location::fromBacktrace(-1),
             subscriber: $this->subscriber,
@@ -116,11 +107,11 @@ final readonly class DIC
     /**
      * @template T of object
      * @param class-string<T> $class
-     * @return Factory<T>
+     * @return Obj<T>
      */
-    public function object(string $class): Factory
+    public function object(string $class): Obj
     {
-        return Factory::object(
+        return new Obj(
             class: $class,
             declaredAt: Location::fromBacktrace(-1),
             subscriber: $this->subscriber,
@@ -131,30 +122,13 @@ final readonly class DIC
 
     /**
      * @template T
-     * @param Ref<T> $value
-     * @return Value<Scoped<T>>
+     * @param callable(): T $function
+     * @return Func<T>
      */
-    public function scoped(Ref $value): Value
+    public function function(callable $function): Func
     {
-        return Value::scoped(
-            value: $value,
-            declaredAt: Location::fromBacktrace(-1),
-            subscriber: $this->subscriber,
-            tagger: $this->tagger,
-            autowiring: $this->autowiring,
-        );
-    }
-
-    /**
-     * @param Ref<object> $object
-     * @param non-empty-string $name
-     * @return Func<mixed>
-     */
-    public function method(Ref $object, string $name): Func
-    {
-        return Func::method(
-            object: $object,
-            name: $name,
+        return new Func(
+            function: $function,
             declaredAt: Location::fromBacktrace(-1),
             subscriber: $this->subscriber,
             tagger: $this->tagger,
@@ -164,18 +138,70 @@ final readonly class DIC
 
     /**
      * @template T
-     * @param class-string<Tag<T>>|Tag<T> $tag
-     * @return Tagged<list<T>>
+     * @param Ref<T> $ref
+     * @return Scope<T>
      */
-    public function taggedList(string|Tag $tag): Tagged
+    public function scope(Ref $ref): Scope
     {
-        return Tagged::list(
-            tag: $tag,
+        return new Scope(
+            ref: $ref,
             declaredAt: Location::fromBacktrace(-1),
             subscriber: $this->subscriber,
             tagger: $this->tagger,
-            autowiring: $this->autowiring,
         );
+    }
+
+    /**
+     * @template T
+     * @template TTag of Tag<T>
+     * @param class-string<TTag>|TTag $tag
+     * @param ?callable(TaggedRef<T, TTag>, TaggedRef<T, TTag>): (-1|0|1) $sort
+     * @return TaggedList<T, TTag>
+     */
+    public function taggedList(string|Tag $tag, ?callable $sort = null): TaggedList
+    {
+        return new TaggedList(
+            tag: $tag,
+            sort: $sort,
+            declaredAt: Location::fromBacktrace(-1),
+            subscriber: $this->subscriber,
+            tagger: $this->tagger,
+        );
+    }
+
+    /**
+     * @template T
+     * @param Type<contravariant T> $type
+     * @param T|Ref<T> $value
+     */
+    public function bind(Type $type, mixed $value): void
+    {
+        $this->bindQualifier($type, '', $value);
+    }
+
+    /**
+     * @template T
+     * @param Type<contravariant T> $type
+     * @param T|Ref<T> $value
+     */
+    public function bindQualifier(Type $type, string|\Stringable|\UnitEnum $qualifier, mixed $value): void
+    {
+        $this->autowiring->addBinding(new Binding($type, $qualifier, $value));
+    }
+
+    /**
+     * @template T
+     * @param T|Ref<T> $value
+     * @param Tag<T> $tag
+     */
+    public function tag(mixed $value, Tag $tag): void
+    {
+        if (!$value instanceof Ref) {
+            $value = $this->value($value);
+        }
+
+        /** @phpstan-ignore argument.type */
+        $this->tagger->tag($value, $tag);
     }
 
     /**

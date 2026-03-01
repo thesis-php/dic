@@ -4,90 +4,49 @@ declare(strict_types=1);
 
 namespace Thesis\DIC\Configurator;
 
-use Thesis\DIC\Configurator;
-use Thesis\DIC\Internal\Autowiring;
-use Thesis\DIC\Internal\Container;
 use Thesis\DIC\Internal\Container\ServiceRegistrar;
 use Thesis\DIC\Internal\Container\Subscriber;
 use Thesis\DIC\Internal\Tagger;
 use Thesis\DIC\Location;
 use Thesis\DIC\Ref;
-use Thesis\DIC\Scoped;
-use Typhoon\Type;
-use function Thesis\DIC\Internal\Type\nativeTypeOf;
+use function Typhoon\Formatter\format;
 
 /**
  * @api
  *
  * @template T
- * @extends Configurator<T>
+ * @implements Ref<T>
  */
-final class Value extends Configurator
+final readonly class Value implements Ref
 {
+    use HasDescription;
+
+    /**
+     * @use HasTags<T>
+     */
+    use HasTags;
+
     /**
      * @internal
      *
-     * @template V
-     * @param V $value
-     * @return self<V>
+     * @param T $value
      */
-    public static function value(
+    public function __construct(
         mixed $value,
         Location $declaredAt,
         Subscriber $subscriber,
         Tagger $tagger,
-        Autowiring $autowiring,
-    ): self {
-        $configurator = new self(
-            nativeType: nativeTypeOf($value),
-            declaredAt: $declaredAt,
-            autowiring: $autowiring,
-            tagger: $tagger,
-        );
+    ) {
+        $this->tagger = $tagger;
+        $this->description = \sprintf('[%s at %s]', format($value), $declaredAt);
 
         $subscriber->onBeforeAssemble(
-            static function (ServiceRegistrar $registrar) use ($value, $configurator): void {
+            function (ServiceRegistrar $registrar) use ($value): void {
                 $registrar->register(
-                    ref: $configurator,
+                    ref: $this,
                     factory: static fn() => $value,
                 );
             },
         );
-
-        return $configurator;
-    }
-
-    /**
-     * @internal
-     *
-     * @template V
-     * @param Ref<V> $value
-     * @return self<Scoped<V>>
-     */
-    public static function scoped(
-        Ref $value,
-        Location $declaredAt,
-        Subscriber $subscriber,
-        Tagger $tagger,
-        Autowiring $autowiring,
-    ): self {
-        /** @var self<Scoped<V>> */
-        $configurator = new self(
-            nativeType: Type\objectT(Scoped::class),
-            declaredAt: $declaredAt,
-            autowiring: $autowiring,
-            tagger: $tagger,
-        );
-
-        $subscriber->onBeforeAssemble(
-            static function (ServiceRegistrar $registrar) use ($value, $configurator): void {
-                $registrar->register(
-                    ref: $configurator,
-                    factory: static fn(Container $container) => new Scoped($value, $container),
-                );
-            },
-        );
-
-        return $configurator;
     }
 }

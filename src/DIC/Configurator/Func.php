@@ -4,175 +4,63 @@ declare(strict_types=1);
 
 namespace Thesis\DIC\Configurator;
 
-use Thesis\DIC\Configurator;
-use Thesis\DIC\Internal\AutowirableFunction;
+use Thesis\DIC\Internal\AutowireableFactory\Arguments;
+use Thesis\DIC\Internal\AutowireableFactory\Func as Factory;
 use Thesis\DIC\Internal\Autowiring;
-use Thesis\DIC\Internal\Container;
 use Thesis\DIC\Internal\Container\ServiceRegistrar;
 use Thesis\DIC\Internal\Container\Subscriber;
 use Thesis\DIC\Internal\Tagger;
-use Thesis\DIC\Lifetime;
 use Thesis\DIC\Location;
 use Thesis\DIC\Ref;
-use Typhoon\Type;
+use function Typhoon\Formatter\formatFunction;
 use const Thesis\DIC\scoped;
-use const Thesis\DIC\singleton;
-use const Thesis\DIC\transient;
 
 /**
  * @api
  *
- * @template T
- * @extends Configurator<\Closure(mixed...): T>
+ * @template-covariant T
+ * @implements Ref<\Closure(mixed...): T>
  */
-final class Func extends Configurator
+final class Func implements Ref
 {
+    use HasArgs;
+    use HasDescription;
+    use HasLifetime;
+
+    /**
+     * @use HasTags<\Closure(mixed...): T>
+     */
+    use HasTags;
+
     /**
      * @internal
      *
-     * @template R
-     * @param callable(): R $function
-     * @return self<R>
+     * @param callable(): T $function
      */
-    public static function function(
+    public function __construct(
         callable $function,
         Location $declaredAt,
         Subscriber $subscriber,
         Tagger $tagger,
         Autowiring $autowiring,
-    ): self {
-        $configurator = new self(
-            function: AutowirableFunction::callable($function),
-            declaredAt: $declaredAt,
-            autowiring: $autowiring,
-            tagger: $tagger,
-        );
-
-        $subscriber->onBeforeAssemble(
-            static function (ServiceRegistrar $registrar) use ($configurator): void {
-                $registrar->register(
-                    ref: $configurator,
-                    factory: $configurator->function->autowire($configurator->autowiring)->apply(...),
-                    lifetime: $configurator->lifetime,
-                );
-            },
-        );
-
-        return $configurator;
-    }
-
-    /**
-     * @internal
-     *
-     * @param Ref<object> $object
-     * @param non-empty-string $name
-     * @return self<mixed>
-     */
-    public static function method(
-        Ref $object,
-        string $name,
-        Location $declaredAt,
-        Subscriber $subscriber,
-        Tagger $tagger,
-        Autowiring $autowiring,
-    ): self {
-        $type = self::refType($object) ?? throw new \LogicException();
-
-        if (!$type instanceof Type\NamedObjectT) {
-            throw new \LogicException("{$object} is not a named object reference");
-        }
-
-        try {
-            $reflection = new \ReflectionMethod($type->class, $name);
-        } catch (\ReflectionException) {
-            throw new \LogicException("{$object} does not have method `%s`");
-        }
-
-        if (!$reflection->isPublic()) {
-            throw new \LogicException("Method `{$name}` on {$object} is not public");
-        }
-
-        $configurator = new self(
-            function: AutowirableFunction::containerAwareProxy(
-                /** @phpstan-ignore method.dynamicName */
-                function: static fn(Container $container, mixed ...$args): mixed => $container->get($object)->{$name}(...$args),
-                reflection: $reflection,
-            ),
-            declaredAt: $declaredAt,
-            autowiring: $autowiring,
-            tagger: $tagger,
-        );
-
-        $subscriber->onBeforeAssemble(
-            static function (ServiceRegistrar $registrar) use ($configurator): void {
-                $registrar->register(
-                    ref: $configurator,
-                    factory: $configurator->function->autowire($configurator->autowiring)->apply(...),
-                    lifetime: $configurator->lifetime,
-                );
-            },
-        );
-
-        return $configurator;
-    }
-
-    /**
-     * @param AutowirableFunction<T> $function
-     */
-    protected function __construct(
-        private AutowirableFunction $function,
-        Location $declaredAt,
-        Autowiring $autowiring,
-        Tagger $tagger,
     ) {
-        parent::__construct(
-            nativeType: Type\objectT(\Closure::class),
-            declaredAt: $declaredAt,
-            autowiring: $autowiring,
-            tagger: $tagger,
-        );
-    }
+        $function = $function(...);
 
-    private Lifetime $lifetime = singleton;
-
-    public function singleton(): static
-    {
-        $this->lifetime = singleton;
-
-        return $this;
-    }
-
-    public function scoped(): static
-    {
         $this->lifetime = scoped;
+        $this->arguments = Arguments::fromFunction($function);
+        $this->tagger = $tagger;
+        $this->description = \sprintf('[%s at %s]', formatFunction($function), $declaredAt);
 
-        return $this;
-    }
+        $subscriber->onBeforeAssemble(
+            function (ServiceRegistrar $registrar) use ($autowiring, $function): void {
+                $arguments = $this->arguments->autowire($autowiring);
 
-    public function transient(): static
-    {
-        $this->lifetime = transient;
-
-        return $this;
-    }
-
-    /**
-     * @param array<non-negative-int|non-empty-string, mixed> $args
-     */
-    public function args(array $args): static
-    {
-        $this->function = $this->function->withArguments($args);
-
-        return $this;
-    }
-
-    /**
-     * @param non-negative-int|non-empty-string $param
-     */
-    public function arg(int|string $param, mixed $arg): static
-    {
-        $this->function = $this->function->withArgument($param, $arg);
-
-        return $this;
+                $registrar->register(
+                    ref: $this,
+                    factory: $arguments->isEmpty ? static fn() => $function : new Factory($function, $arguments),
+                    lifetime: $this->lifetime,
+                );
+            },
+        );
     }
 }

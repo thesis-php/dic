@@ -9,8 +9,6 @@ namespace Thesis\DIC;
  */
 interface Ref
 {
-    public Location $declaredAt { get; }
-
     /**
      * @return non-empty-string
      */

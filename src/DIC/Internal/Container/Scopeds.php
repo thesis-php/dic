@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Thesis\DIC\Internal\Container;
 
-use Thesis\DIC\Internal\AutowirableFunction;
+use Thesis\DIC\Internal\AutowireableFactory;
 use Thesis\DIC\Internal\Autowiring;
 use Thesis\DIC\Internal\Container;
 use Thesis\DIC\Ref;
@@ -56,7 +56,7 @@ final readonly class Scopeds
         foreach ($factories as $ref) {
             $factory = $factories[$ref];
 
-            if ($factory instanceof AutowirableFunction) {
+            if ($factory instanceof AutowireableFactory) {
                 $factories[$ref] = $factory->autowire($autowiring);
             }
         }

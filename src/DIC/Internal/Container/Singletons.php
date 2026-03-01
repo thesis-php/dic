@@ -64,11 +64,7 @@ final readonly class Singletons
         if ($value instanceof Factory) {
             $value = $value($container);
 
-            if ($value === null) {
-                $value = NULL_;
-            }
-
-            $this->values->offsetSet($ref, $value);
+            $this->values->offsetSet($ref, $value ?? NULL_);
 
             return $value;
         }
