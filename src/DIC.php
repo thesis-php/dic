@@ -82,7 +82,7 @@ final readonly class DIC
     {
         return new Value(
             value: $value,
-            declaredAt: Location::fromBacktrace(-1),
+            declaredAt: Location::caller(),
             subscriber: $this->subscriber,
             tagger: $this->tagger,
         );
@@ -97,7 +97,7 @@ final readonly class DIC
     {
         return new Factory(
             factory: $factory,
-            declaredAt: Location::fromBacktrace(-1),
+            declaredAt: Location::caller(),
             subscriber: $this->subscriber,
             tagger: $this->tagger,
             autowiring: $this->autowiring,
@@ -113,7 +113,7 @@ final readonly class DIC
     {
         return new Obj(
             class: $class,
-            declaredAt: Location::fromBacktrace(-1),
+            declaredAt: Location::caller(),
             subscriber: $this->subscriber,
             tagger: $this->tagger,
             autowiring: $this->autowiring,
@@ -129,7 +129,7 @@ final readonly class DIC
     {
         return new Func(
             function: $function,
-            declaredAt: Location::fromBacktrace(-1),
+            declaredAt: Location::caller(),
             subscriber: $this->subscriber,
             tagger: $this->tagger,
             autowiring: $this->autowiring,
@@ -145,7 +145,7 @@ final readonly class DIC
     {
         return new Scope(
             ref: $ref,
-            declaredAt: Location::fromBacktrace(-1),
+            declaredAt: Location::caller(),
             subscriber: $this->subscriber,
             tagger: $this->tagger,
         );
@@ -163,7 +163,7 @@ final readonly class DIC
         return new TaggedList(
             tag: $tag,
             sort: $sort,
-            declaredAt: Location::fromBacktrace(-1),
+            declaredAt: Location::caller(),
             subscriber: $this->subscriber,
             tagger: $this->tagger,
         );

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Thesis\DIC;
 
 /**
+ * @api This interface must not be implemented in userland.
+ *
  * @template-covariant T
  */
 interface Ref

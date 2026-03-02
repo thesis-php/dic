@@ -110,7 +110,7 @@ final class Obj implements Ref
      */
     public function method(string $name): Method
     {
-        return $this->methodDeclaredAt($name, Location::fromBacktrace(-1));
+        return $this->methodDeclaredAt($name, Location::caller());
     }
 
     /**

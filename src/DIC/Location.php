@@ -10,25 +10,31 @@ namespace Thesis\DIC;
 final readonly class Location
 {
     /**
-     * @param non-positive-int $offset
+     * @param non-negative-int $index
      */
-    public static function fromBacktrace(int $offset = 0): self
+    public static function caller(int $index = 0): self
     {
-        $offset = abs($offset);
+        return self::fromTrace($index + 2);
+    }
 
-        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $offset + 1);
+    /**
+     * @param non-negative-int $index
+     */
+    public static function fromTrace(int $index = 0): self
+    {
+        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $index + 1);
 
-        $trace = $backtrace[$offset] ?? throw new \LogicException('Invalid backtrace offset');
+        $trace = $backtrace[$index] ?? throw new \LogicException('Invalid trace index');
 
         $file = $trace['file'] ?? '';
         $line = $trace['line'] ?? 0;
 
         if ($file === '') {
-            throw new \LogicException('No file in backtrace');
+            throw new \LogicException(\sprintf('No `file` in trace #%d: %s', $index, json_encode($trace)));
         }
 
         if ($line < 1) {
-            throw new \LogicException('No line in backtrace');
+            throw new \LogicException(\sprintf('No `line` in trace #%d: %s', $index, json_encode($trace)));
         }
 
         return new self($file, $line);
