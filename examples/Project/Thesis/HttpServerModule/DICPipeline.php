@@ -17,11 +17,11 @@ final class DICPipeline implements Pipeline
     private int $offset = 0;
 
     /**
-     * @param Scope<callable(Request): Response> $scopeWithHandler
+     * @param Scope<callable(Request): Response> $scopedHandler
      * @param list<Middleware> $middleware
      */
     public function __construct(
-        private Scope $scopeWithHandler,
+        private Scope $scopedHandler,
         private readonly array $middleware = [],
     ) {}
 
@@ -30,7 +30,7 @@ final class DICPipeline implements Pipeline
         $middleware = $this->middleware[$this->offset] ?? null;
 
         if ($middleware === null) {
-            return ($this->scopeWithHandler->with($request)->value)($request);
+            return ($this->scopedHandler->with($request)->value)($request);
         }
 
         $pipeline = clone $this;
@@ -43,7 +43,7 @@ final class DICPipeline implements Pipeline
     {
         $pipeline = clone $this;
 
-        $pipeline->scopeWithHandler = $this->scopeWithHandler->with($value, $type, $qualifier);
+        $pipeline->scopedHandler = $this->scopedHandler->with($value, $type, $qualifier);
 
         return $pipeline;
     }

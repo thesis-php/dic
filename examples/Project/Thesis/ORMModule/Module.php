@@ -20,6 +20,7 @@ final readonly class Module
      */
     public function __construct(
         private Ref $transactionFactory,
+        private float $middlewarePriority = 0,
     ) {}
 
     /**
@@ -33,7 +34,7 @@ final readonly class Module
 
         $dic->object(ORMMiddleware::class)
             ->args([$em])
-            ->tag(new AsMiddleware());
+            ->tag(new AsMiddleware($this->middlewarePriority));
 
         /** @phpstan-ignore return.type */
         return $em;

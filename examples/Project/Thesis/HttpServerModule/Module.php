@@ -63,8 +63,8 @@ final readonly class Module
     private static function endpoints(DIC $dic, Tags $tags): array
     {
         $middleware = $dic->taggedList(
-            AsMiddleware::class,
-            static fn(TaggedRef $a, TaggedRef $b) => $b->tag->priority <=> $a->tag->priority,
+            tag: AsMiddleware::class,
+            sort: static fn(TaggedRef $a, TaggedRef $b) => $b->tag->priority <=> $a->tag->priority,
         );
 
         return array_map(
