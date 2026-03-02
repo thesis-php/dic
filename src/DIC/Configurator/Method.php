@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Thesis\DIC\Configurator;
 
-use Thesis\DIC\Internal\AutowireableFactory\Arguments;
-use Thesis\DIC\Internal\AutowireableFactory\Method as Factory;
+use Thesis\DIC\Internal\AutowireableFactory as Factory;
 use Thesis\DIC\Internal\Autowiring;
 use Thesis\DIC\Internal\Container;
 use Thesis\DIC\Internal\Container\ServiceRegistrar;
@@ -47,7 +46,7 @@ final class Method implements Ref
         Autowiring $autowiring,
     ) {
         $this->lifetime = scoped;
-        $this->arguments = Arguments::fromParameters($reflection->getParameters());
+        $this->arguments = Factory\Arguments::fromParameters($reflection->getParameters());
         $this->tagger = $tagger;
         $this->description = \sprintf('[%s at %s]', formatReflectedFunction($reflection), $declaredAt);
 
@@ -62,7 +61,7 @@ final class Method implements Ref
                     factory: $arguments->isEmpty
                         /** @phpstan-ignore method.dynamicName */
                         ? static fn(Container $container) => $container->get($object)->{$name}(...)
-                        : new Factory($reflection, $object, $arguments),
+                        : new Factory\Method($reflection, $object, $arguments),
                     lifetime: $this->lifetime,
                 );
             },

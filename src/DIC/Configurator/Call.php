@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Thesis\DIC\Configurator;
 
-use Thesis\DIC\Internal\AutowireableFactory\Arguments;
-use Thesis\DIC\Internal\AutowireableFactory\Call;
+use Thesis\DIC\Internal\AutowireableFactory as Factory;
 use Thesis\DIC\Internal\Autowiring;
 use Thesis\DIC\Internal\Container\ServiceRegistrar;
 use Thesis\DIC\Internal\Container\Subscriber;
@@ -21,7 +20,7 @@ use const Thesis\DIC\singleton;
  * @template-covariant T
  * @implements Ref<T>
  */
-final class Factory implements Ref
+final class Call implements Ref
 {
     use HasArgs;
     use HasDescription;
@@ -47,7 +46,7 @@ final class Factory implements Ref
         $factory = $factory(...);
 
         $this->tagger = $tagger;
-        $this->arguments = Arguments::fromFunction($factory);
+        $this->arguments = Factory\Arguments::fromFunction($factory);
         $type = new \ReflectionFunction($factory)->getReturnType();
         $this->description = \sprintf('[%s at %s]', $type === null ? 'mixed' : formatReflectedType($type), $declaredAt);
 
@@ -61,7 +60,7 @@ final class Factory implements Ref
 
                 $registrar->register(
                     ref: $this,
-                    factory: $arguments->isEmpty ? $factory : new Call($factory, $arguments),
+                    factory: $arguments->isEmpty ? $factory : new Factory\Call($factory, $arguments),
                     lifetime: $this->lifetime,
                 );
             },

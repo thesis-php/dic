@@ -91,7 +91,7 @@ final readonly class Module
         if ($this->mode instanceof Direct) {
             $httpServer = $dic
                 /** @phpstan-ignore argument.type */
-                ->factory(SocketHttpServer::createForDirectAccess(...))
+                ->call(SocketHttpServer::createForDirectAccess(...))
                 ->args([
                     'connectionLimit' => $this->mode->connectionLimit,
                     'connectionLimitPerIp' => $this->mode->connectionLimitPerIp,
@@ -99,7 +99,7 @@ final readonly class Module
         } else {
             $httpServer = $dic
                 /** @phpstan-ignore argument.type */
-                ->factory(SocketHttpServer::createForBehindProxy(...))
+                ->call(SocketHttpServer::createForBehindProxy(...))
                 ->args([
                     'headerType' => $this->mode->headerType,
                     'trustedProxies' => $this->mode->trustedProxies,

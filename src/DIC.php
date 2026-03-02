@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Thesis;
 
-use Thesis\DIC\Configurator\Factory;
+use Thesis\DIC\Configurator\Call;
 use Thesis\DIC\Configurator\Func;
 use Thesis\DIC\Configurator\Obj;
 use Thesis\DIC\Configurator\Scope;
@@ -90,13 +90,13 @@ final readonly class DIC
 
     /**
      * @template T
-     * @param callable(): T $factory
-     * @return Factory<T>
+     * @param callable(): T $function
+     * @return Call<T>
      */
-    public function factory(callable $factory): Factory
+    public function call(callable $function): Call
     {
-        return new Factory(
-            factory: $factory,
+        return new Call(
+            factory: $function,
             declaredAt: Location::caller(),
             subscriber: $this->subscriber,
             tagger: $this->tagger,

@@ -39,9 +39,11 @@ final readonly class App
         $dic->bind(objectT(PostgresConnectionPool::class), $postgres);
 
         $beginTx = $dic
+            /** @phpstan-ignore argument.type */
             ->function(delegate(...))
             ->args([
-                $dic->factory(static fn(PostgresConnectionPool $pg) => $pg->beginTransaction()),
+                /** @phpstan-ignore argument.type */
+                $dic->call(static fn(PostgresConnectionPool $pg) => $pg->beginTransaction()),
             ]);
 
         $dic->require(new ORMModule($beginTx));
@@ -49,7 +51,7 @@ final readonly class App
         return $dic->require(
             new HttpServerModule(
                 mode: new Direct(),
-                logger: $dic->factory(LoggerFactory::stdOut(...)),
+                logger: $dic->call(LoggerFactory::stdOut(...)),
             ),
         );
     }
