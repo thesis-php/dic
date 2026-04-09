@@ -12,6 +12,5 @@ return Rector\Config\RectorConfig::configure()
     ->withCache(__DIR__ . '/var/rector')
     ->withPhpSets()
     ->withSkip([
-        Rector\Php80\Rector\Class_\ClassPropertyAssignToConstructorPromotionRector::class,
         Rector\Php80\Rector\Class_\StringableForToStringRector::class,
     ]);
