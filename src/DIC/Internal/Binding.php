@@ -13,7 +13,7 @@ use Typhoon\Type;
  *
  * @template T
  */
-final class Binding
+final readonly class Binding
 {
     /**
      * @param Type<contravariant T> $type
