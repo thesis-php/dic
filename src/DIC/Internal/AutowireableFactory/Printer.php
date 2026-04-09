@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Thesis\DIC\Internal\AutowireableFactory;
 
+use function Typhoon\Formatter\formatReflectedParameter;
+
 /**
  * @internal
  */
@@ -48,7 +50,7 @@ final readonly class Printer
     public static function parameter(\ReflectionParameter $parameter): string
     {
         if (preg_match('/^Parameter #\d+ \[ <(?:required|optional)> (.+) ]$/', (string) $parameter, $matches) !== 1) {
-            throw new \LogicException();
+            throw new \LogicException(\sprintf('Failed to parse parameter `%s`', formatReflectedParameter($parameter)));
         }
 
         return $matches[1];

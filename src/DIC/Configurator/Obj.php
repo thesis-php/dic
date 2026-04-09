@@ -53,7 +53,7 @@ final class Obj implements Ref
         $reflection = new \ReflectionClass($class);
 
         if (!$reflection->isInstantiable()) {
-            throw new \LogicException();
+            throw new \LogicException(\sprintf('Class `%s` is not instantiable', $class));
         }
 
         $this->arguments = Arguments::fromParameters($reflection->getConstructor()?->getParameters() ?? []);
@@ -131,7 +131,7 @@ final class Obj implements Ref
         $reflection = new \ReflectionMethod($this->class, $name);
 
         if (!$reflection->isPublic()) {
-            throw new \LogicException();
+            throw new \LogicException(\sprintf('Method `%s::%s()` is not public', $this->class, $name));
         }
 
         return $this->methods[$name] = new Method(

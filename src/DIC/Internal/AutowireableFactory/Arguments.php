@@ -60,7 +60,7 @@ final class Arguments
         );
 
         if ($values !== []) {
-            throw new \LogicException();
+            throw new \LogicException(\sprintf('Invalid arguments: %s', implode(', ', array_keys($values))));
         }
 
         return new self($arguments);
