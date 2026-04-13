@@ -3,7 +3,7 @@
 ## Installation
 
 ```shell
-composer require thesis/dic typhoon/formatter ^0.1@dev
+composer require thesis/dic
 ```
 
 Documentation coming soon! For now check out [examples/app.php](examples/Project/index.php).
