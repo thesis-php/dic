@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Thesis\DIC\Internal\Type;
 
 use Typhoon\Type;
-use function Typhoon\Formatter\formatClass;
+use function Thesis\Formatter\formatClass;
 
 /**
  * @internal

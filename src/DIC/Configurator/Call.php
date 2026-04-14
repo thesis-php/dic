@@ -11,7 +11,7 @@ use Thesis\DIC\Internal\Container\Subscriber;
 use Thesis\DIC\Internal\Tagger;
 use Thesis\DIC\Location;
 use Thesis\DIC\Ref;
-use function Typhoon\Formatter\formatReflectedType;
+use function Thesis\Formatter\formatReflectedType;
 use const Thesis\DIC\singleton;
 
 /**

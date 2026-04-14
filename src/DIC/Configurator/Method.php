@@ -12,7 +12,7 @@ use Thesis\DIC\Internal\Container\Subscriber;
 use Thesis\DIC\Internal\Tagger;
 use Thesis\DIC\Location;
 use Thesis\DIC\Ref;
-use function Typhoon\Formatter\formatReflectedFunction;
+use function Thesis\Formatter\formatReflectedFunction;
 use const Thesis\DIC\scoped;
 
 /**

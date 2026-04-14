@@ -9,7 +9,7 @@ use Thesis\DIC\Internal\Container\Subscriber;
 use Thesis\DIC\Internal\Tagger;
 use Thesis\DIC\Location;
 use Thesis\DIC\Ref;
-use function Typhoon\Formatter\format;
+use function Thesis\Formatter\format;
 
 /**
  * @api

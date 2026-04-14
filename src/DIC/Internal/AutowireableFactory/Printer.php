@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Thesis\DIC\Internal\AutowireableFactory;
 
-use function Typhoon\Formatter\formatReflectedParameter;
+use function Thesis\Formatter\formatReflectedParameter;
 
 /**
  * @internal

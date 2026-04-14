@@ -13,7 +13,7 @@ use Thesis\DIC\Ref;
 use Thesis\DIC\Tag;
 use Thesis\DIC\TaggedRef;
 use Thesis\DIC\Tags;
-use function Typhoon\Formatter\format;
+use function Thesis\Formatter\format;
 
 /**
  * @api

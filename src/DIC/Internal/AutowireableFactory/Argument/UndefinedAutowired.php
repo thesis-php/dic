@@ -9,7 +9,7 @@ use Thesis\DIC\Internal\AutowireableFactory\Parameter;
 use Thesis\DIC\Internal\Autowiring;
 use Thesis\DIC\Internal\Container;
 use Thesis\DIC\Ref;
-use function Typhoon\Formatter\format;
+use function Thesis\Formatter\format;
 
 /**
  * @internal

@@ -8,9 +8,9 @@ use Thesis\DIC\Mapping\DoNotAutowire;
 use Thesis\DIC\Mapping\Qualifier;
 use Typhoon\Type;
 use function Thesis\DIC\Internal\Type\fromReflectedType;
-use function Typhoon\Formatter\format;
-use function Typhoon\Formatter\formatReflectedFunction;
-use function Typhoon\Formatter\formatReflectedParameter;
+use function Thesis\Formatter\format;
+use function Thesis\Formatter\formatReflectedFunction;
+use function Thesis\Formatter\formatReflectedParameter;
 
 /**
  * @internal
