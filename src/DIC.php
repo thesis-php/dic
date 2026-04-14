@@ -34,7 +34,7 @@ final readonly class DIC
      * @param callable(self): Ref<T> $app
      * @return T
      */
-    #[\Deprecated('Use DIC::init() instead', since: '0.3.2')]
+    #[\Deprecated('Use DIC::init() instead', since: '0.3.3')]
     public static function install(callable $app): mixed
     {
         /** @var T */
