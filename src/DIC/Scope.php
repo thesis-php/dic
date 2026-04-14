@@ -51,7 +51,6 @@ final class Scope
 
     /**
      * @var T
-     * @phpstan-ignore generics.variance
      */
     public mixed $value {
         get => $this->container->get($this->ref);
