@@ -29,31 +29,29 @@ final class Scope
      */
     public function __construct(
         private readonly Ref $ref,
-        private Container $container {
-            get {
-                if ($this->bindings === []) {
-                    return $this->container;
-                }
-
-                $autowiring = new Autowiring();
-
-                foreach ($this->bindings as $binding) {
-                    $autowiring->addBinding($binding);
-                }
-
-                $this->container = $this->container->scoped($autowiring);
-                $this->bindings = [];
-
-                return $this->container;
-            }
-        },
+        private readonly Container $container,
     ) {}
 
     /**
+     * @return T
+     */
+    public function obtain(): mixed
+    {
+        $autowiring = new Autowiring();
+
+        foreach ($this->bindings as $binding) {
+            $autowiring->addBinding($binding);
+        }
+
+        return $this->container->scoped($autowiring)->get($this->ref);
+    }
+
+    /**
      * @var T
+     * @deprecated since 0.3.4, use {@see self::obtain()}
      */
     public mixed $value {
-        get => $this->container->get($this->ref);
+        get => $this->obtain();
     }
 
     /**

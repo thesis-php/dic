@@ -30,7 +30,7 @@ final class DICPipeline implements Pipeline
         $middleware = $this->middleware[$this->offset] ?? null;
 
         if ($middleware === null) {
-            return ($this->scopedHandler->with($request)->value)($request);
+            return ($this->scopedHandler->with($request)->obtain())($request);
         }
 
         $pipeline = clone $this;
