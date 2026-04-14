@@ -18,9 +18,7 @@ use Thesis\DIC\Ref;
 final readonly class Container
 {
     /**
-     * @template T
-     * @param callable(Subscriber, Tagger): Ref<T> $app
-     * @return T
+     * @param callable(Subscriber, Tagger): mixed $app
      */
     public static function assemble(callable $app): mixed
     {
@@ -45,7 +43,7 @@ final readonly class Container
 
         $dispatcher->afterAssemble();
 
-        return $container->get($result);
+        return $container->resolve($result);
     }
 
     private function __construct(

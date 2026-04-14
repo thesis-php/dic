@@ -34,7 +34,24 @@ final readonly class DIC
      * @param callable(self): Ref<T> $app
      * @return T
      */
+    #[\Deprecated('Use DIC::init() instead', since: '0.3.2')]
     public static function install(callable $app): mixed
+    {
+        /** @var T */
+        return Container::assemble(
+            static fn(Subscriber $subscriber, Tagger $tagger) => $app(new self(
+                subscriber: $subscriber,
+                tagger: $tagger,
+            )),
+        );
+    }
+
+    /**
+     * Assembles the container and resolves the refs returned by $app.
+     *
+     * @param callable(self): mixed $app
+     */
+    public static function init(callable $app): mixed
     {
         return Container::assemble(
             static fn(Subscriber $subscriber, Tagger $tagger) => $app(new self(

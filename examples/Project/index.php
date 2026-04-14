@@ -10,7 +10,7 @@ use function Amp\trapSignal;
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/Thesis/HttpServerModule/methods.php';
 
-$httpServer = DIC::install(new App());
+$httpServer = DIC::init(new App());
 
 $httpServer->expose('0.0.0.0:1337');
 
