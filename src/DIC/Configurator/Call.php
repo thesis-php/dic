@@ -9,10 +9,10 @@ use Thesis\DIC\Internal\Autowiring;
 use Thesis\DIC\Internal\Container\ServiceRegistrar;
 use Thesis\DIC\Internal\Container\Subscriber;
 use Thesis\DIC\Internal\Tagger;
+use Thesis\DIC\Lifetime;
 use Thesis\DIC\Location;
 use Thesis\DIC\Ref;
 use function Thesis\Formatter\formatReflectedType;
-use const Thesis\DIC\singleton;
 
 /**
  * @api
@@ -54,7 +54,7 @@ final class Call implements Ref
             function (ServiceRegistrar $registrar) use ($factory, $autowiring): void {
                 $arguments = $this->arguments->autowire($autowiring);
 
-                if ($this->lifetime === singleton) {
+                if ($this->lifetime === Lifetime::Singleton) {
                     $arguments->ensureResolvable();
                 }
 

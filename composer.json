@@ -41,7 +41,9 @@
             "Thesis\\": "src/"
         },
         "files": [
-            "src/autoload.files.php"
+            "src/DIC/Internal/Type/fromReflectedType.php",
+            "src/DIC/Internal/Type/nativeTypeOf.php",
+            "src/DIC/Mapping/DoNotAutowire.php"
         ]
     },
     "autoload-dev": {

@@ -7,9 +7,6 @@ namespace Thesis\DIC\Internal\Container;
 use Thesis\DIC\Internal\Container;
 use Thesis\DIC\Lifetime;
 use Thesis\DIC\Ref;
-use const Thesis\DIC\scoped;
-use const Thesis\DIC\singleton;
-use const Thesis\DIC\transient;
 
 /**
  * @internal
@@ -34,12 +31,12 @@ final class ServiceRegistrar
      * @param Ref<T> $ref
      * @param callable(Container): T $factory
      */
-    public function register(Ref $ref, callable $factory, Lifetime $lifetime = singleton): void
+    public function register(Ref $ref, callable $factory, Lifetime $lifetime = Lifetime::Singleton): void
     {
         match ($lifetime) {
-            singleton => $this->singletons = $this->singletons->with($ref, $factory),
-            scoped => $this->scopeds = $this->scopeds->with($ref, $factory),
-            transient => $this->transients = $this->transients->with($ref, $factory),
+            Lifetime::Singleton => $this->singletons = $this->singletons->with($ref, $factory),
+            Lifetime::Scoped => $this->scopeds = $this->scopeds->with($ref, $factory),
+            Lifetime::Transient => $this->transients = $this->transients->with($ref, $factory),
         };
     }
 }

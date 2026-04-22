@@ -10,10 +10,10 @@ use Thesis\DIC\Internal\Container;
 use Thesis\DIC\Internal\Container\ServiceRegistrar;
 use Thesis\DIC\Internal\Container\Subscriber;
 use Thesis\DIC\Internal\Tagger;
+use Thesis\DIC\Lifetime;
 use Thesis\DIC\Location;
 use Thesis\DIC\Ref;
 use function Thesis\Formatter\formatReflectedFunction;
-use const Thesis\DIC\scoped;
 
 /**
  * @api
@@ -45,7 +45,7 @@ final class Method implements Ref
         Tagger $tagger,
         Autowiring $autowiring,
     ) {
-        $this->lifetime = scoped;
+        $this->lifetime = Lifetime::Scoped;
         $this->arguments = Factory\Arguments::fromParameters($reflection->getParameters());
         $this->tagger = $tagger;
         $this->description = \sprintf('[%s at %s]', formatReflectedFunction($reflection), $declaredAt);

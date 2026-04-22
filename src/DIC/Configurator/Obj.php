@@ -11,14 +11,12 @@ use Thesis\DIC\Internal\Autowiring;
 use Thesis\DIC\Internal\Container\ServiceRegistrar;
 use Thesis\DIC\Internal\Container\Subscriber;
 use Thesis\DIC\Internal\Tagger;
+use Thesis\DIC\Lifetime;
 use Thesis\DIC\Location;
 use Thesis\DIC\Mapping\Scoped;
 use Thesis\DIC\Mapping\Transient;
 use Thesis\DIC\Ref;
 use Thesis\DIC\Tag;
-use const Thesis\DIC\scoped;
-use const Thesis\DIC\singleton;
-use const Thesis\DIC\transient;
 
 /**
  * @api
@@ -64,7 +62,7 @@ final class Obj implements Ref
             function (ServiceRegistrar $registrar) use ($reflection, $autowiring): void {
                 $arguments = $this->arguments->autowire($autowiring);
 
-                if ($this->lifetime === singleton) {
+                if ($this->lifetime === Lifetime::Singleton) {
                     $arguments->ensureResolvable();
                 }
 
@@ -92,9 +90,9 @@ final class Obj implements Ref
         }
 
         $this->lifetime = match (true) {
-            $reflection->getAttributes(Scoped::class) !== [] => scoped,
-            $reflection->getAttributes(Transient::class) !== [] => transient,
-            default => singleton,
+            $reflection->getAttributes(Scoped::class) !== [] => Lifetime::Scoped,
+            $reflection->getAttributes(Transient::class) !== [] => Lifetime::Transient,
+            default => Lifetime::Singleton,
         };
 
         foreach ($reflection->getMethods() as $method) {

@@ -13,18 +13,3 @@ enum Lifetime
     case Scoped;
     case Transient;
 }
-
-/**
- * @api
- */
-const singleton = Lifetime::Singleton;
-
-/**
- * @api
- */
-const scoped = Lifetime::Scoped;
-
-/**
- * @api
- */
-const transient = Lifetime::Transient;

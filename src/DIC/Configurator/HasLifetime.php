@@ -5,34 +5,31 @@ declare(strict_types=1);
 namespace Thesis\DIC\Configurator;
 
 use Thesis\DIC\Lifetime;
-use const Thesis\DIC\scoped;
-use const Thesis\DIC\singleton;
-use const Thesis\DIC\transient;
 
 /**
  * @api
  */
 trait HasLifetime
 {
-    private Lifetime $lifetime = singleton;
+    private Lifetime $lifetime = Lifetime::Singleton;
 
     final public function singleton(): static
     {
-        $this->lifetime = singleton;
+        $this->lifetime = Lifetime::Singleton;
 
         return $this;
     }
 
     final public function scoped(): static
     {
-        $this->lifetime = scoped;
+        $this->lifetime = Lifetime::Scoped;
 
         return $this;
     }
 
     final public function transient(): static
     {
-        $this->lifetime = transient;
+        $this->lifetime = Lifetime::Transient;
 
         return $this;
     }
