@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BC break:** Rename `Thesis\DIC\Configurator\Scope` to `ScopedOf`.
 - **BC break:** Rename `Scope::obtain()` to `resolve()`.
 - **BC break:** Rename `DIC::scope()` to `DIC::scopedOf()`.
+- **BC break:** Merge `DIC::bind()` and `bindQualifier()` into single `DIC::bind(mixed $value, Type $type, string|\Stringable|\UnitEnum $qualifier = '')`.
 
 ### Removed
 

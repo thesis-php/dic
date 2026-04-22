@@ -188,22 +188,12 @@ final readonly class DIC
 
     /**
      * @template T
-     * @param Type<contravariant T> $type
      * @param T|Ref<T> $value
-     */
-    public function bind(Type $type, mixed $value): void
-    {
-        $this->bindQualifier($type, '', $value);
-    }
-
-    /**
-     * @template T
      * @param Type<contravariant T> $type
-     * @param T|Ref<T> $value
      */
-    public function bindQualifier(Type $type, string|\Stringable|\UnitEnum $qualifier, mixed $value): void
+    public function bind(mixed $value, Type $type, string|\Stringable|\UnitEnum $qualifier = ''): void
     {
-        $this->autowiring->addBinding(new Binding($type, $qualifier, $value));
+        $this->autowiring->addBinding(new Binding($value, $type, $qualifier));
     }
 
     /**

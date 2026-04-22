@@ -56,9 +56,9 @@ final class Scoped
         $copy = clone $this;
 
         $copy->bindings[] = new Binding(
+            value: $value,
             type: $type ?? nativeTypeOf($value),
             qualifier: $qualifier,
-            value: $value,
         );
 
         return $copy;
