@@ -18,5 +18,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- **BC break:** `DIC::install()` — use `DIC::init()`.
 - **BC break:** Constants `singleton`, `scoped`, `transient` — use `Lifetime::*` directly.
 - **BC break:** `Scope::$value` property — use `Scoped::resolve()`.
