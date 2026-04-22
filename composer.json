@@ -19,22 +19,8 @@
         "typhoon/type": "^0.8"
     },
     "require-dev": {
-        "ext-pcntl": "*",
-        "amphp/amp": "^3.1",
-        "amphp/byte-stream": "^2.1",
-        "amphp/http": "^2.1",
-        "amphp/http-server": "^3.4",
-        "amphp/log": "^2.0",
-        "amphp/postgres": "^2.1",
-        "amphp/socket": "^2.3",
-        "monolog/monolog": "^3.10",
         "phpunit/phpunit": "^13.0",
-        "psr/log": "^3.0",
-        "ramsey/uuid": "^4.9",
-        "symfony/var-dumper": "^8.0.4",
-        "thesis/orm": "^0.2.0",
-        "thesis/transaction": "^0.1.0",
-        "wilaak/radix-router": "^3.6"
+        "symfony/var-dumper": "^8.0.4"
     },
     "autoload": {
         "psr-4": {
@@ -48,7 +34,6 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Project\\": "examples/Project/",
             "Thesis\\": "tests/"
         }
     },
