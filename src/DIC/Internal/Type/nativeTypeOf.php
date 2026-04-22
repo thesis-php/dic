@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Thesis\DIC\Internal\Type;
 
+if (\function_exists('Thesis\DIC\Internal\Type\nativeTypeOf')) {
+    return;
+}
+
 use Typhoon\Type;
 
 /**
