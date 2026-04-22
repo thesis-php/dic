@@ -30,6 +30,6 @@ final readonly class ValueWithRefs extends Argument
 
     public function resolve(Container $container): mixed
     {
-        return $container->resolve($this->value);
+        return $container->unwrap($this->value);
     }
 }

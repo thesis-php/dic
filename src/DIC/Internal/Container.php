@@ -43,7 +43,7 @@ final readonly class Container
 
         $dispatcher->afterAssemble();
 
-        return $container->resolve($result);
+        return $container->unwrap($result);
     }
 
     private function __construct(
@@ -79,25 +79,30 @@ final readonly class Container
         throw new \LogicException("Invalid reference {$ref}", previous: $previous);
     }
 
-    public function resolve(mixed $value): mixed
+    /**
+     * @template T
+     * @param Ref<T> $ref
+     * @return T
+     */
+    public function resolveInScope(Ref $ref, Autowiring $autowiring): mixed
+    {
+        return new self(
+            singletons: $this->singletons,
+            scopeds: $this->scopeds->autowire($autowiring),
+            transients: $this->transients->autowire($autowiring),
+        )->get($ref);
+    }
+
+    public function unwrap(mixed $value): mixed
     {
         if ($value instanceof Ref) {
             return $this->get($value);
         }
 
         if (\is_array($value)) {
-            return array_map($this->resolve(...), $value);
+            return array_map($this->unwrap(...), $value);
         }
 
         return $value;
-    }
-
-    public function scoped(Autowiring $autowiring): self
-    {
-        return new self(
-            singletons: $this->singletons,
-            scopeds: $this->scopeds->autowire($autowiring),
-            transients: $this->transients->autowire($autowiring),
-        );
     }
 }

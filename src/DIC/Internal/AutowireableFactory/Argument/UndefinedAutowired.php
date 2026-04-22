@@ -56,7 +56,7 @@ final readonly class UndefinedAutowired extends Argument
     private function resolver(): \Closure
     {
         if (\count($this->candidates) === 1) {
-            return fn(Container $container) => $container->resolve($this->candidates[0]);
+            return fn(Container $container) => $container->unwrap($this->candidates[0]);
         }
 
         if ($this->candidates === []) {

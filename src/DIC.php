@@ -7,7 +7,7 @@ namespace Thesis;
 use Thesis\DIC\Configurator\Call;
 use Thesis\DIC\Configurator\Func;
 use Thesis\DIC\Configurator\Obj;
-use Thesis\DIC\Configurator\Scope;
+use Thesis\DIC\Configurator\ScopedOf;
 use Thesis\DIC\Configurator\TaggedList;
 use Thesis\DIC\Configurator\Value;
 use Thesis\DIC\Internal\Autowiring;
@@ -156,11 +156,11 @@ final readonly class DIC
     /**
      * @template T
      * @param Ref<T> $ref
-     * @return Scope<T>
+     * @return ScopedOf<T>
      */
-    public function scope(Ref $ref): Scope
+    public function scopedOf(Ref $ref): ScopedOf
     {
-        return new Scope(
+        return new ScopedOf(
             ref: $ref,
             declaredAt: Location::caller(),
             subscriber: $this->subscriber,

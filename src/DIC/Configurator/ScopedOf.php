@@ -10,20 +10,20 @@ use Thesis\DIC\Internal\Container\Subscriber;
 use Thesis\DIC\Internal\Tagger;
 use Thesis\DIC\Location;
 use Thesis\DIC\Ref;
-use Thesis\DIC\Scope as Wrapper;
+use Thesis\DIC\Scoped;
 
 /**
  * @api
  *
  * @template-covariant T
- * @implements Ref<Wrapper<T>>
+ * @implements Ref<Scoped<T>>
  */
-final readonly class Scope implements Ref
+final readonly class ScopedOf implements Ref
 {
     use HasDescription;
 
     /**
-     * @use HasTags<Wrapper<T>>
+     * @use HasTags<Scoped<T>>
      */
     use HasTags;
 
@@ -45,7 +45,7 @@ final readonly class Scope implements Ref
             function (ServiceRegistrar $registrar) use ($ref): void {
                 $registrar->register(
                     ref: $this,
-                    factory: static fn(Container $container) => new Wrapper($ref, $container),
+                    factory: static fn(Container $container) => new Scoped($ref, $container),
                 );
             },
         );

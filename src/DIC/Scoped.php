@@ -15,7 +15,7 @@ use function Thesis\DIC\Internal\Type\nativeTypeOf;
  *
  * @template-covariant T
  */
-final class Scope
+final class Scoped
 {
     /**
      * @var list<Binding<*>>
@@ -35,7 +35,7 @@ final class Scope
     /**
      * @return T
      */
-    public function obtain(): mixed
+    public function resolve(): mixed
     {
         $autowiring = new Autowiring();
 
@@ -43,15 +43,7 @@ final class Scope
             $autowiring->addBinding($binding);
         }
 
-        return $this->container->scoped($autowiring)->get($this->ref);
-    }
-
-    /**
-     * @var T
-     * @deprecated since 0.3.4, use {@see self::obtain()}
-     */
-    public mixed $value {
-        get => $this->obtain();
+        return $this->container->resolveInScope($this->ref, $autowiring);
     }
 
     /**
