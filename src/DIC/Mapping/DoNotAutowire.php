@@ -9,8 +9,3 @@ namespace Thesis\DIC\Mapping;
  */
 #[\Attribute(\Attribute::TARGET_PARAMETER | \Attribute::TARGET_FUNCTION | \Attribute::TARGET_METHOD)]
 final readonly class DoNotAutowire {}
-
-/**
- * @api
- */
-const doNotAutowire = new DoNotAutowire();
