@@ -16,7 +16,7 @@
     "require": {
         "php": "^8.4",
         "thesis/formatter": "^0.1",
-        "typhoon/type": "^0.8"
+        "typhoon/type": "^0.8.1"
     },
     "require-dev": {
         "phpunit/phpunit": "^13.0",
