@@ -11,7 +11,6 @@ use Thesis\DIC\Configurator\ScopedOf;
 use Thesis\DIC\Configurator\TaggedList;
 use Thesis\DIC\Configurator\Value;
 use Thesis\DIC\Internal\Autowiring;
-use Thesis\DIC\Internal\Binding;
 use Thesis\DIC\Internal\Container;
 use Thesis\DIC\Internal\Container\Subscriber;
 use Thesis\DIC\Internal\Tagger;
@@ -172,11 +171,11 @@ final readonly class DIC
     /**
      * @template T
      * @param T|Ref<T> $value
-     * @param Type<contravariant T> $type
+     * @param ?Type<contravariant T> $type
      */
-    public function bind(mixed $value, Type $type, string|\Stringable|\UnitEnum $qualifier = ''): void
+    public function bind(mixed $value, ?Type $type = null, string|\Stringable|\UnitEnum $qualifier = ''): void
     {
-        $this->autowiring->addBinding(new Binding($value, $type, $qualifier));
+        $this->autowiring->bind($value, $type, $qualifier);
     }
 
     /**

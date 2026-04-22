@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Thesis\DIC\Internal;
 
 use Thesis\DIC\Internal\AutowireableFactory\Parameter;
-use Thesis\DIC\Internal\Autowiring\MatchBindingType;
-use const Typhoon\Type\mixedT;
+use Thesis\DIC\Internal\Autowiring\StringifyBindingType;
+use Thesis\DIC\Ref;
+use Typhoon\Type;
 
 /**
  * @internal
@@ -21,16 +22,36 @@ final class Autowiring
     }
 
     /**
-     * @var array<string, non-empty-list<Binding<*>>>
+     * @var array<non-empty-string, mixed>
      */
-    private array $bindingsByQualifier = [];
+    private array $bindings = [];
 
     /**
-     * @param Binding<*> $binding
+     * @template T
+     * @param T|Ref<T> $value
+     * @param ?Type<contravariant T> $type
      */
-    public function addBinding(Binding $binding): void
+    public function bind(mixed $value, ?Type $type, string|\Stringable|\UnitEnum $qualifier): void
     {
-        $this->bindingsByQualifier[self::stringifyQualifier($binding->qualifier)][] = $binding;
+        /** @var StringifyBindingType */
+        static $stringifier = new StringifyBindingType();
+
+        $type = $type?->accept($stringifier) ?? StringifyBindingType::value($value);
+
+        $this->bindings[self::bindingKey($type, $qualifier)] = $value;
+    }
+
+    /**
+     * @template T
+     * @param T|Ref<T> $value
+     * @param ?Type<contravariant T> $type
+     */
+    public function with(mixed $value, ?Type $type, string|\Stringable|\UnitEnum $qualifier): self
+    {
+        $autowiring = clone $this;
+        $autowiring->bind($value, $type, $qualifier);
+
+        return $autowiring;
     }
 
     /**
@@ -38,25 +59,30 @@ final class Autowiring
      */
     public function autowire(Parameter $parameter): array
     {
+        $candidates = [];
         $qualifier = $parameter->qualifier;
-        $type = $parameter->type ?? mixedT;
 
-        $candidates = array_unique(
-            array_column(
-                array_filter(
-                    $this->bindingsByQualifier[self::stringifyQualifier($qualifier)] ?? [],
-                    static fn(Binding $binding) => $type->accept(new MatchBindingType($binding->type)),
-                ),
-                'value',
-            ),
-            SORT_REGULAR,
-        );
+        foreach ($parameter->bindingTypes as $bindingType) {
+            $key = self::bindingKey($bindingType, $qualifier);
+
+            if (\array_key_exists($key, $this->bindings)) {
+                $candidates[] = $this->bindings[$key];
+            }
+        }
 
         if ($candidates === [] && $this->parent !== null) {
             return $this->parent->autowire($parameter);
         }
 
-        return array_values($candidates);
+        return $candidates;
+    }
+
+    /**
+     * @return non-empty-string
+     */
+    private static function bindingKey(string $type, string|\Stringable|\UnitEnum $qualifier): string
+    {
+        return $type . '.' . self::stringifyQualifier($qualifier);
     }
 
     private static function stringifyQualifier(string|\Stringable|\UnitEnum $qualifier): string

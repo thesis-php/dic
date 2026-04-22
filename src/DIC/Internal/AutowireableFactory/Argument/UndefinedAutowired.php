@@ -66,13 +66,13 @@ final readonly class UndefinedAutowired extends Argument
 
             throw new \LogicException(\sprintf(
                 'No autowiring candidates for `%s`',
-                $this->parameter->formattedNameWithQualifierAndType,
+                $this->parameter->formattedName,
             ));
         }
 
         throw new \LogicException(\sprintf(
             "Autowiring of `%s` is ambiguous:\n- %s",
-            $this->parameter->formattedNameWithQualifierAndType,
+            $this->parameter->formattedName,
             implode("\n- ", array_map(
                 static fn(mixed $candidate) => $candidate instanceof Ref ? (string) $candidate : format($candidate),
                 $this->candidates,

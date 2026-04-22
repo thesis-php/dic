@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Thesis\DIC;
 
 use Thesis\DIC\Internal\Autowiring;
-use Thesis\DIC\Internal\Binding;
 use Thesis\DIC\Internal\Container;
 use Typhoon\Type;
-use function Thesis\DIC\Internal\Type\nativeTypeOf;
 
 /**
  * @api
@@ -17,10 +15,7 @@ use function Thesis\DIC\Internal\Type\nativeTypeOf;
  */
 final class Scoped
 {
-    /**
-     * @var list<Binding<*>>
-     */
-    private array $bindings = [];
+    private Autowiring $autowiring;
 
     /**
      * @internal
@@ -30,20 +25,16 @@ final class Scoped
     public function __construct(
         private readonly Ref $ref,
         private readonly Container $container,
-    ) {}
+    ) {
+        $this->autowiring = new Autowiring();
+    }
 
     /**
      * @return T
      */
     public function resolve(): mixed
     {
-        $autowiring = new Autowiring();
-
-        foreach ($this->bindings as $binding) {
-            $autowiring->addBinding($binding);
-        }
-
-        return $this->container->resolveInScope($this->ref, $autowiring);
+        return $this->container->resolveInScope($this->ref, $this->autowiring);
     }
 
     /**
@@ -53,14 +44,9 @@ final class Scoped
      */
     public function with(mixed $value, ?Type $type = null, \UnitEnum|\Stringable|string $qualifier = ''): static
     {
-        $copy = clone $this;
+        $scoped = clone $this;
+        $scoped->autowiring = $this->autowiring->with($value, $type, $qualifier);
 
-        $copy->bindings[] = new Binding(
-            value: $value,
-            type: $type ?? nativeTypeOf($value),
-            qualifier: $qualifier,
-        );
-
-        return $copy;
+        return $scoped;
     }
 }

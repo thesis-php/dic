@@ -8,11 +8,11 @@ use Typhoon\Type;
 
 final class BindingTypeNotSupported extends \LogicException
 {
-    public function __construct(Type $type)
+    public function __construct(string|Type $type)
     {
         parent::__construct(\sprintf(
             'Type `%s` is not supported as a binding type',
-            Type\stringify($type),
+            \is_string($type) ? $type : Type\stringify($type),
         ));
     }
 }

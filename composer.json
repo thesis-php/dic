@@ -27,8 +27,6 @@
             "Thesis\\": "src/"
         },
         "files": [
-            "src/DIC/Internal/Type/fromReflectedType.php",
-            "src/DIC/Internal/Type/nativeTypeOf.php",
             "src/DIC/doNotAutowire.php"
         ]
     },

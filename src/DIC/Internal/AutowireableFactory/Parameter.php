@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Thesis\DIC\Internal\AutowireableFactory;
 
+use Thesis\DIC\Internal\Autowiring\StringifyBindingType;
 use Thesis\DIC\Mapping\DoNotAutowire;
 use Thesis\DIC\Mapping\Qualifier;
 use Typhoon\Type;
-use function Thesis\DIC\Internal\Type\fromReflectedType;
 use function Thesis\Formatter\format;
 use function Thesis\Formatter\formatReflectedFunction;
-use function Thesis\Formatter\formatReflectedParameter;
+use function Thesis\Formatter\formatReflectedType;
 
 /**
  * @internal
@@ -40,33 +40,26 @@ final class Parameter
      * @var non-empty-string
      */
     public string $formattedName {
-        get => formatReflectedParameter($this->reflection);
-    }
-
-    /**
-     * @var non-empty-string
-     */
-    public string $formattedNameWithQualifierAndType {
         get {
             $formattedFunction = formatReflectedFunction($this->reflection->getDeclaringFunction());
-
             $qualifier = $this->qualifier;
+            $type = $this->reflection->getType();
 
             return \sprintf(
                 '%s(%s%s$%s)',
                 substr($formattedFunction, 0, -2),
                 $qualifier === '' ? '' : \sprintf('#[Qualifier(%s)] ', format($qualifier)),
-                $this->type === null ? '' : Type\stringify($this->type) . ' ',
+                $type === null ? '' : formatReflectedType($this->reflection->getType()) . ' ',
                 $this->name,
             );
         }
     }
 
     /**
-     * @phpstan-ignore property.uninitialized
+     * @var list<non-empty-lowercase-string>
      */
-    public ?Type $type {
-        get => $this->type ??= fromReflectedType(
+    public array $bindingTypes {
+        get => StringifyBindingType::reflected(
             type: $this->reflection->getType(),
             self: $this->reflection->getDeclaringFunction()->getClosureScopeClass()?->name,
             static: $this->reflection->getDeclaringFunction()->getClosureCalledClass()?->name,
