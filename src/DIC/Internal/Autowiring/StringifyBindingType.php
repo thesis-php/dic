@@ -28,13 +28,16 @@ use function Thesis\Formatter\formatClass;
  */
 final class StringifyBindingType extends Fallback
 {
+    /**
+     * @return lowercase-string
+     */
     public static function value(mixed $value): string
     {
         if (\is_resource($value)) {
             throw new \LogicException('Resources are not supported for binding');
         }
 
-        return get_debug_type($value);
+        return strtolower(get_debug_type($value));
     }
 
     /**
