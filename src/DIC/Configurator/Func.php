@@ -12,7 +12,10 @@ use Thesis\DIC\Internal\Container\Subscriber;
 use Thesis\DIC\Internal\Tagger;
 use Thesis\DIC\Lifetime;
 use Thesis\DIC\Location;
+use Thesis\DIC\Mapping\Singleton;
+use Thesis\DIC\Mapping\Transient;
 use Thesis\DIC\Ref;
+use Thesis\DIC\Tag;
 use function Thesis\Formatter\formatFunction;
 
 /**
@@ -46,7 +49,6 @@ final class Func implements Ref
     ) {
         $function = $function(...);
 
-        $this->lifetime = Lifetime::Scoped;
         $this->arguments = Arguments::fromFunction($function);
         $this->tagger = $tagger;
         $this->description = \sprintf('[%s at %s]', formatFunction($function), $declaredAt);
@@ -62,5 +64,17 @@ final class Func implements Ref
                 );
             },
         );
+
+        $reflection = new \ReflectionFunction($function);
+
+        foreach ($reflection->getAttributes(Tag::class, \ReflectionAttribute::IS_INSTANCEOF) as $attribute) {
+            $this->tag($attribute->newInstance());
+        }
+
+        $this->lifetime = match (true) {
+            $reflection->getAttributes(Singleton::class) !== [] => Lifetime::Singleton,
+            $reflection->getAttributes(Transient::class) !== [] => Lifetime::Transient,
+            default => Lifetime::Scoped,
+        };
     }
 }
