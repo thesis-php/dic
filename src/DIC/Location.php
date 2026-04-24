@@ -29,12 +29,17 @@ final readonly class Location
         $file = $trace['file'] ?? '';
         $line = $trace['line'] ?? 0;
 
+        if (preg_match('/^(.+)\((\d+)\) : eval\(\)\'d code$/', $file, $matches) === 1) {
+            $file = $matches[1];
+            $line = (int) $matches[2];
+        }
+
         if ($file === '') {
-            throw new \LogicException(\sprintf('No `file` in trace #%d: %s', $index, json_encode($trace)));
+            throw new \LogicException(\sprintf('No `file` in trace #%d: %s', $index, json_encode($trace))); // @codeCoverageIgnore
         }
 
         if ($line < 1) {
-            throw new \LogicException(\sprintf('No `line` in trace #%d: %s', $index, json_encode($trace)));
+            throw new \LogicException(\sprintf('No `line` in trace #%d: %s', $index, json_encode($trace))); // @codeCoverageIgnore
         }
 
         return new self($file, $line);
