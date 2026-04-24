@@ -19,8 +19,8 @@
         "typhoon/type": "^0.8.1"
     },
     "require-dev": {
-        "phpunit/phpunit": "^13.0",
-        "symfony/var-dumper": "^8.0.4"
+        "symfony/var-dumper": "^8.0.4",
+        "testo/testo": "^0.10.2"
     },
     "autoload": {
         "psr-4": {

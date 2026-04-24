@@ -24,7 +24,7 @@ final readonly class Location
     {
         $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $index + 1);
 
-        $trace = $backtrace[$index] ?? throw new \LogicException('Invalid trace index');
+        $trace = $backtrace[$index] ?? throw new \OutOfRangeException('Invalid trace index');
 
         $file = $trace['file'] ?? '';
         $line = $trace['line'] ?? 0;
@@ -34,13 +34,8 @@ final readonly class Location
             $line = (int) $matches[2];
         }
 
-        if ($file === '') {
-            throw new \LogicException(\sprintf('No `file` in trace #%d: %s', $index, json_encode($trace))); // @codeCoverageIgnore
-        }
-
-        if ($line < 1) {
-            throw new \LogicException(\sprintf('No `line` in trace #%d: %s', $index, json_encode($trace))); // @codeCoverageIgnore
-        }
+        \assert($file !== '', 'debug_backtrace() should almost never return an empty file name');
+        \assert($line >= 1, 'debug_backtrace() should almost never return a non-positive line number');
 
         return new self($file, $line);
     }

@@ -102,8 +102,8 @@ phpstan: var vendor ## Analyze code using PHPStan
 	$(RUN) phpstan analyze --memory-limit=1G $(ARGS)
 .PHONY: phpstan
 
-test: var vendor up ## Run tests using PHPUnit
-	$(RUN) vendor/bin/phpunit $(ARGS)
+test: var vendor up ## Run tests using Testo
+	$(RUN) vendor/bin/testo $(ARGS)
 .PHONY: test
 
 infect: var vendor up ## Run mutation tests using Infection

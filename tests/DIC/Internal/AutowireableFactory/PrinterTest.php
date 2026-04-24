@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Thesis\DIC\Internal\AutowireableFactory;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\TestWith;
-use PHPUnit\Framework\TestCase;
+use Testo\Assert;
+use Testo\Data\DataSet;
+use Testo\Test;
 
-#[CoversClass(Printer::class)]
-final class PrinterTest extends TestCase
+final readonly class PrinterTest
 {
-    #[TestWith(['#[X]'])]
-    #[TestWith(['#[X("a", new stdClass)]'])]
-    #[TestWith(['#[X("a", \Thesis\DIC\singleton)]'])]
+    #[Test]
+    #[DataSet(['#[X]'])]
+    #[DataSet(['#[X("a", new stdClass)]'])]
+    #[DataSet(['#[X("a", \Thesis\DIC\singleton)]'])]
     public function testAttribute(string $code): void
     {
         $reflection = $this->reflectAttribute($code);
@@ -21,7 +21,7 @@ final class PrinterTest extends TestCase
         $printed = Printer::attribute($reflection);
         $printedReflection = $this->reflectAttribute($printed);
 
-        self::assertSame($reflection->__toString(), $printedReflection->__toString());
+        Assert::same($printedReflection->__toString(), $reflection->__toString());
     }
 
     /**
@@ -38,15 +38,16 @@ final class PrinterTest extends TestCase
         return $attributes[0];
     }
 
-    #[TestWith(['string $a'])]
-    #[TestWith(['?string $a'])]
-    #[TestWith(['string &$a'])]
-    #[TestWith(['?string $a = null'])]
-    #[TestWith(['?string &$a = null'])]
-    #[TestWith(['?string $a = "b"'])]
-    #[TestWith(['object $o = new stdClass()'])]
-    #[TestWith(['object $o = new ArrayObject([1, 2, "a", new stdClass()])'])]
-    #[TestWith(['string ...$strings'])]
+    #[Test]
+    #[DataSet(['string $a'])]
+    #[DataSet(['?string $a'])]
+    #[DataSet(['string &$a'])]
+    #[DataSet(['?string $a = null'])]
+    #[DataSet(['?string &$a = null'])]
+    #[DataSet(['?string $a = "b"'])]
+    #[DataSet(['object $o = new stdClass()'])]
+    #[DataSet(['object $o = new ArrayObject([1, 2, "a", new stdClass()])'])]
+    #[DataSet(['string ...$strings'])]
     public function testParameter(string $code): void
     {
         $reflection = $this->reflectParameter($code);
@@ -54,7 +55,7 @@ final class PrinterTest extends TestCase
         $printed = Printer::parameter($reflection);
         $printedReflection = $this->reflectParameter($printed);
 
-        self::assertSame($reflection->__toString(), $printedReflection->__toString());
+        Assert::same($printedReflection->__toString(), $reflection->__toString());
     }
 
     private function reflectParameter(string $code): \ReflectionParameter

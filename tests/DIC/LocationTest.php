@@ -4,52 +4,57 @@ declare(strict_types=1);
 
 namespace Thesis\DIC;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
+use Testo\Assert;
+use Testo\Expect;
+use Testo\Test;
 
-#[CoversClass(Location::class)]
-final class LocationTest extends TestCase
+final class LocationTest
 {
-    public function testCurrent(): void
+    #[Test]
+    public function fromTrace(): void
     {
         $location = Location::fromTrace();
 
-        self::assertSame(__FILE__, $location->file);
-        self::assertSame(__LINE__ - 3, $location->line);
+        Assert::same($location->file, __FILE__);
+        Assert::same($location->line, __LINE__ - 3);
     }
 
-    public function testCaller(): void
-    {
-        (static function (): void {
-            $location = Location::caller();
-
-            self::assertSame(__FILE__, $location->file);
-            self::assertSame(__LINE__ + 1, $location->line);
-        })(); // the expected line
-    }
-
-    public function testFromTraceWithIndex(): void
+    #[Test]
+    public function fromTraceWithIndex(): void
     {
         $fn = static fn() => Location::fromTrace(1);
 
         $location = $fn();
 
-        self::assertSame(__FILE__, $location->file);
-        self::assertSame(__LINE__ - 3, $location->line);
+        Assert::same($location->file, __FILE__);
+        Assert::same($location->line, __LINE__ - 3);
     }
 
-    public function testCallerWithIndex(): void
+    #[Test]
+    public function caller(): void
+    {
+        (static function (): void {
+            $location = Location::caller();
+
+            Assert::same($location->file, __FILE__);
+            Assert::same($location->line, __LINE__ + 1);
+        })(); // the expected line
+    }
+
+    #[Test]
+    public function callerWithIndex(): void
     {
         $inner = static fn() => Location::caller(1);
         $outer = static fn() => $inner(); // the expected line
 
         $location = $outer();
 
-        self::assertSame(__FILE__, $location->file);
-        self::assertSame(__LINE__ - 3, $location->line);
+        Assert::same($location->file, __FILE__);
+        Assert::same($location->line, __LINE__ - 3);
     }
 
-    public function testEval(): void
+    #[Test]
+    public function eval(): void
     {
         $location = eval(
             // the expected line is below
@@ -61,23 +66,16 @@ final class LocationTest extends TestCase
                 PHP
         );
 
-        self::assertInstanceOf(Location::class, $location);
-        self::assertSame(__LINE__ - 8, $location->line);
-        self::assertSame(__FILE__, $location->file);
+        Assert::instanceOf($location, Location::class);
+        Assert::same($location->line, __LINE__ - 8);
+        Assert::same($location->file, __FILE__);
     }
 
-    public function testToString(): void
+    #[Test]
+    public function throwsOnInvalidIndex(): void
     {
-        $location = new Location('a', 2);
-
-        $string = (string) $location;
-
-        self::assertSame('a:2', $string);
-    }
-
-    public function testItThrowsOnInvalidIndex(): void
-    {
-        $this->expectExceptionObject(new \LogicException('Invalid trace index'));
+        Expect::exception(\OutOfRangeException::class)
+            ->withMessage('Invalid trace index');
 
         Location::fromTrace(1_000);
     }
