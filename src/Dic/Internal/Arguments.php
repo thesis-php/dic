@@ -95,9 +95,6 @@ final class Arguments
         $this->values = array_fill(0, \count($this->parameters), doNotAutowire);
     }
 
-    /**
-     * @param non-negative-int|non-empty-string $positionOrName
-     */
     public function set(int|string $positionOrName, mixed $value): void
     {
         if ($this->parameters === []) {

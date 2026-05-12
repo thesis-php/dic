@@ -52,9 +52,6 @@ abstract class ArgsConfigurator extends LifetimeConfigurator
         return $this;
     }
 
-    /**
-     * @param non-negative-int|non-empty-string $param
-     */
     final public function arg(int|string $param, mixed $arg): static
     {
         $this->ensureConfigurable();
@@ -69,7 +66,7 @@ abstract class ArgsConfigurator extends LifetimeConfigurator
     }
 
     /**
-     * @param array<non-negative-int|non-empty-string, mixed> $args
+     * @param array<mixed> $args
      */
     final public function args(array $args): static
     {
