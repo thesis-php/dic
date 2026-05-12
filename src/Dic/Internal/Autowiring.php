@@ -7,7 +7,6 @@ namespace Thesis\Dic\Internal;
 use Thesis\Dic\Exception\BindingTypeNotSupported;
 use Thesis\Dic\Ref;
 use Typhoon\Type;
-use function Thesis\Formatter\formatReflectedParameter;
 
 /**
  * @internal
@@ -33,21 +32,11 @@ final class Autowiring
     }
 
     /**
-     * @return Ref<mixed>
+     * @return ?Ref<mixed>
      */
-    public function autowire(\ReflectionParameter $parameter, string|\Stringable|\UnitEnum $qualifier): Ref
+    public function autowire(Type $type, string|\Stringable|\UnitEnum $qualifier): ?Ref
     {
-        $type = TypeReflector::parameterType($parameter)
-            ?? throw new \LogicException(\sprintf(
-                'Parameter `%s` does not have a type to be autowired',
-                formatReflectedParameter($parameter),
-            ));
-
-        return $this->bindings[self::key($type, $qualifier)]
-            ?? throw new \LogicException(\sprintf(
-                'No bound services match parameter `%s`',
-                formatReflectedParameter($parameter),
-            ));
+        return $this->bindings[self::key($type, $qualifier)] ?? null;
     }
 
     /**

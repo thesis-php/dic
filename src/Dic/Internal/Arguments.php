@@ -6,11 +6,13 @@ namespace Thesis\Dic\Internal;
 
 use Thesis\Dic\Autowire;
 use Thesis\Dic\DoNotAutowire;
+use Thesis\Dic\Internal\Factory\Closure;
 use Thesis\Dic\Internal\Factory\Value;
 use Thesis\Dic\Lifetime;
 use Thesis\Dic\Ref;
 use function Thesis\Formatter\formatClass;
 use function Thesis\Formatter\formatReflectedFunction;
+use function Thesis\Formatter\formatReflectedParameter;
 use const Thesis\Dic\autowire;
 use const Thesis\Dic\doNotAutowire;
 
@@ -143,7 +145,31 @@ final class Arguments
         }
 
         if ($value instanceof Autowire) {
-            $value = $autowiring->autowire($parameter, $value->qualifier);
+            $type = TypeReflector::parameterType($parameter);
+
+            if ($type === null) {
+                if ($parameter->isDefaultValueAvailable()) {
+                    return new Closure(static fn() => $parameter->getDefaultValue());
+                }
+
+                throw new \LogicException(\sprintf(
+                    'Required parameter `%s` does not have a type to be autowired',
+                    formatReflectedParameter($parameter),
+                ));
+            }
+
+            $value = $autowiring->autowire($type, $value->qualifier);
+
+            if ($value === null) {
+                if ($parameter->isDefaultValueAvailable()) {
+                    return new Closure(static fn() => $parameter->getDefaultValue());
+                }
+
+                throw new \LogicException(\sprintf(
+                    'No bound autowiring services match required parameter `%s`',
+                    formatReflectedParameter($parameter),
+                ));
+            }
         }
 
         self::validate($value, "\${$parameter->name}", $ref);
