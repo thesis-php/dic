@@ -43,6 +43,36 @@ final readonly class Dic
         return $containerBuilder->build()->get($ref);
     }
 
+    /**
+     * @template T
+     * @template R
+     * @param callable(self): Ref<T> $module
+     * @param callable(T): R $function
+     * @return R
+     */
+    public static function run(callable $module, callable $function): mixed
+    {
+        $containerBuilder = new ContainerBuilder();
+
+        $ref = $module(new self($containerBuilder));
+
+        $container = $containerBuilder->build();
+
+        $value = $container->get($ref);
+
+        try {
+            $result = $function($value);
+        } catch (\Throwable $error) {
+            $container->dispose($error);
+
+            throw $error;
+        }
+
+        $container->dispose();
+
+        return $result;
+    }
+
     private Autowiring $autowiring;
 
     private function __construct(
