@@ -25,8 +25,6 @@ final class ValueConfigurator extends Configurator
 
     /**
      * @internal
-     *
-     * @param T $value
      */
     public function __construct(
         private readonly mixed $value,
@@ -42,6 +40,7 @@ final class ValueConfigurator extends Configurator
 
     protected function createFactory(): Factory
     {
+        /** @var Factory<T> */
         return Value::from($this->value);
     }
 }

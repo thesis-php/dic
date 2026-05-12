@@ -63,11 +63,12 @@ final readonly class Dic
 
     /**
      * @template T
-     * @param T $value
+     * @param T|Ref<T> $value
      * @return ValueConfigurator<T>
      */
     public function value(mixed $value): ValueConfigurator
     {
+        /** @var ValueConfigurator<T> */
         return new ValueConfigurator(
             value: $value,
             declaredAt: Location::caller(),
