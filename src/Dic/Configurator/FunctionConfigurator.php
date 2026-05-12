@@ -17,7 +17,7 @@ use function Thesis\Formatter\formatReflectedFunction;
  * @api
  *
  * @template T
- * @extends ArgsConfigurator<\Closure(mixed...): T>
+ * @extends ArgsConfigurator<T>
  */
 final class FunctionConfigurator extends ArgsConfigurator
 {
@@ -26,7 +26,7 @@ final class FunctionConfigurator extends ArgsConfigurator
     /**
      * @internal
      *
-     * @param \Closure(): T $function
+     * @phpstan-ignore missingType.callable
      */
     public function __construct(
         private readonly \Closure $function,
@@ -49,6 +49,7 @@ final class FunctionConfigurator extends ArgsConfigurator
 
     protected function createFactoryWithArguments(ResolvedArguments $arguments): Factory
     {
+        /** @var Factory<T> */
         return Func::from(
             function: $this->function,
             arguments: $arguments,

@@ -107,12 +107,12 @@ final readonly class Dic
     }
 
     /**
-     * @template T
-     * @param callable(): T $function
-     * @return FunctionConfigurator<T>
+     * @return FunctionConfigurator<\Closure>
+     * @phpstan-ignore missingType.callable, missingType.callable
      */
     public function function(callable $function): FunctionConfigurator
     {
+        /** @var FunctionConfigurator<\Closure> */
         return new FunctionConfigurator(
             function: $function(...),
             declaredAt: Location::caller(),

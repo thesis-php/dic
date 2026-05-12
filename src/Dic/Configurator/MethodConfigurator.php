@@ -18,7 +18,7 @@ use function Thesis\Formatter\formatReflectedFunction;
  * @api
  *
  * @template T
- * @extends ArgsConfigurator<\Closure(mixed...): T>
+ * @extends ArgsConfigurator<T>
  */
 final class MethodConfigurator extends ArgsConfigurator
 {

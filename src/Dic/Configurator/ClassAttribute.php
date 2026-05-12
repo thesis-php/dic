@@ -6,11 +6,13 @@ namespace Thesis\Dic\Configurator;
 
 /**
  * @api
+ *
+ * @template T of object
  */
 interface ClassAttribute
 {
     /**
-     * @param ObjectConfigurator<object> $configurator
+     * @param ObjectConfigurator<T> $configurator
      */
     public function configure(ObjectConfigurator $configurator): void;
 }

@@ -15,7 +15,7 @@ use Thesis\Dic\Ref;
  * @internal
  *
  * @template-covariant T
- * @implements Factory<\Closure(mixed...): T>
+ * @implements Factory<T>
  */
 final readonly class Method implements Factory
 {
@@ -90,7 +90,7 @@ final readonly class Method implements Factory
         $__objFactory = static fn() => $container->get($object);
         $__argsFactory = static fn() => $factory->create($container);
 
-        /** @var \Closure(mixed...): T */
+        /** @var T */
         return eval("return {$this->code};");
     }
 }

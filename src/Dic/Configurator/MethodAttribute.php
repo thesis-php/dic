@@ -6,11 +6,13 @@ namespace Thesis\Dic\Configurator;
 
 /**
  * @api
+ *
+ * @template T
  */
 interface MethodAttribute
 {
     /**
-     * @param MethodConfigurator<mixed> $configurator
+     * @param MethodConfigurator<T> $configurator
      */
     public function configure(MethodConfigurator $configurator): void;
 }

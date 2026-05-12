@@ -14,19 +14,15 @@ use Thesis\Dic\Internal\ResolvedArguments;
  * @internal
  *
  * @template-covariant T
- * @implements Factory<\Closure(mixed...): T>
+ * @implements Factory<T>
  */
 final readonly class Func implements Factory
 {
     /**
-     * @template R
-     * @param \Closure(mixed...): R $function
-     * @return Factory<\Closure(mixed...): R>
+     * @phpstan-ignore missingType.callable
      */
-    public static function from(
-        \Closure $function,
-        ResolvedArguments $arguments,
-    ): Factory {
+    public static function from(\Closure $function, ResolvedArguments $arguments): Factory
+    {
         $parameters = [];
         $factories = [];
         $argumentVars = [];
@@ -75,8 +71,9 @@ final readonly class Func implements Factory
     }
 
     /**
-     * @param \Closure(): T $function
      * @param non-empty-string $code
+     *
+     * @phpstan-ignore missingType.callable
      */
     private function __construct(
         private \Closure $function,
@@ -91,7 +88,7 @@ final readonly class Func implements Factory
         $__func = $this->function;
         $__argsFactory = static fn() => $factory->create($container);
 
-        /** @var \Closure(mixed...): T */
+        /** @var T */
         return eval("return {$this->code};");
     }
 }
