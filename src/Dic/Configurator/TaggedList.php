@@ -9,6 +9,7 @@ use Thesis\Dic\Internal\Container;
 use Thesis\Dic\Internal\ContainerBuilder;
 use Thesis\Dic\Internal\Factory;
 use Thesis\Dic\Internal\Factory\Closure;
+use Thesis\Dic\Lifetime;
 use Thesis\Dic\Location;
 use Thesis\Dic\Ref;
 use Thesis\Dic\Tag;
@@ -65,6 +66,14 @@ final class TaggedList extends LifetimeConfigurator
     protected function createFactory(): Factory
     {
         $refs = $this->refs;
+
+        if ($this->lifetime === Lifetime::Singleton) {
+            foreach ($refs as $ref) {
+                if ($ref->lifetime === Lifetime::Scoped) {
+                    throw new \LogicException("Cannot inject scoped service {$ref} into singleton {$this}");
+                }
+            }
+        }
 
         return new Closure(static fn(Container $c) => array_map($c->get(...), $refs));
     }
