@@ -20,5 +20,5 @@ interface Container
 
     public function startScope(): Scope;
 
-    public function dispose(?\Throwable $error): void;
+    public function dispose(?\Throwable $error = null): void;
 }

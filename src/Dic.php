@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Thesis;
 
-use Thesis\Dic\Configurator\DisposerConfigurator;
+use Thesis\Dic\Configurator\DisposeConfigurator;
 use Thesis\Dic\Configurator\FactoryConfigurator;
 use Thesis\Dic\Configurator\FunctionConfigurator;
 use Thesis\Dic\Configurator\ObjectConfigurator;
@@ -155,9 +155,9 @@ final readonly class Dic
         );
     }
 
-    public function disposer(): DisposerConfigurator
+    public function dispose(): DisposeConfigurator
     {
-        return new DisposerConfigurator(
+        return new DisposeConfigurator(
             declaredAt: Location::caller(),
             autowiring: $this->autowiring,
             containerBuilder: $this->containerBuilder,

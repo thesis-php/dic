@@ -14,9 +14,9 @@ use Thesis\Dic\Location;
 /**
  * @api
  *
- * @extends LifetimeConfigurator<\Closure(?\Throwable): void>
+ * @extends LifetimeConfigurator<\Closure(?\Throwable=): void>
  */
-final class DisposerConfigurator extends LifetimeConfigurator
+final class DisposeConfigurator extends LifetimeConfigurator
 {
     /**
      * @internal
