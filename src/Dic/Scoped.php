@@ -45,7 +45,7 @@ final readonly class Scoped
             throw $error;
         }
 
-        $scope->dispose();
+        $scope->dispose(null);
 
         return $result;
     }

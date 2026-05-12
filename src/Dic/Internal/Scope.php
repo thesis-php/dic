@@ -50,7 +50,7 @@ final readonly class Scope implements Container
         );
     }
 
-    public function dispose(?\Throwable $error = null): void
+    public function dispose(?\Throwable $error): void
     {
         foreach ($this->scopeds as $ref => $value) {
             $this->disposers->dispose($ref, $value, $error);

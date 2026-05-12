@@ -50,7 +50,7 @@ final readonly class Root implements Container
         );
     }
 
-    public function dispose(?\Throwable $error = null): void
+    public function dispose(?\Throwable $error): void
     {
         foreach (clone $this->singletons as $ref => $value) {
             $this->disposers->dispose($ref, $value, $error);

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Thesis;
 
-use Thesis\Dic\Configurator\DisposeConfigurator;
 use Thesis\Dic\Configurator\FactoryConfigurator;
 use Thesis\Dic\Configurator\FunctionConfigurator;
 use Thesis\Dic\Configurator\ObjectConfigurator;
@@ -26,22 +25,6 @@ use Thesis\Dic\Tags;
 final readonly class Dic
 {
     use NonCopyable;
-
-    /**
-     * Assembles the container and resolves the ref returned by $module.
-     *
-     * @template T
-     * @param callable(self): Ref<T> $module
-     * @return T
-     */
-    public static function assemble(callable $module): mixed
-    {
-        $containerBuilder = new ContainerBuilder();
-
-        $ref = $module(new self($containerBuilder));
-
-        return $containerBuilder->build()->get($ref);
-    }
 
     /**
      * @template T
@@ -68,7 +51,7 @@ final readonly class Dic
             throw $error;
         }
 
-        $container->dispose();
+        $container->dispose(null);
 
         return $result;
     }
@@ -179,15 +162,6 @@ final readonly class Dic
         return new TaggedList(
             tag: $tag,
             sort: $sort,
-            declaredAt: Location::caller(),
-            autowiring: $this->autowiring,
-            containerBuilder: $this->containerBuilder,
-        );
-    }
-
-    public function dispose(): DisposeConfigurator
-    {
-        return new DisposeConfigurator(
             declaredAt: Location::caller(),
             autowiring: $this->autowiring,
             containerBuilder: $this->containerBuilder,

@@ -19,6 +19,4 @@ interface Container
     public function get(Ref $ref): mixed;
 
     public function startScope(): Scope;
-
-    public function dispose(?\Throwable $error = null): void;
 }
