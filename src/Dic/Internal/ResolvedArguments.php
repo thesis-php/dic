@@ -43,7 +43,7 @@ final readonly class ResolvedArguments
         }
 
         if ($argument->isDefaultValueAvailable()) {
-            return new Closure($argument->getDefaultValue(...));
+            return new Closure(static fn() => $argument->getDefaultValue());
         }
 
         throw new \LogicException(\sprintf(
