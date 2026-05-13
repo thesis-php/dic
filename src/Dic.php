@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Thesis;
 
-use Thesis\Dic\Configurator\FactoryConfigurator;
-use Thesis\Dic\Configurator\FunctionConfigurator;
+use Thesis\Dic\Autoconfigurator\CallableAutoconfigurator;
+use Thesis\Dic\Autoconfigurator\ObjectAutoconfigurator;
+use Thesis\Dic\Configurator\CallableConfigurator;
 use Thesis\Dic\Configurator\ObjectConfigurator;
 use Thesis\Dic\Configurator\ScopedConfigurator;
-use Thesis\Dic\Configurator\TaggedList;
+use Thesis\Dic\Configurator\TaggedListConfigurator;
 use Thesis\Dic\Configurator\ValueConfigurator;
+use Thesis\Dic\Internal\AttributeAutoconfigurator;
 use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\ContainerBuilder;
 use Thesis\Dic\Internal\NonCopyable;
@@ -36,6 +38,7 @@ final readonly class Dic
     public static function run(callable $module, callable $function): mixed
     {
         $containerBuilder = new ContainerBuilder();
+        $containerBuilder->addAutoconfigurator(new AttributeAutoconfigurator());
 
         $ref = $module(new self($containerBuilder));
 
@@ -91,21 +94,6 @@ final readonly class Dic
     }
 
     /**
-     * @template T
-     * @param callable(): T $function
-     * @return FactoryConfigurator<T>
-     */
-    public function factory(callable $function): FactoryConfigurator
-    {
-        return new FactoryConfigurator(
-            function: $function(...),
-            declaredAt: Location::caller(),
-            autowiring: $this->autowiring,
-            containerBuilder: $this->containerBuilder,
-        );
-    }
-
-    /**
      * @template T of object
      * @param class-string<T> $class
      * @return ObjectConfigurator<T>
@@ -121,14 +109,12 @@ final readonly class Dic
     }
 
     /**
-     * @return FunctionConfigurator<\Closure>
-     * @phpstan-ignore missingType.callable, missingType.callable
+     * @param callable|array{Ref<object>, string} $callable
      */
-    public function function(callable $function): FunctionConfigurator
+    public function callable(callable|array $callable): CallableConfigurator
     {
-        /** @var FunctionConfigurator<\Closure> */
-        return new FunctionConfigurator(
-            function: $function(...),
+        return new CallableConfigurator(
+            callable: $callable,
             declaredAt: Location::caller(),
             autowiring: $this->autowiring,
             containerBuilder: $this->containerBuilder,
@@ -155,11 +141,11 @@ final readonly class Dic
      * @template TTag of Tag<T>
      * @param class-string<TTag>|TTag $tag
      * @param ?callable(TaggedRef<T, TTag>, TaggedRef<T, TTag>): int $sort
-     * @return TaggedList<T, TTag>
+     * @return TaggedListConfigurator<T, TTag>
      */
-    public function taggedList(string|Tag $tag, ?callable $sort = null): TaggedList
+    public function taggedList(string|Tag $tag, ?callable $sort = null): TaggedListConfigurator
     {
-        return new TaggedList(
+        return new TaggedListConfigurator(
             tag: $tag,
             sort: $sort,
             declaredAt: Location::caller(),
@@ -174,5 +160,10 @@ final readonly class Dic
     public function onResolveTags(callable $handler): void
     {
         $this->containerBuilder->onResolveTags($handler);
+    }
+
+    public function addAutoconfigurator(CallableAutoconfigurator|ObjectAutoconfigurator $autoconfigurator): void
+    {
+        $this->containerBuilder->addAutoconfigurator($autoconfigurator);
     }
 }

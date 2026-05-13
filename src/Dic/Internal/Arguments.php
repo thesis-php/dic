@@ -14,7 +14,6 @@ use function Thesis\Formatter\formatClass;
 use function Thesis\Formatter\formatReflectedFunction;
 use function Thesis\Formatter\formatReflectedParameter;
 use const Thesis\Dic\autowire;
-use const Thesis\Dic\doNotAutowire;
 
 /**
  * @internal
@@ -22,7 +21,7 @@ use const Thesis\Dic\doNotAutowire;
 final class Arguments
 {
     /**
-     * @param array<non-negative-int|non-empty-string, mixed> $values
+     * @param array<mixed> $values
      */
     public static function forFunction(\ReflectionFunctionAbstract $function, array $values = []): self
     {
@@ -44,15 +43,6 @@ final class Arguments
         return $args;
     }
 
-    private static function firstAttribute(\ReflectionFunctionAbstract|\ReflectionParameter $reflection): null|Autowire|DoNotAutowire
-    {
-        $attribute = $reflection->getAttributes(Autowire::class)[0]
-            ?? $reflection->getAttributes(DoNotAutowire::class)[0]
-            ?? null;
-
-        return $attribute?->newInstance();
-    }
-
     /**
      * @param class-string $class
      */
@@ -62,6 +52,15 @@ final class Arguments
             functionName: \sprintf('%s::__construct()', formatClass($class)),
             parameters: [],
         );
+    }
+
+    private static function firstAttribute(\ReflectionFunctionAbstract|\ReflectionParameter $reflection): null|Autowire|DoNotAutowire
+    {
+        $attribute = $reflection->getAttributes(Autowire::class)[0]
+            ?? $reflection->getAttributes(DoNotAutowire::class)[0]
+            ?? null;
+
+        return $attribute?->newInstance();
     }
 
     /**
@@ -75,7 +74,6 @@ final class Arguments
     private array $values = [];
 
     /**
-     * @param non-empty-string $functionName
      * @param list<\ReflectionParameter> $parameters
      */
     private function __construct(
@@ -83,16 +81,6 @@ final class Arguments
         private readonly array $parameters,
     ) {
         $this->positionsByName = array_flip(array_column($parameters, 'name'));
-    }
-
-    public function autowire(string|\Stringable|\UnitEnum $qualifier): void
-    {
-        $this->values = array_fill(0, \count($this->parameters), new Autowire($qualifier));
-    }
-
-    public function doNotAutowire(): void
-    {
-        $this->values = array_fill(0, \count($this->parameters), doNotAutowire);
     }
 
     public function set(int|string $positionOrName, mixed $value): void
@@ -115,6 +103,11 @@ final class Arguments
             ?? throw new \LogicException("{$this->functionName} has no parameter \${$positionOrName}");
 
         $this->values[$position] = $value;
+    }
+
+    public function fill(mixed $value): void
+    {
+        $this->values = array_fill(0, \count($this->parameters), $value);
     }
 
     /**

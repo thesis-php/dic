@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Internal;
 
+use Thesis\Dic\Autoconfigurator\CallableAutoconfigurator;
+use Thesis\Dic\Autoconfigurator\ObjectAutoconfigurator;
 use Thesis\Dic\Ref;
 use Thesis\Dic\Tag;
 use Thesis\Dic\TaggedRef;
@@ -19,24 +21,32 @@ final class ContainerBuilder
      */
     private array $taggedRefs = [];
 
+    private readonly Factories $factories;
+
+    private readonly Disposers $disposers;
+
+    private readonly Autoconfigurators $autoconfigurators;
+
+    /**
+     * @var list<callable(CallableAutoconfigurator&ObjectAutoconfigurator): void>
+     */
+    private array $autoconfigurationListeners = [];
+
     /**
      * @var list<callable(Tags): void>
      */
     private array $resolveTagsListeners = [];
 
     /**
-     * @var list<callable(): void>
+     * @var list<callable(Factories): void>
      */
     private array $registrationListeners = [];
-
-    private readonly Factories $factories;
-
-    private readonly Disposers $disposers;
 
     public function __construct()
     {
         $this->factories = new Factories();
         $this->disposers = new Disposers();
+        $this->autoconfigurators = new Autoconfigurators();
     }
 
     /**
@@ -50,32 +60,6 @@ final class ContainerBuilder
     }
 
     /**
-     * @param callable(Tags): void $listener
-     */
-    public function onResolveTags(callable $listener): void
-    {
-        $this->resolveTagsListeners[] = $listener;
-    }
-
-    /**
-     * @template T
-     * @param Ref<T> $ref
-     * @param Factory<T> $factory
-     */
-    public function registerFactory(Ref $ref, Factory $factory): void
-    {
-        $this->factories->register($ref, $factory);
-    }
-
-    /**
-     * @param callable(): void $listener
-     */
-    public function onRegistration(callable $listener): void
-    {
-        $this->registrationListeners[] = $listener;
-    }
-
-    /**
      * @template T
      * @param Ref<T> $ref
      * @param callable(T, ?\Throwable): void $disposer
@@ -85,8 +69,41 @@ final class ContainerBuilder
         $this->disposers->add($ref, $disposer);
     }
 
+    public function addAutoconfigurator(CallableAutoconfigurator|ObjectAutoconfigurator $autoconfigurator): void
+    {
+        $this->autoconfigurators->add($autoconfigurator);
+    }
+
+    /**
+     * @param callable(CallableAutoconfigurator&ObjectAutoconfigurator): void $listener
+     */
+    public function onAutoconfiguration(callable $listener): void
+    {
+        $this->autoconfigurationListeners[] = $listener;
+    }
+
+    /**
+     * @param callable(Tags): void $listener
+     */
+    public function onResolveTags(callable $listener): void
+    {
+        $this->resolveTagsListeners[] = $listener;
+    }
+
+    /**
+     * @param callable(Factories): void $listener
+     */
+    public function onRegistration(callable $listener): void
+    {
+        $this->registrationListeners[] = $listener;
+    }
+
     public function build(): Root
     {
+        while (null !== $listener = array_shift($this->autoconfigurationListeners)) {
+            $listener($this->autoconfigurators);
+        }
+
         $tags = new Tags($this->taggedRefs);
 
         while (null !== $listener = array_shift($this->resolveTagsListeners)) {
@@ -94,7 +111,7 @@ final class ContainerBuilder
         }
 
         while (null !== $listener = array_shift($this->registrationListeners)) {
-            $listener();
+            $listener($this->factories);
         }
 
         return new Root(

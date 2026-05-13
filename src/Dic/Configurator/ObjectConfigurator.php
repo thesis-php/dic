@@ -4,42 +4,53 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Configurator;
 
+use Thesis\Dic\Autoconfigurator\CallableAutoconfigurator;
+use Thesis\Dic\Autoconfigurator\ObjectAutoconfigurator;
 use Thesis\Dic\Internal\Arguments;
 use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\ContainerBuilder;
 use Thesis\Dic\Internal\Factory;
-use Thesis\Dic\Internal\Factory\CallAfter;
-use Thesis\Dic\Internal\Factory\ChainCallAfter;
 use Thesis\Dic\Internal\Factory\Constructor;
-use Thesis\Dic\Internal\Factory\LazyObject;
-use Thesis\Dic\Internal\ResolvedArguments;
+use Thesis\Dic\Internal\Factory\ObjectCall;
+use Thesis\Dic\Internal\Factory\ObjectChainCall;
 use Thesis\Dic\Location;
+use Thesis\Dic\Ref;
 use function Thesis\Formatter\formatClass;
 
 /**
  * @api
  *
- * @template T of object
- * @extends ArgsConfigurator<T>
+ * @template T of object = object
+ * @extends Ref<T>
  */
-final class ObjectConfigurator extends ArgsConfigurator
+final class ObjectConfigurator extends Ref
 {
+    use Internal\Lifetime;
+    use Internal\Lazy;
+    use Internal\Args;
+    use Internal\Calls;
+    use Internal\Autoconfigure;
+
+    /** @use Internal\Bind<T> */
+    use Internal\Bind;
+
+    /** @use Internal\Tag<T> */
+    use Internal\Tag;
+
+    /** @use Internal\Disposer<T> */
+    use Internal\Disposer;
+
     /**
      * @var \ReflectionClass<T>
      */
     public readonly \ReflectionClass $reflection;
 
-    private bool $lazy = false;
+    private readonly Arguments $arguments;
 
     /**
-     * @var array<non-empty-string, \WeakReference<MethodConfigurator<mixed>>>
+     * @var array<string, CallableConfigurator>
      */
     private array $methods = [];
-
-    /**
-     * @var list<Internal\ObjectCall>
-     */
-    private array $calls = [];
 
     /**
      * @internal
@@ -49,8 +60,8 @@ final class ObjectConfigurator extends ArgsConfigurator
     public function __construct(
         string $class,
         Location $declaredAt,
-        protected readonly Autowiring $autowiring,
-        protected readonly ContainerBuilder $containerBuilder,
+        Autowiring $autowiring,
+        ContainerBuilder $containerBuilder,
     ) {
         $this->reflection = new \ReflectionClass($class);
 
@@ -58,157 +69,92 @@ final class ObjectConfigurator extends ArgsConfigurator
             throw new \LogicException(\sprintf('Class `%s` is not instantiable', $class));
         }
 
-        $constructor = $this->reflection->getConstructor();
-
         parent::__construct(
             label: formatClass($class),
             declaredAt: $declaredAt,
-            arguments: $constructor === null
-                ? Arguments::forClassWithoutConstructor($class)
-                : Arguments::forFunction($constructor),
+            autowiring: $autowiring,
+            containerBuilder: $containerBuilder,
         );
 
-        foreach ($this->reflection->getAttributes(ClassAttribute::class, \ReflectionAttribute::IS_INSTANCEOF) as $attribute) {
-            $attribute->newInstance()->configure($this);
-        }
+        $constructor = $this->reflection->getConstructor();
 
-        foreach ($this->reflection->getMethods() as $method) {
-            if ($method->getAttributes(MethodAttribute::class, \ReflectionAttribute::IS_INSTANCEOF) !== []) {
-                $this->methods[$method->name] = \WeakReference::create(new MethodConfigurator(
-                    object: $this,
-                    reflection: $method,
-                    declaredAt: $declaredAt,
-                    autowiring: $this->autowiring,
-                    containerBuilder: $this->containerBuilder,
-                ));
+        $this->arguments = $constructor === null
+            ? Arguments::forClassWithoutConstructor($class)
+            : Arguments::forFunction($constructor);
+
+        $containerBuilder->onAutoconfiguration(function (CallableAutoconfigurator&ObjectAutoconfigurator $autoconfigurator): void {
+            if (!$this->autoconfigure) {
+                return;
             }
-        }
+
+            if ($autoconfigurator->supportsObject($this->reflection)) {
+                $autoconfigurator->autoconfigureObject($this);
+            }
+
+            foreach ($this->reflection->getMethods(\ReflectionMethod::IS_PUBLIC) as $methodReflection) {
+                if ($autoconfigurator->supportsCallable($methodReflection)) {
+                    // this ensures that method is autoconfigured
+                    $this->method($methodReflection->name);
+                }
+            }
+        });
+
+        $containerBuilder->onRegistration(function (): void {
+            $this->calls = [];
+            $this->methods = [];
+        });
     }
 
-    public function eager(): static
+    public function method(string $name): CallableConfigurator
     {
-        $this->ensureConfigurable();
-
-        $this->lazy = false;
-
-        return $this;
-    }
-
-    public function lazy(): static
-    {
-        $this->ensureConfigurable();
-
-        $this->lazy = true;
-
-        return $this;
-    }
-
-    /**
-     * @param non-empty-string $method
-     * @param array<non-negative-int|non-empty-string, mixed> $args
-     */
-    public function call(string $method, array $args = []): static
-    {
-        $this->ensureConfigurable();
-
-        $this->calls[] = new Internal\ObjectCall(
-            method: $method,
-            arguments: Arguments::forFunction($this->reflection->getMethod($method), $args),
-        );
-
-        return $this;
-    }
-
-    /**
-     * @param non-empty-string $method
-     * @param array<non-negative-int|non-empty-string, mixed> $args
-     */
-    public function chainCall(string $method, array $args = []): static
-    {
-        $this->ensureConfigurable();
-
-        $this->calls[] = new Internal\ObjectCall(
-            method: $method,
-            arguments: Arguments::forFunction($this->reflection->getMethod($method), $args),
-            chain: true,
-        );
-
-        return $this;
-    }
-
-    /**
-     * @param non-empty-string $name
-     * @return MethodFactoryConfigurator<mixed>
-     */
-    public function methodAsFactory(string $name): MethodFactoryConfigurator
-    {
-        $this->ensureConfigurable();
-
-        return new MethodFactoryConfigurator(
-            object: $this,
-            reflection: $this->reflection->getMethod($name),
+        return $this->methods[$name] ??= new CallableConfigurator(
+            callable: [$this, $name],
             declaredAt: Location::caller(),
             autowiring: $this->autowiring,
             containerBuilder: $this->containerBuilder,
         );
     }
 
-    /**
-     * @param non-empty-string $name
-     * @return MethodConfigurator<mixed>
-     */
-    public function method(string $name): MethodConfigurator
+    protected function createFactory(): Factory
     {
-        $this->ensureConfigurable();
-
-        $method = ($this->methods[$name] ?? null)?->get();
-
-        if ($method !== null) {
-            return $method;
-        }
-
-        $method = new MethodConfigurator(
-            object: $this,
-            reflection: $this->reflection->getMethod($name),
-            declaredAt: Location::caller(),
-            autowiring: $this->autowiring,
-            containerBuilder: $this->containerBuilder,
+        $factory = new Constructor(
+            class: $this->reflection->name,
+            arguments: $this->buildArguments($this->arguments),
         );
-
-        $this->methods[$name] = \WeakReference::create($method);
-
-        return $method;
-    }
-
-    protected function createFactoryWithArguments(ResolvedArguments $arguments): Factory
-    {
-        $factory = new Constructor($this->reflection->name, $arguments->toFactory());
 
         foreach ($this->calls as $call) {
-            $arguments = $call
-                ->arguments
-                ->resolve($this, $this->autowiring)
-                ->toFactory();
-
             if ($call->chain) {
-                $factory = new ChainCallAfter(
+                $factory = new ObjectChainCall(
                     factory: $factory,
                     method: $call->method,
-                    arguments: $arguments,
+                    arguments: $this->buildArguments($call->arguments),
                 );
             } else {
-                $factory = new CallAfter(
+                $factory = new ObjectCall(
                     factory: $factory,
                     method: $call->method,
-                    arguments: $arguments,
+                    arguments: $this->buildArguments($call->arguments),
                 );
             }
         }
 
         if ($this->lazy) {
-            $factory = new LazyObject($this->reflection, $factory);
+            $factory = new Factory\LazyObject(
+                reflection: $this->reflection,
+                factory: $factory,
+            );
         }
 
         return $factory;
+    }
+
+    /**
+     * @return Factory<list<mixed>>
+     */
+    private function buildArguments(Arguments $arguments): Factory
+    {
+        return $arguments
+            ->resolve($this, $this->autowiring)
+            ->toFactory();
     }
 }

@@ -21,10 +21,23 @@ use Thesis\Dic\Tags;
  *
  * @template T
  * @template TTag of Tag<T>
- * @extends LifetimeConfigurator<list<T>>
+ * @extends Ref<list<T>>
  */
-final class TaggedList extends LifetimeConfigurator
+final class TaggedListConfigurator extends Ref
 {
+    use Internal\Lifetime;
+
+    /** @use Internal\Bind<list<T>> */
+    use Internal\Bind;
+
+    /** @use Internal\Tag<list<T>> */
+    use Internal\Tag;
+
+    /** @use Internal\Disposer<list<T>> */
+    use Internal\Disposer;
+
+    protected null $reflection { get => null; }
+
     /**
      * @var list<Ref<T>>
      */
@@ -40,8 +53,8 @@ final class TaggedList extends LifetimeConfigurator
         string|Tag $tag,
         ?callable $sort,
         Location $declaredAt,
-        protected readonly Autowiring $autowiring,
-        protected readonly ContainerBuilder $containerBuilder,
+        Autowiring $autowiring,
+        ContainerBuilder $containerBuilder,
     ) {
         $containerBuilder->onResolveTags(function (Tags $tags) use ($tag, $sort): void {
             $taggedRefs = $tags->find($tag);
@@ -60,6 +73,8 @@ final class TaggedList extends LifetimeConfigurator
                 default => $tag::class,
             },
             declaredAt: $declaredAt,
+            autowiring: $autowiring,
+            containerBuilder: $containerBuilder,
         );
     }
 

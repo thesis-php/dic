@@ -13,7 +13,7 @@ use Thesis\Dic\Internal\Factory;
  * @template-covariant T of object
  * @implements Factory<T>
  */
-final readonly class ChainCallAfter implements Factory
+final readonly class ObjectCall implements Factory
 {
     /**
      * @param Factory<T> $factory
@@ -28,8 +28,11 @@ final readonly class ChainCallAfter implements Factory
 
     public function create(Container $container): mixed
     {
-        /** @phpstan-ignore method.dynamicName, return.type */
-        return $this->factory->create($container)
-            ->{$this->method}(...$this->arguments->create($container));
+        $object = $this->factory->create($container);
+
+        /** @phpstan-ignore method.dynamicName */
+        $object->{$this->method}(...$this->arguments->create($container));
+
+        return $object;
     }
 }

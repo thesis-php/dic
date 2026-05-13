@@ -5,15 +5,12 @@ declare(strict_types=1);
 namespace Thesis\Dic\Configurator\Internal;
 
 use Thesis\Dic\Internal\Arguments;
-use Thesis\Dic\Internal\NonCopyable;
 
 /**
  * @internal
  */
-final readonly class ObjectCall
+final readonly class Call
 {
-    use NonCopyable;
-
     /**
      * @param non-empty-string $method
      */

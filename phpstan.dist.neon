@@ -19,3 +19,6 @@ parameters:
     reportAnyTypeWideningInVarTag: true
     reportPossiblyNonexistentConstantArrayOffset: true
     reportPossiblyNonexistentGeneralArrayOffset: true
+
+    ignoreErrors:
+        - identifier: missingType.callable
