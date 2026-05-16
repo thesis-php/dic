@@ -48,11 +48,6 @@ final class ObjectConfigurator extends Ref
     private readonly Arguments $arguments;
 
     /**
-     * @var array<string, CallableConfigurator>
-     */
-    private array $methods = [];
-
-    /**
      * @internal
      *
      * @param class-string<T> $class
@@ -90,29 +85,11 @@ final class ObjectConfigurator extends Ref
             if ($autoconfigurator->supportsObject($this->reflection)) {
                 $autoconfigurator->autoconfigureObject($this);
             }
-
-            foreach ($this->reflection->getMethods(\ReflectionMethod::IS_PUBLIC) as $methodReflection) {
-                if ($autoconfigurator->supportsCallable($methodReflection)) {
-                    // this ensures that method is autoconfigured
-                    $this->method($methodReflection->name);
-                }
-            }
         });
 
         $containerBuilder->onRegistration(function (): void {
             $this->calls = [];
-            $this->methods = [];
         });
-    }
-
-    public function method(string $name): CallableConfigurator
-    {
-        return $this->methods[$name] ??= new CallableConfigurator(
-            callable: [$this, $name],
-            declaredAt: Location::caller(),
-            autowiring: $this->autowiring,
-            containerBuilder: $this->containerBuilder,
-        );
     }
 
     protected function createFactory(): Factory
@@ -153,8 +130,6 @@ final class ObjectConfigurator extends Ref
      */
     private function buildArguments(Arguments $arguments): Factory
     {
-        return $arguments
-            ->resolve($this, $this->autowiring)
-            ->toFactory();
+        return $arguments->resolve($this, $this->autowiring);
     }
 }

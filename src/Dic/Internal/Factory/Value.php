@@ -48,8 +48,13 @@ final readonly class Value implements Factory
      * @param T $value
      */
     private function __construct(
-        public mixed $value,
+        private mixed $value,
     ) {}
+
+    public function dependencies(): iterable
+    {
+        return [];
+    }
 
     public function create(Container $container): mixed
     {

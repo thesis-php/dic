@@ -26,6 +26,12 @@ final readonly class ObjectCall implements Factory
         private Factory $arguments,
     ) {}
 
+    public function dependencies(): iterable
+    {
+        yield from $this->factory->dependencies();
+        yield from $this->arguments->dependencies();
+    }
+
     public function create(Container $container): mixed
     {
         $object = $this->factory->create($container);

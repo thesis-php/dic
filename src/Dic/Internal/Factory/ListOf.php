@@ -21,6 +21,15 @@ final readonly class ListOf implements Factory
         private array $factories,
     ) {}
 
+    public function dependencies(): iterable
+    {
+        foreach ($this->factories as $index => $factory) {
+            foreach ($factory->dependencies() as $path => $ref) {
+                yield "\${$index}{$path}" => $ref;
+            }
+        }
+    }
+
     public function create(Container $container): array
     {
         return array_map(

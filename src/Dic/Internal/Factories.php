@@ -23,6 +23,14 @@ final readonly class Factories
     }
 
     /**
+     * @param Ref<*> $ref
+     */
+    public function has(Ref $ref): bool
+    {
+        return $this->factories->offsetExists($ref);
+    }
+
+    /**
      * @template T
      * @param Ref<T> $ref
      * @param Factory<T> $factory

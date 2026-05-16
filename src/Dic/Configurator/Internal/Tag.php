@@ -21,7 +21,7 @@ trait Tag
     {
         $this->ensureConfigurable();
 
-        $this->containerBuilder->tag($this, $tag);
+        $this->containerBuilder->addTag($this, $tag);
 
         return $this;
     }

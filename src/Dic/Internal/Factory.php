@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Internal;
 
+use Thesis\Dic\Ref;
+
 /**
  * @internal
  *
@@ -11,6 +13,11 @@ namespace Thesis\Dic\Internal;
  */
 interface Factory
 {
+    /**
+     * @return iterable<string, Ref<*>>
+     */
+    public function dependencies(): iterable;
+
     /**
      * @return T
      */

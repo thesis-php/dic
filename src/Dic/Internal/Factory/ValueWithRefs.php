@@ -20,6 +20,29 @@ final readonly class ValueWithRefs implements Factory
         private mixed $value,
     ) {}
 
+    public function dependencies(): iterable
+    {
+        return self::findDependencies('', $this->value);
+    }
+
+    /**
+     * @return \Generator<string, Ref<*>>
+     */
+    private static function findDependencies(string $pathPrefix, mixed $value): \Generator
+    {
+        if ($value instanceof Ref) {
+            yield $pathPrefix => $value;
+
+            return;
+        }
+
+        if (\is_array($value)) {
+            foreach ($value as $key => $item) {
+                yield from self::findDependencies("{$pathPrefix}[{$key}]", $item);
+            }
+        }
+    }
+
     public function create(Container $container): mixed
     {
         return self::resolve($this->value, $container);

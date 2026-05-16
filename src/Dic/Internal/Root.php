@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Internal;
 
-use Thesis\Dic\Lifetime;
 use Thesis\Dic\Ref;
 
 /**
@@ -18,7 +17,8 @@ final readonly class Root implements Container
     private \WeakMap $singletons;
 
     public function __construct(
-        private Factories $factories,
+        private Factories $singletonFactories,
+        private Factories $scopedFactories,
         private Disposers $disposers,
     ) {
         $this->singletons = new \WeakMap();
@@ -26,16 +26,12 @@ final readonly class Root implements Container
 
     public function get(Ref $ref): mixed
     {
-        if ($ref->lifetime !== Lifetime::Singleton) {
-            throw new \LogicException("{$ref->lifetime->name} service {$ref} must not be requested from the root container");
-        }
-
         try {
             return $this->singletons->offsetGet($ref);
         } catch (\Error) {
-            $value = $this->factories->create($ref, $this);
+            $value = $this->singletonFactories->create($ref, $this);
             $this->singletons->offsetSet($ref, $value);
-            $this->factories->remove($ref);
+            $this->singletonFactories->remove($ref);
 
             return $value;
         }
@@ -45,7 +41,7 @@ final readonly class Root implements Container
     {
         return new Scope(
             root: $this,
-            factories: $this->factories,
+            factories: $this->scopedFactories,
             disposers: $this->disposers,
         );
     }

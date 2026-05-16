@@ -26,6 +26,12 @@ final readonly class ObjectChainCall implements Factory
         private Factory $arguments,
     ) {}
 
+    public function dependencies(): iterable
+    {
+        yield from $this->factory->dependencies();
+        yield from $this->arguments->dependencies();
+    }
+
     public function create(Container $container): mixed
     {
         /** @phpstan-ignore method.dynamicName, return.type */

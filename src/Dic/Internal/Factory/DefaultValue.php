@@ -9,21 +9,20 @@ use Thesis\Dic\Internal\Factory;
 
 /**
  * @internal
- *
- * @template-covariant T
- * @implements Factory<T>
  */
-final readonly class Closure implements Factory
+final readonly class DefaultValue implements Factory
 {
-    /**
-     * @param \Closure(Container): T $factory
-     */
     public function __construct(
-        private \Closure $factory,
+        private \ReflectionParameter $parameter,
     ) {}
+
+    public function dependencies(): iterable
+    {
+        return [];
+    }
 
     public function create(Container $container): mixed
     {
-        return ($this->factory)($container);
+        return $this->parameter->getDefaultValue();
     }
 }

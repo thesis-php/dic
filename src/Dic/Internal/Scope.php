@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Internal;
 
-use Thesis\Dic\Lifetime;
 use Thesis\Dic\Ref;
 
 /**
@@ -27,7 +26,7 @@ final readonly class Scope implements Container
 
     public function get(Ref $ref): mixed
     {
-        if ($ref->lifetime === Lifetime::Singleton) {
+        if (!$this->factories->has($ref)) {
             return $this->root->get($ref);
         }
 

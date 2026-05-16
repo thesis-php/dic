@@ -21,7 +21,9 @@ final class ContainerBuilder
      */
     private array $taggedRefs = [];
 
-    private readonly Factories $factories;
+    private readonly Factories $singletonFactories;
+
+    private readonly Factories $scopedFactories;
 
     private readonly Disposers $disposers;
 
@@ -38,13 +40,14 @@ final class ContainerBuilder
     private array $resolveTagsListeners = [];
 
     /**
-     * @var list<callable(Factories): void>
+     * @var list<callable(): void>
      */
     private array $registrationListeners = [];
 
     public function __construct()
     {
-        $this->factories = new Factories();
+        $this->singletonFactories = new Factories();
+        $this->scopedFactories = new Factories();
         $this->disposers = new Disposers();
         $this->autoconfigurators = new Autoconfigurators();
     }
@@ -54,7 +57,7 @@ final class ContainerBuilder
      * @param Ref<T> $ref
      * @param Tag<T> $tag
      */
-    public function tag(Ref $ref, Tag $tag): void
+    public function addTag(Ref $ref, Tag $tag): void
     {
         $this->taggedRefs[] = new TaggedRef($ref, $tag);
     }
@@ -75,6 +78,19 @@ final class ContainerBuilder
     }
 
     /**
+     * @template T
+     * @param Ref<T> $ref
+     * @param Factory<T> $factory
+     */
+    public function addFactory(Ref $ref, Lifetime $lifetime, Factory $factory): void
+    {
+        match ($lifetime) {
+            Lifetime::Scoped => $this->scopedFactories->register($ref, $factory),
+            Lifetime::Singleton => $this->singletonFactories->register($ref, $factory),
+        };
+    }
+
+    /**
      * @param callable(CallableAutoconfigurator&ObjectAutoconfigurator): void $listener
      */
     public function onAutoconfiguration(callable $listener): void
@@ -91,7 +107,7 @@ final class ContainerBuilder
     }
 
     /**
-     * @param callable(Factories): void $listener
+     * @param callable(): void $listener
      */
     public function onRegistration(callable $listener): void
     {
@@ -111,11 +127,12 @@ final class ContainerBuilder
         }
 
         while (null !== $listener = array_shift($this->registrationListeners)) {
-            $listener($this->factories);
+            $listener();
         }
 
         return new Root(
-            factories: $this->factories,
+            singletonFactories: $this->singletonFactories,
+            scopedFactories: $this->scopedFactories,
             disposers: $this->disposers,
         );
     }

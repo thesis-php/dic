@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace Thesis\Dic\Configurator;
 
 use Thesis\Dic\Internal\Autowiring;
-use Thesis\Dic\Internal\Container;
 use Thesis\Dic\Internal\ContainerBuilder;
 use Thesis\Dic\Internal\Factory;
-use Thesis\Dic\Internal\Factory\Closure;
-use Thesis\Dic\Lifetime;
+use Thesis\Dic\Internal\Lifetime;
 use Thesis\Dic\Location;
 use Thesis\Dic\Ref;
 use Thesis\Dic\Scoped;
@@ -31,45 +29,28 @@ final class ScopedConfigurator extends Ref
     /** @use Internal\Disposer<Scoped<T>> */
     use Internal\Disposer;
 
-    public Lifetime $lifetime { get => Lifetime::Singleton; }
-
-    /**
-     * @var \ReflectionClass<Scoped<*>>
-     * @phpstan-ignore return.type
-     */
-    protected \ReflectionClass $reflection { get => new \ReflectionClass(Scoped::class); }
-
     /**
      * @internal
      *
-     * @param Ref<T> $target
+     * @param Ref<T> $ref
      */
     public function __construct(
-        private readonly Ref $target,
+        private readonly Ref $ref,
         Location $declaredAt,
         Autowiring $autowiring,
         ContainerBuilder $containerBuilder,
     ) {
         parent::__construct(
-            label: "scoped {$target}",
+            label: "scoped {$ref}",
             declaredAt: $declaredAt,
             autowiring: $autowiring,
             containerBuilder: $containerBuilder,
+            lifetime: Lifetime::Singleton,
         );
     }
 
     protected function createFactory(): Factory
     {
-        $ref = $this->target;
-
-        if ($this->target->lifetime !== Lifetime::Scoped) {
-            throw new \LogicException(\sprintf(
-                'Cannot wrap in Scoped a %s service %s',
-                strtolower($ref->lifetime->name),
-                $ref,
-            ));
-        }
-
-        return new Closure(static fn(Container $c) => new Scoped($ref, $c));
+        return new Factory\Scoped($this->ref);
     }
 }

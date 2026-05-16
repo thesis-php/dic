@@ -6,9 +6,9 @@ namespace Thesis\Dic\Internal;
 
 use Thesis\Dic\Autowire;
 use Thesis\Dic\DoNotAutowire;
-use Thesis\Dic\Internal\Factory\Closure;
+use Thesis\Dic\Internal\Factory\DefaultValue;
+use Thesis\Dic\Internal\Factory\ListOf;
 use Thesis\Dic\Internal\Factory\Value;
-use Thesis\Dic\Lifetime;
 use Thesis\Dic\Ref;
 use function Thesis\Formatter\formatClass;
 use function Thesis\Formatter\formatReflectedFunction;
@@ -25,22 +25,22 @@ final class Arguments
      */
     public static function forFunction(\ReflectionFunctionAbstract $function, array $values = []): self
     {
-        $args = new self(
+        $arguments = new self(
             functionName: formatReflectedFunction($function),
             parameters: $function->getParameters(),
         );
 
-        $default = self::firstAttribute($function) ?? autowire;
+        $default = self::attribute($function) ?? autowire;
 
         foreach ($function->getParameters() as $position => $parameter) {
-            $args->values[$position] = self::firstAttribute($parameter) ?? $default;
+            $arguments->values[$position] = self::attribute($parameter) ?? $default;
         }
 
         foreach ($values as $positionOrName => $value) {
-            $args->set($positionOrName, $value);
+            $arguments->set($positionOrName, $value);
         }
 
-        return $args;
+        return $arguments;
     }
 
     /**
@@ -54,7 +54,7 @@ final class Arguments
         );
     }
 
-    private static function firstAttribute(\ReflectionFunctionAbstract|\ReflectionParameter $reflection): null|Autowire|DoNotAutowire
+    private static function attribute(\ReflectionFunctionAbstract|\ReflectionParameter $reflection): null|Autowire|DoNotAutowire
     {
         $attribute = $reflection->getAttributes(Autowire::class)[0]
             ?? $reflection->getAttributes(DoNotAutowire::class)[0]
@@ -83,24 +83,24 @@ final class Arguments
         $this->positionsByName = array_flip(array_column($parameters, 'name'));
     }
 
-    public function set(int|string $positionOrName, mixed $value): void
+    public function set(int|string $parameter, mixed $value): void
     {
         if ($this->parameters === []) {
             throw new \LogicException("{$this->functionName} has no parameters");
         }
 
-        if (\is_int($positionOrName)) {
-            if (!isset($this->parameters[$positionOrName])) {
-                throw new \LogicException("{$this->functionName} has no parameter #{$positionOrName}");
+        if (\is_int($parameter)) {
+            if (!isset($this->parameters[$parameter])) {
+                throw new \LogicException("{$this->functionName} has no parameter #{$parameter}");
             }
 
-            $this->values[$positionOrName] = $value;
+            $this->values[$parameter] = $value;
 
             return;
         }
 
-        $position = $this->positionsByName[$positionOrName]
-            ?? throw new \LogicException("{$this->functionName} has no parameter \${$positionOrName}");
+        $position = $this->positionsByName[$parameter]
+            ?? throw new \LogicException("{$this->functionName} has no parameter \${$parameter}");
 
         $this->values[$position] = $value;
     }
@@ -112,26 +112,32 @@ final class Arguments
 
     /**
      * @param Ref<*> $ref
+     * @return Factory<list<mixed>>
      */
-    public function resolve(Ref $ref, Autowiring $autowiring): ResolvedArguments
+    public function resolve(Ref $ref, Autowiring $autowiring): Factory
     {
-        return new ResolvedArguments(
-            list: array_map(
-                fn(\ReflectionParameter $p) => $this->resolveArgument($p, $ref, $autowiring),
-                $this->parameters,
-            ),
-        );
+        return new ListOf(array_map(
+            fn(\ReflectionParameter $p) => $this->resolveArgument($p, $ref, $autowiring),
+            $this->parameters,
+        ));
     }
 
     /**
      * @param Ref<*> $ref
      */
-    private function resolveArgument(\ReflectionParameter $parameter, Ref $ref, Autowiring $autowiring): Factory|\ReflectionParameter
+    private function resolveArgument(\ReflectionParameter $parameter, Ref $ref, Autowiring $autowiring): Factory
     {
         $value = $this->values[$parameter->getPosition()] ?? autowire;
 
         if ($value instanceof DoNotAutowire) {
-            return $parameter;
+            if ($parameter->isDefaultValueAvailable()) {
+                return new DefaultValue($parameter);
+            }
+
+            throw new \LogicException(\sprintf(
+                'Parameter %s is not autowired and has no default value',
+                formatReflectedParameter($parameter),
+            ));
         }
 
         if ($value instanceof Autowire) {
@@ -139,7 +145,7 @@ final class Arguments
 
             if ($type === null) {
                 if ($parameter->isDefaultValueAvailable()) {
-                    return new Closure(static fn() => $parameter->getDefaultValue());
+                    return new DefaultValue($parameter);
                 }
 
                 throw new \LogicException(\sprintf(
@@ -152,7 +158,7 @@ final class Arguments
 
             if ($value === null) {
                 if ($parameter->isDefaultValueAvailable()) {
-                    return new Closure(static fn() => $parameter->getDefaultValue());
+                    return new DefaultValue($parameter);
                 }
 
                 throw new \LogicException(\sprintf(
@@ -189,10 +195,6 @@ final class Arguments
 
         if ($value === $ref) {
             throw new \LogicException("Cyclic dependency: {$ref} depends on itself at {$path}");
-        }
-
-        if ($value->lifetime === Lifetime::Scoped && $ref->lifetime === Lifetime::Singleton) {
-            throw new \LogicException("Cannot inject scoped service {$value} into singleton {$ref} at {$path}");
         }
     }
 }

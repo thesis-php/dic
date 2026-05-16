@@ -24,6 +24,11 @@ final readonly class Constructor implements Factory
         private Factory $arguments,
     ) {}
 
+    public function dependencies(): iterable
+    {
+        return $this->arguments->dependencies();
+    }
+
     public function create(Container $container): mixed
     {
         return new ($this->class)(...$this->arguments->create($container));

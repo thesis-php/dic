@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Configurator\Internal;
 
-use Thesis\Dic;
+use Thesis\Dic\Internal;
+use Thesis\Dic\Internal\Lifetime as Enum;
 
 /**
  * @internal
@@ -13,13 +14,11 @@ use Thesis\Dic;
  */
 trait Lifetime
 {
-    public private(set) Dic\Lifetime $lifetime = Dic\Lifetime::Singleton;
-
     final public function scoped(bool $scoped = true): static
     {
         $this->ensureConfigurable();
 
-        $this->lifetime = $scoped ? Dic\Lifetime::Scoped : Dic\Lifetime::Singleton;
+        $this->lifetime = $scoped ? Enum::Scoped : Enum::Singleton;
 
         return $this;
     }
@@ -28,7 +27,7 @@ trait Lifetime
     {
         $this->ensureConfigurable();
 
-        $this->lifetime = $singleton ? Dic\Lifetime::Singleton : Dic\Lifetime::Scoped;
+        $this->lifetime = $singleton ? Enum::Singleton : Enum::Scoped;
 
         return $this;
     }

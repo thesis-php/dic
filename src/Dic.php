@@ -14,6 +14,7 @@ use Thesis\Dic\Configurator\ValueConfigurator;
 use Thesis\Dic\Internal\AttributeAutoconfigurator;
 use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\ContainerBuilder;
+use Thesis\Dic\Internal\Lifetime;
 use Thesis\Dic\Internal\NonCopyable;
 use Thesis\Dic\Location;
 use Thesis\Dic\Ref;
@@ -37,24 +38,35 @@ final readonly class Dic
      */
     public static function run(callable $module, callable $function): mixed
     {
+        /** @var \ReflectionProperty */
+        static $lifetimeProperty = new \ReflectionProperty(Ref::class, 'lifetime');
+
         $containerBuilder = new ContainerBuilder();
         $containerBuilder->addAutoconfigurator(new AttributeAutoconfigurator());
 
         $ref = $module(new self($containerBuilder));
 
-        $container = $containerBuilder->build();
+        $root = $containerBuilder->build();
 
-        $value = $container->get($ref);
+        if ($lifetimeProperty->getValue($ref) === Lifetime::Scoped) {
+            $scope = $root->startScope();
+            $value = $scope->get($ref);
+        } else {
+            $scope = null;
+            $value = $root->get($ref);
+        }
 
         try {
             $result = $function($value);
         } catch (\Throwable $error) {
-            $container->dispose($error);
+            $scope?->dispose($error);
+            $root->dispose($error);
 
             throw $error;
         }
 
-        $container->dispose(null);
+        $scope?->dispose(null);
+        $root->dispose(null);
 
         return $result;
     }
@@ -108,10 +120,7 @@ final readonly class Dic
         );
     }
 
-    /**
-     * @param callable|array{Ref<object>, string} $callable
-     */
-    public function callable(callable|array $callable): CallableConfigurator
+    public function callable(callable $callable): CallableConfigurator
     {
         return new CallableConfigurator(
             callable: $callable,
@@ -129,7 +138,7 @@ final readonly class Dic
     public function scoped(Ref $ref): ScopedConfigurator
     {
         return new ScopedConfigurator(
-            target: $ref,
+            ref: $ref,
             declaredAt: Location::caller(),
             autowiring: $this->autowiring,
             containerBuilder: $this->containerBuilder,

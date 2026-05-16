@@ -24,6 +24,11 @@ final readonly class LazyObject implements Factory
         private Factory $factory,
     ) {}
 
+    public function dependencies(): iterable
+    {
+        return $this->factory->dependencies();
+    }
+
     public function create(Container $container): mixed
     {
         return $this->reflection->newLazyProxy(fn() => $this->factory->create($container));
