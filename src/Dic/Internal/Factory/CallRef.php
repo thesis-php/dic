@@ -6,6 +6,7 @@ namespace Thesis\Dic\Internal\Factory;
 
 use Thesis\Dic\Internal\Container;
 use Thesis\Dic\Internal\Factory;
+use Thesis\Dic\Ref;
 
 /**
  * @internal
@@ -13,23 +14,24 @@ use Thesis\Dic\Internal\Factory;
  * @template-covariant T
  * @implements Factory<T>
  */
-final readonly class Call implements Factory
+final readonly class CallRef implements Factory
 {
     /**
-     * @param callable(): T $function
+     * @param Ref<callable(): T> $function
      */
     public function __construct(
-        private mixed $function,
+        private Ref $function,
         private Arguments $arguments,
     ) {}
 
     public function dependencies(): iterable
     {
-        return $this->arguments->dependencies();
+        yield '' => $this->function;
+        yield from $this->arguments->dependencies();
     }
 
     public function create(Container $container): mixed
     {
-        return ($this->function)(...$this->arguments->create($container));
+        return $container->get($this->function)(...$this->arguments->create($container));
     }
 }

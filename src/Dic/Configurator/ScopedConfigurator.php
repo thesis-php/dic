@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Thesis\Dic\Configurator;
 
 use Thesis\Dic\Internal\Autowiring;
+use Thesis\Dic\Internal\ClassReflection;
 use Thesis\Dic\Internal\ContainerBuilder;
 use Thesis\Dic\Internal\Factory;
 use Thesis\Dic\Internal\Lifetime;
@@ -28,6 +29,8 @@ final class ScopedConfigurator extends Ref
 
     /** @use Internal\Disposer<Scoped<T>> */
     use Internal\Disposer;
+
+    protected ClassReflection $internalReflection { get => ClassReflection::fromClass(Scoped::class); }
 
     /**
      * @internal

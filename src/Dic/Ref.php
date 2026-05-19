@@ -4,12 +4,19 @@ declare(strict_types=1);
 
 namespace Thesis\Dic;
 
+use Thesis\Dic\Configurator\MethodConfigurator;
+use Thesis\Dic\Configurator\ObjectConfigurator;
 use Thesis\Dic\Configurator\ScopedConfigurator;
+use Thesis\Dic\Configurator\SignatureConfigurator;
+use Thesis\Dic\Configurator\TaggedListConfigurator;
+use Thesis\Dic\Configurator\ValueConfigurator;
 use Thesis\Dic\Exception\ContainerAlreadyBuilt;
 use Thesis\Dic\Exception\InvalidConfiguration;
 use Thesis\Dic\Internal\Autowiring;
+use Thesis\Dic\Internal\ClassReflection;
 use Thesis\Dic\Internal\ContainerBuilder;
 use Thesis\Dic\Internal\Factory;
+use Thesis\Dic\Internal\FunctionReflection;
 use Thesis\Dic\Internal\Lifetime;
 
 /**
@@ -18,6 +25,7 @@ use Thesis\Dic\Internal\Lifetime;
  * This class must not be extended in userland.
  * Its protected API is not covered by the BC promise.
  *
+ * @phpstan-sealed MethodConfigurator|ObjectConfigurator|SignatureConfigurator|ScopedConfigurator|TaggedListConfigurator|ValueConfigurator
  * @template-covariant T
  */
 abstract class Ref
@@ -31,6 +39,8 @@ abstract class Ref
             $this->lifetime = $value;
         }
     }
+
+    abstract protected null|ClassReflection|FunctionReflection $internalReflection { get; }
 
     /**
      * @internal

@@ -33,7 +33,7 @@ final class TaggedListConfigurator extends Ref
     /** @use Internal\Disposer<list<T>> */
     use Internal\Disposer;
 
-    protected null $reflection { get => null; }
+    protected null $internalReflection { get => null; }
 
     /**
      * @var list<Ref<T>>

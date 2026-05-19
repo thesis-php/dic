@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Configurator\Internal;
 
-use Thesis\Dic\Internal\Arguments;
-use function Thesis\Formatter\formatReflectedFunction;
-
 /**
  * @internal
  *
@@ -26,15 +23,12 @@ trait Calls
     {
         $this->ensureConfigurable();
 
-        $reflection = $this->reflection->getMethod($method);
-
-        if (!$reflection->isPublic()) {
-            throw new \LogicException(\sprintf('`%s` must be public', formatReflectedFunction($reflection)));
-        }
-
         $this->calls[] = new Call(
-            method: $reflection->name,
-            arguments: Arguments::forFunction($reflection, $args),
+            method: $method,
+            arguments: new Arguments(
+                function: $this->internalReflection->publicMethod($method),
+                values: $args,
+            ),
         );
 
         return $this;
@@ -47,15 +41,12 @@ trait Calls
     {
         $this->ensureConfigurable();
 
-        $reflection = $this->reflection->getMethod($method);
-
-        if (!$reflection->isPublic()) {
-            throw new \LogicException(\sprintf('`%s` must be public', formatReflectedFunction($reflection)));
-        }
-
         $this->calls[] = new Call(
-            method: $reflection->name,
-            arguments: Arguments::forFunction($reflection, $args),
+            method: $method,
+            arguments: new Arguments(
+                function: $this->internalReflection->publicMethod($method),
+                values: $args,
+            ),
             chain: true,
         );
 

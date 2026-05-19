@@ -27,6 +27,21 @@ final readonly class TypeReflector
         );
     }
 
+    public static function returnType(\ReflectionFunctionAbstract $function): ?Type
+    {
+        $type = $function->getReturnType();
+
+        if ($type === null) {
+            return null;
+        }
+
+        return self::reflectionType(
+            reflectionType: $type,
+            self: $function->getClosureScopeClass(),
+            static: $function->getClosureCalledClass(),
+        );
+    }
+
     /**
      * @param ?\ReflectionClass<*> $self
      * @param ?\ReflectionClass<*> $static

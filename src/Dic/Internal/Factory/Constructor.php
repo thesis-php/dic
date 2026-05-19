@@ -17,11 +17,10 @@ final readonly class Constructor implements Factory
 {
     /**
      * @param class-string<T> $class
-     * @param Factory<list<mixed>> $arguments
      */
     public function __construct(
         private string $class,
-        private Factory $arguments,
+        private Arguments $arguments,
     ) {}
 
     public function dependencies(): iterable

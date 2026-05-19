@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Internal;
 
-use Thesis\Dic\Autoconfigurator\CallableAutoconfigurator;
-use Thesis\Dic\Autoconfigurator\ObjectAutoconfigurator;
 use Thesis\Dic\Ref;
 use Thesis\Dic\Tag;
 use Thesis\Dic\TaggedRef;
@@ -27,13 +25,6 @@ final class ContainerBuilder
 
     private readonly Disposers $disposers;
 
-    private readonly Autoconfigurators $autoconfigurators;
-
-    /**
-     * @var list<callable(CallableAutoconfigurator&ObjectAutoconfigurator): void>
-     */
-    private array $autoconfigurationListeners = [];
-
     /**
      * @var list<callable(Tags): void>
      */
@@ -49,7 +40,6 @@ final class ContainerBuilder
         $this->singletonFactories = new Factories();
         $this->scopedFactories = new Factories();
         $this->disposers = new Disposers();
-        $this->autoconfigurators = new Autoconfigurators();
     }
 
     /**
@@ -72,11 +62,6 @@ final class ContainerBuilder
         $this->disposers->add($ref, $disposer);
     }
 
-    public function addAutoconfigurator(CallableAutoconfigurator|ObjectAutoconfigurator $autoconfigurator): void
-    {
-        $this->autoconfigurators->add($autoconfigurator);
-    }
-
     /**
      * @template T
      * @param Ref<T> $ref
@@ -88,14 +73,6 @@ final class ContainerBuilder
             Lifetime::Scoped => $this->scopedFactories->register($ref, $factory),
             Lifetime::Singleton => $this->singletonFactories->register($ref, $factory),
         };
-    }
-
-    /**
-     * @param callable(CallableAutoconfigurator&ObjectAutoconfigurator): void $listener
-     */
-    public function onAutoconfiguration(callable $listener): void
-    {
-        $this->autoconfigurationListeners[] = $listener;
     }
 
     /**
@@ -116,10 +93,6 @@ final class ContainerBuilder
 
     public function build(): Root
     {
-        while (null !== $listener = array_shift($this->autoconfigurationListeners)) {
-            $listener($this->autoconfigurators);
-        }
-
         $tags = new Tags($this->taggedRefs);
 
         while (null !== $listener = array_shift($this->resolveTagsListeners)) {

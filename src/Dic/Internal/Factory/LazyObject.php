@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Internal\Factory;
 
+use Thesis\Dic\Internal\ClassReflection;
 use Thesis\Dic\Internal\Container;
 use Thesis\Dic\Internal\Factory;
 
@@ -16,11 +17,11 @@ use Thesis\Dic\Internal\Factory;
 final readonly class LazyObject implements Factory
 {
     /**
-     * @param \ReflectionClass<T> $reflection
+     * @param ClassReflection<T> $reflection
      * @param Factory<T> $factory
      */
     public function __construct(
-        private \ReflectionClass $reflection,
+        private ClassReflection $reflection,
         private Factory $factory,
     ) {}
 

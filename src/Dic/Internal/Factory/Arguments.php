@@ -10,12 +10,12 @@ use Thesis\Dic\Internal\Factory;
 /**
  * @internal
  *
- * @implements Factory<list<mixed>>
+ * @implements Factory<array<non-negative-int, mixed>>
  */
-final readonly class ListOf implements Factory
+final readonly class Arguments implements Factory
 {
     /**
-     * @param list<Factory> $factories
+     * @param array<non-negative-int, Factory> $factories
      */
     public function __construct(
         private array $factories,

@@ -17,13 +17,11 @@ final readonly class ObjectCall implements Factory
 {
     /**
      * @param Factory<T> $factory
-     * @param non-empty-string $method
-     * @param Factory<list<mixed>> $arguments
      */
     public function __construct(
         private Factory $factory,
         private string $method,
-        private Factory $arguments,
+        private Arguments $arguments,
     ) {}
 
     public function dependencies(): iterable

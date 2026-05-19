@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Internal;
 
-use Thesis\Dic\Exception\BindingTypeNotSupported;
+use Thesis\Dic\Exception\UnsupportedType;
 use Typhoon\Type;
 use Typhoon\Type\Visitor\Fallback;
 
@@ -13,7 +13,7 @@ use Typhoon\Type\Visitor\Fallback;
  *
  * @extends Fallback<bool>
  */
-final class BindingTypeValidator extends Fallback
+final class TypeValidator extends Fallback
 {
     public static function validate(Type $type): void
     {
@@ -21,7 +21,7 @@ final class BindingTypeValidator extends Fallback
         static $validator = new self();
 
         if (!$type->accept($validator)) {
-            throw new BindingTypeNotSupported($type);
+            throw new UnsupportedType($type);
         }
     }
 

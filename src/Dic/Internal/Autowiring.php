@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Internal;
 
-use Thesis\Dic\Exception\BindingTypeNotSupported;
+use Thesis\Dic\Exception\UnsupportedType;
 use Thesis\Dic\Ref;
 use Typhoon\Type;
 
@@ -22,11 +22,11 @@ final class Autowiring
      * @template T
      * @param Type<contravariant T> $type
      * @param Ref<T> $ref
-     * @throws BindingTypeNotSupported
+     * @throws UnsupportedType
      */
     public function bind(Ref $ref, Type $type, string|\Stringable|\UnitEnum $qualifier): void
     {
-        BindingTypeValidator::validate($type);
+        TypeValidator::validate($type);
 
         $this->bindings[self::key($type, $qualifier)] = $ref;
     }

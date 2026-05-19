@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Configurator\Internal;
 
-use Thesis\Dic\Exception\BindingTypeNotSupported;
+use Thesis\Dic\Exception\UnsupportedType;
 use Typhoon\Type;
 
 /**
@@ -17,7 +17,7 @@ trait Bind
 {
     /**
      * @param Type<contravariant T> $type
-     * @throws BindingTypeNotSupported
+     * @throws UnsupportedType
      */
     final public function bind(Type $type, string|\Stringable|\UnitEnum $qualifier = ''): static
     {

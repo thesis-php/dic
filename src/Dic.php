@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace Thesis;
 
-use Thesis\Dic\Autoconfigurator\CallableAutoconfigurator;
-use Thesis\Dic\Autoconfigurator\ObjectAutoconfigurator;
-use Thesis\Dic\Configurator\CallableConfigurator;
+use Thesis\Dic\Configurator\MethodConfigurator;
 use Thesis\Dic\Configurator\ObjectConfigurator;
 use Thesis\Dic\Configurator\ScopedConfigurator;
+use Thesis\Dic\Configurator\SignatureConfigurator;
 use Thesis\Dic\Configurator\TaggedListConfigurator;
 use Thesis\Dic\Configurator\ValueConfigurator;
-use Thesis\Dic\Internal\AttributeAutoconfigurator;
 use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\ContainerBuilder;
 use Thesis\Dic\Internal\Lifetime;
@@ -21,6 +19,7 @@ use Thesis\Dic\Ref;
 use Thesis\Dic\Tag;
 use Thesis\Dic\TaggedRef;
 use Thesis\Dic\Tags;
+use Typhoon\Type\ClosureT;
 
 /**
  * @api
@@ -42,7 +41,6 @@ final readonly class Dic
         static $lifetimeProperty = new \ReflectionProperty(Ref::class, 'lifetime');
 
         $containerBuilder = new ContainerBuilder();
-        $containerBuilder->addAutoconfigurator(new AttributeAutoconfigurator());
 
         $ref = $module(new self($containerBuilder));
 
@@ -108,23 +106,57 @@ final readonly class Dic
     /**
      * @template T of object
      * @param class-string<T> $class
+     * @param null|Ref<callable(): T>|callable(): T $factory
      * @return ObjectConfigurator<T>
      */
-    public function object(string $class): ObjectConfigurator
+    public function object(string $class, null|Ref|callable $factory = null): ObjectConfigurator
     {
         return new ObjectConfigurator(
             class: $class,
+            factory: $factory,
             declaredAt: Location::caller(),
             autowiring: $this->autowiring,
             containerBuilder: $this->containerBuilder,
         );
     }
 
-    public function callable(callable $callable): CallableConfigurator
+    /**
+     * @param Ref<object> $object
+     */
+    public function method(Ref $object, string $name): MethodConfigurator
     {
-        return new CallableConfigurator(
-            callable: $callable,
+        return new MethodConfigurator(
+            object: $object,
+            name: $name,
             declaredAt: Location::caller(),
+            autowiring: $this->autowiring,
+            containerBuilder: $this->containerBuilder,
+        );
+    }
+
+    /**
+     * @template T of \Closure
+     * @param ClosureT<T> $signature
+     * @param callable|Ref<callable> $implementation
+     * @return SignatureConfigurator<T>
+     */
+    public function signature(ClosureT $signature, callable|Ref $implementation): SignatureConfigurator
+    {
+        $declaredAt = Location::caller();
+
+        if (!$implementation instanceof Ref) {
+            $implementation = new ValueConfigurator(
+                value: $implementation,
+                declaredAt: $declaredAt,
+                autowiring: $this->autowiring,
+                containerBuilder: $this->containerBuilder,
+            );
+        }
+
+        return new SignatureConfigurator(
+            signature: $signature,
+            implementation: $implementation,
+            declaredAt: $declaredAt,
             autowiring: $this->autowiring,
             containerBuilder: $this->containerBuilder,
         );
@@ -169,10 +201,5 @@ final readonly class Dic
     public function onResolveTags(callable $handler): void
     {
         $this->containerBuilder->onResolveTags($handler);
-    }
-
-    public function addAutoconfigurator(CallableAutoconfigurator|ObjectAutoconfigurator $autoconfigurator): void
-    {
-        $this->containerBuilder->addAutoconfigurator($autoconfigurator);
     }
 }
