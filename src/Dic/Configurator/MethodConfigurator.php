@@ -22,6 +22,8 @@ use Typhoon\Type\ClosureT;
  */
 final class MethodConfigurator extends Ref
 {
+    use Internal\Lifetime;
+
     /** @use Internal\Bind<T> */
     use Internal\Bind;
 
