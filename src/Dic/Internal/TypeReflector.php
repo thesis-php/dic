@@ -53,14 +53,14 @@ final readonly class TypeReflector
     ): Type {
         if ($reflectionType instanceof \ReflectionUnionType) {
             return Type\unionT(array_map( // @phpstan-ignore argument.type
-                static fn(\ReflectionType $type) => self::reflectionType($reflectionType, $self, $static),
+                static fn(\ReflectionType $type) => self::reflectionType($type, $self, $static),
                 $reflectionType->getTypes(),
             ));
         }
 
         if ($reflectionType instanceof \ReflectionIntersectionType) {
             return Type\intersectionT(array_map( // @phpstan-ignore argument.type, argument.templateType
-                static fn(\ReflectionType $type) => self::reflectionType($reflectionType, $self, $static),
+                static fn(\ReflectionType $type) => self::reflectionType($type, $self, $static),
                 $reflectionType->getTypes(),
             ));
         }
