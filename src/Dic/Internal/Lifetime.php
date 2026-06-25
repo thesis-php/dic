@@ -10,5 +10,6 @@ namespace Thesis\Dic\Internal;
 enum Lifetime
 {
     case Singleton;
+    case CanBeScoped;
     case Scoped;
 }

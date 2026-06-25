@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Thesis\Dic;
 
-use Thesis\Dic\Internal\NonCopyable;
-
 /**
  * @api
  *
@@ -14,8 +12,6 @@ use Thesis\Dic\Internal\NonCopyable;
  */
 final readonly class TaggedRef
 {
-    use NonCopyable;
-
     /**
      * @param Ref<T> $ref
      * @param TTag $tag

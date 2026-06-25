@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Internal;
 
+use Thesis\Dic\Internal\Container\Scope;
 use Thesis\Dic\Ref;
 
 /**
@@ -19,4 +20,6 @@ interface Container
     public function get(Ref $ref): mixed;
 
     public function startScope(): Scope;
+
+    public function dispose(?\Throwable $error): void;
 }

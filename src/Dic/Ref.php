@@ -4,154 +4,42 @@ declare(strict_types=1);
 
 namespace Thesis\Dic;
 
-use Thesis\Dic\Configurator\MethodConfigurator;
-use Thesis\Dic\Configurator\ObjectConfigurator;
-use Thesis\Dic\Configurator\ScopedConfigurator;
-use Thesis\Dic\Configurator\SignatureConfigurator;
-use Thesis\Dic\Configurator\TaggedListConfigurator;
-use Thesis\Dic\Configurator\ValueConfigurator;
-use Thesis\Dic\Exception\ContainerAlreadyBuilt;
-use Thesis\Dic\Exception\InvalidConfiguration;
-use Thesis\Dic\Internal\Autowiring;
-use Thesis\Dic\Internal\ClassReflection;
-use Thesis\Dic\Internal\ContainerBuilder;
-use Thesis\Dic\Internal\Factory;
-use Thesis\Dic\Internal\FunctionReflection;
-use Thesis\Dic\Internal\Lifetime;
+use Thesis\Dic\Configuration\Autoconfig;
+use Thesis\Dic\Internal\NonCopyable;
+use Thesis\Dic\Internal\Signature;
 
 /**
  * @api
  *
- * This class must not be extended in userland.
- * Its protected API is not covered by the BC promise.
- *
- * @phpstan-sealed MethodConfigurator|ObjectConfigurator|SignatureConfigurator|ScopedConfigurator|TaggedListConfigurator|ValueConfigurator
  * @template-covariant T
+ *
+ * @phpstan-sealed Autoconfig
  */
 abstract class Ref
 {
-    private bool $resolved = false;
-
-    final protected ?Lifetime $lifetime = null {
-        set {
-            $this->ensureConfigurable();
-
-            $this->lifetime = $value;
-        }
-    }
-
-    abstract protected null|ClassReflection|FunctionReflection $internalReflection { get; }
+    use NonCopyable;
 
     /**
-     * @internal
-     *
-     * @param non-empty-string $label
+     * @var non-empty-string
      */
-    protected function __construct(
-        private readonly string $label,
-        private readonly Location $declaredAt,
-        protected readonly Autowiring $autowiring,
-        protected readonly ContainerBuilder $containerBuilder,
-        ?Lifetime $lifetime = null,
-    ) {
-        $this->lifetime = $lifetime;
-        $this->containerBuilder->onRegistration($this->resolve(...));
-    }
+    abstract public string $label { get; }
+
+    abstract public Location $declaredAt { get; }
+
+    abstract protected ?Signature $signature { get; }
+
+    abstract public null|\ReflectionFunction|\ReflectionMethod $function { get; }
 
     /**
-     * @return Factory<T>
+     * @var ?\ReflectionClass<*>
      */
-    abstract protected function createFactory(): Factory;
-
-    final protected function ensureConfigurable(): void
-    {
-        if ($this->resolved) {
-            throw new ContainerAlreadyBuilt($this);
-        }
-    }
-
-    /**
-     * @phpstan-assert Lifetime $this->lifetime
-     */
-    private function resolve(): void
-    {
-        if ($this->resolved) {
-            \assert($this->lifetime !== null);
-
-            return;
-        }
-
-        try {
-            $factory = $this->createFactory();
-        } catch (\Throwable $error) {
-            throw new InvalidConfiguration($this, $error);
-        }
-
-        $this->resolveLifetime($factory);
-
-        $this->containerBuilder->addFactory($this, $this->lifetime, $factory);
-
-        $this->resolved = true;
-    }
-
-    /**
-     * @var array<string, Ref<*>>
-     */
-    private array $transitiveScopedDependencies = [];
-
-    /**
-     * @param Factory<T> $factory
-     * @phpstan-assert Lifetime $this->lifetime
-     */
-    private function resolveLifetime(Factory $factory): void
-    {
-        if ($this->lifetime === Lifetime::Scoped) {
-            return;
-        }
-
-        if ($this instanceof ScopedConfigurator) {
-            \assert($this->lifetime === Lifetime::Singleton);
-
-            return;
-        }
-
-        foreach ($factory->dependencies() as $path => $ref) {
-            $ref->resolve();
-
-            if ($ref->lifetime === Lifetime::Singleton) {
-                continue;
-            }
-
-            if ($ref->transitiveScopedDependencies === []) {
-                $this->transitiveScopedDependencies[$path] = $ref;
-
-                continue;
-            }
-
-            foreach ($ref->transitiveScopedDependencies as $nextPath => $scopedRef) {
-                $this->transitiveScopedDependencies[$path . $nextPath] = $scopedRef;
-            }
-        }
-
-        if ($this->transitiveScopedDependencies === []) {
-            $this->lifetime = Lifetime::Singleton;
-
-            return;
-        }
-
-        if ($this->lifetime === Lifetime::Singleton) {
-            // todo message
-            throw new \LogicException("{$this} cannot be a singleton");
-        }
-
-        $this->lifetime = Lifetime::Scoped;
-    }
+    abstract public ?\ReflectionClass $class { get; }
 
     /**
      * @return non-empty-string
      */
     final public function __toString(): string
     {
-        return "[{$this->label} at {$this->declaredAt}]";
+        return \sprintf('%s (%s)', $this->label, $this->declaredAt);
     }
 }

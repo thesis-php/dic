@@ -12,4 +12,6 @@ return Rector\Config\RectorConfig::configure()
     ->withPhpSets()
     ->withSkip([
         Rector\Php80\Rector\Class_\StringableForToStringRector::class,
+        Rector\Php81\Rector\Array_\ArrayToFirstClassCallableRector::class,
+        Rector\Php80\Rector\Class_\ClassPropertyAssignToConstructorPromotionRector::class,
     ]);

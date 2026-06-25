@@ -4,21 +4,20 @@ declare(strict_types=1);
 
 namespace Thesis;
 
-use Thesis\Dic\Configurator\MethodConfigurator;
-use Thesis\Dic\Configurator\ObjectConfigurator;
-use Thesis\Dic\Configurator\ScopedConfigurator;
-use Thesis\Dic\Configurator\SignatureConfigurator;
-use Thesis\Dic\Configurator\TaggedListConfigurator;
-use Thesis\Dic\Configurator\ValueConfigurator;
+use Thesis\Dic\Configuration\Autoconfig;
+use Thesis\Dic\Configuration\ClosureConfig;
+use Thesis\Dic\Configuration\ObjectConfig;
+use Thesis\Dic\Configuration\ScopedConfig;
+use Thesis\Dic\Configuration\TaggedListConfig;
+use Thesis\Dic\Configuration\ValueConfig;
 use Thesis\Dic\Internal\Autowiring;
-use Thesis\Dic\Internal\ContainerBuilder;
-use Thesis\Dic\Internal\Lifetime;
+use Thesis\Dic\Internal\Builder;
 use Thesis\Dic\Internal\NonCopyable;
 use Thesis\Dic\Location;
 use Thesis\Dic\Ref;
 use Thesis\Dic\Tag;
 use Thesis\Dic\TaggedRef;
-use Thesis\Dic\Tags;
+use Thesis\Dic\TaggedRefs;
 use Typhoon\Type\ClosureT;
 
 /**
@@ -29,6 +28,9 @@ final readonly class Dic
     use NonCopyable;
 
     /**
+     * The recommended entry point. Runs $function with the service the module
+     * returns, then disposes the scope and the container (even on throw).
+     *
      * @template T
      * @template R
      * @param callable(self): Ref<T> $module
@@ -37,42 +39,49 @@ final readonly class Dic
      */
     public static function run(callable $module, callable $function): mixed
     {
-        /** @var \ReflectionProperty */
-        static $lifetimeProperty = new \ReflectionProperty(Ref::class, 'lifetime');
+        $builder = new Builder();
 
-        $containerBuilder = new ContainerBuilder();
+        $ref = $module(new self($builder));
 
-        $ref = $module(new self($containerBuilder));
+        $container = $builder->build();
 
-        $root = $containerBuilder->build();
-
-        if ($lifetimeProperty->getValue($ref) === Lifetime::Scoped) {
-            $scope = $root->startScope();
-            $value = $scope->get($ref);
-        } else {
-            $scope = null;
-            $value = $root->get($ref);
-        }
+        $scope = $container->startScope();
+        $error = null;
 
         try {
-            $result = $function($value);
+            return $function($scope->get($ref));
         } catch (\Throwable $error) {
-            $scope?->dispose($error);
-            $root->dispose($error);
-
             throw $error;
+        } finally {
+            $scope->dispose($error);
+            $container->dispose($error);
         }
+    }
 
-        $scope?->dispose(null);
-        $root->dispose(null);
+    /**
+     * Returns the service the module returns without disposing anything.
+     * Meant for tests and debugging modules; otherwise prefer {@see self::run()}.
+     *
+     * @template T
+     * @param callable(self): Ref<T> $module
+     * @return T
+     */
+    public static function assemble(callable $module): mixed
+    {
+        $builder = new Builder();
 
-        return $result;
+        $ref = $module(new self($builder));
+
+        return $builder
+            ->build()
+            ->startScope()
+            ->get($ref);
     }
 
     private Autowiring $autowiring;
 
     private function __construct(
-        private ContainerBuilder $containerBuilder,
+        private Builder $builder,
     ) {
         $this->autowiring = new Autowiring();
     }
@@ -84,22 +93,22 @@ final readonly class Dic
      */
     public function require(callable $module): mixed
     {
-        return $module(new self($this->containerBuilder));
+        return $module(new self($this->builder));
     }
 
     /**
      * @template T
      * @param T|Ref<T> $value
-     * @return ValueConfigurator<T>
+     * @return ValueConfig<T>
      */
-    public function value(mixed $value): ValueConfigurator
+    public function value(mixed $value): ValueConfig
     {
-        /** @var ValueConfigurator<T> */
-        return new ValueConfigurator(
+        /** @var ValueConfig<T> */
+        return new ValueConfig(
+            builder: $this->builder,
+            autowiring: $this->autowiring,
             value: $value,
             declaredAt: Location::caller(),
-            autowiring: $this->autowiring,
-            containerBuilder: $this->containerBuilder,
         );
     }
 
@@ -107,73 +116,58 @@ final readonly class Dic
      * @template T of object
      * @param class-string<T> $class
      * @param null|Ref<callable(): T>|callable(): T $factory
-     * @return ObjectConfigurator<T>
+     * @return ObjectConfig<T>
      */
-    public function object(string $class, null|Ref|callable $factory = null): ObjectConfigurator
+    public function object(string $class, null|Ref|callable $factory = null): ObjectConfig
     {
-        return new ObjectConfigurator(
-            class: $class,
+        return new ObjectConfig(
+            builder: $this->builder,
+            autowiring: $this->autowiring,
+            class: new \ReflectionClass($class),
             factory: $factory,
             declaredAt: Location::caller(),
-            autowiring: $this->autowiring,
-            containerBuilder: $this->containerBuilder,
-        );
-    }
-
-    /**
-     * @param Ref<object> $object
-     */
-    public function method(Ref $object, string $name): MethodConfigurator
-    {
-        return new MethodConfigurator(
-            object: $object,
-            name: $name,
-            declaredAt: Location::caller(),
-            autowiring: $this->autowiring,
-            containerBuilder: $this->containerBuilder,
         );
     }
 
     /**
      * @template T of \Closure
-     * @param ClosureT<T> $signature
-     * @param callable|Ref<callable> $implementation
-     * @return SignatureConfigurator<T>
+     * @param ClosureT<T> $type
+     * @param callable|array{Ref<class-string|object>, string}|Ref<callable> $function
+     * @return ClosureConfig<T>
      */
-    public function signature(ClosureT $signature, callable|Ref $implementation): SignatureConfigurator
+    public function closure(ClosureT $type, callable|array|Ref $function): ClosureConfig
     {
-        $declaredAt = Location::caller();
-
-        if (!$implementation instanceof Ref) {
-            $implementation = new ValueConfigurator(
-                value: $implementation,
-                declaredAt: $declaredAt,
+        if (!$function instanceof Ref) {
+            $function = new ValueConfig(
+                builder: $this->builder,
                 autowiring: $this->autowiring,
-                containerBuilder: $this->containerBuilder,
+                value: $function,
+                declaredAt: Location::caller(),
             );
         }
 
-        return new SignatureConfigurator(
-            signature: $signature,
-            implementation: $implementation,
-            declaredAt: $declaredAt,
+        /** @var Ref<callable> $function */
+        return new ClosureConfig(
+            builder: $this->builder,
             autowiring: $this->autowiring,
-            containerBuilder: $this->containerBuilder,
+            type: $type,
+            function: $function,
+            declaredAt: Location::caller(),
         );
     }
 
     /**
      * @template T
      * @param Ref<T> $ref
-     * @return ScopedConfigurator<T>
+     * @return ScopedConfig<T>
      */
-    public function scoped(Ref $ref): ScopedConfigurator
+    public function scoped(Ref $ref): ScopedConfig
     {
-        return new ScopedConfigurator(
+        return new ScopedConfig(
+            builder: $this->builder,
+            autowiring: $this->autowiring,
             ref: $ref,
             declaredAt: Location::caller(),
-            autowiring: $this->autowiring,
-            containerBuilder: $this->containerBuilder,
         );
     }
 
@@ -182,24 +176,32 @@ final readonly class Dic
      * @template TTag of Tag<T>
      * @param class-string<TTag>|TTag $tag
      * @param ?callable(TaggedRef<T, TTag>, TaggedRef<T, TTag>): int $sort
-     * @return TaggedListConfigurator<T, TTag>
+     * @return TaggedListConfig<T, TTag>
      */
-    public function taggedList(string|Tag $tag, ?callable $sort = null): TaggedListConfigurator
+    public function taggedList(string|Tag $tag, ?callable $sort = null): TaggedListConfig
     {
-        return new TaggedListConfigurator(
+        return new TaggedListConfig(
+            builder: $this->builder,
+            autowiring: $this->autowiring,
             tag: $tag,
             sort: $sort,
             declaredAt: Location::caller(),
-            autowiring: $this->autowiring,
-            containerBuilder: $this->containerBuilder,
         );
     }
 
     /**
-     * @param callable(Tags): void $handler
+     * @param callable(TaggedRefs): void $listener
      */
-    public function onResolveTags(callable $handler): void
+    public function onTagResolution(callable $listener): void
     {
-        $this->containerBuilder->onResolveTags($handler);
+        $this->builder->onTagResolution($listener);
+    }
+
+    /**
+     * @param callable(Autoconfig<*>): void $configurator
+     */
+    public function autoconfigure(callable $configurator): void
+    {
+        $this->builder->addAutoconfigurator($configurator);
     }
 }

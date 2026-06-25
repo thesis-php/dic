@@ -1,0 +1,78 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Thesis\Dic\Configuration;
+
+use Thesis\Dic\Error\UnsupportedBindingType;
+use Thesis\Dic\Internal\Autowiring;
+use Thesis\Dic\Internal\Autowiring\AutowiringType;
+use Thesis\Dic\Internal\Builder;
+use Thesis\Dic\Internal\Factory;
+use Thesis\Dic\Location;
+use Typhoon\Type;
+
+/**
+ * @api
+ *
+ * @template T
+ * @extends Autoconfig<T>
+ *
+ * @phpstan-sealed ValueConfig|ClosureConfig|ObjectConfig|MethodConfig|ScopedConfig|TaggedListConfig
+ */
+abstract class Config extends Autoconfig
+{
+    protected function __construct(
+        Builder $builder,
+        protected readonly Autowiring $autowiring,
+        public readonly Location $declaredAt,
+    ) {
+        parent::__construct($builder);
+
+        $builder->register($this, $this->createFactory(...));
+    }
+
+    /**
+     * @return non-empty-string
+     */
+    abstract protected function defaultLabel(): string;
+
+    /**
+     * @phpstan-ignore property.uninitialized
+     */
+    public private(set) string $label {
+        get => $this->label ??= $this->defaultLabel();
+    }
+
+    /**
+     * @param non-empty-string $label
+     */
+    final public function label(string $label): static
+    {
+        $this->label = $label;
+
+        return $this;
+    }
+
+    /**
+     * @param Type<contravariant T> $type
+     * @throws UnsupportedBindingType
+     */
+    final public function bind(Type $type, string|\Stringable|\UnitEnum $qualifier = ''): static
+    {
+        try {
+            $autowiringType = AutowiringType::ofTyphoonType($type);
+        } catch (Autowiring\UnsupportedType $error) {
+            throw new UnsupportedBindingType($type, $error);
+        }
+
+        $this->autowiring->bind($this, $autowiringType, $qualifier);
+
+        return $this;
+    }
+
+    /**
+     * @return Factory<T>
+     */
+    abstract protected function createFactory(): Factory;
+}

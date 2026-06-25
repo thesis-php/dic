@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Internal;
 
-use Thesis\Dic\Exception\UnsupportedType;
+use Thesis\Dic\Error\InvalidArgument;
+use Thesis\Dic\Internal\Autowiring\AutowiringType;
 use Thesis\Dic\Ref;
-use Typhoon\Type;
 
 /**
  * @internal
@@ -14,39 +14,45 @@ use Typhoon\Type;
 final class Autowiring
 {
     /**
-     * @var array<non-empty-string, Ref<mixed>>
+     * @var array<non-empty-string, array<string, Ref<mixed>>>
      */
     private array $bindings = [];
 
     /**
      * @template T
-     * @param Type<contravariant T> $type
      * @param Ref<T> $ref
-     * @throws UnsupportedType
+     * @param AutowiringType<T> $type
      */
-    public function bind(Ref $ref, Type $type, string|\Stringable|\UnitEnum $qualifier): void
+    public function bind(Ref $ref, AutowiringType $type, string|\Stringable|\UnitEnum $qualifier): void
     {
-        TypeValidator::validate($type);
+        $qualifierAsString = self::stringifyQualifier($qualifier);
 
-        $this->bindings[self::key($type, $qualifier)] = $ref;
+        $boundRef = $this->bindings[$type->string][$qualifierAsString] ?? null;
+
+        if ($boundRef !== null) {
+            throw new InvalidArgument("Cannot bind {$ref} to type {$type->string}: it is already bound to {$boundRef}");
+        }
+
+        $this->bindings[$type->string][$qualifierAsString] = $ref;
     }
 
     /**
-     * @return ?Ref<mixed>
+     * @template T
+     * @param AutowiringType<T> $type
+     * @return ?Ref<T>
      */
-    public function autowire(Type $type, string|\Stringable|\UnitEnum $qualifier): ?Ref
+    public function autowire(AutowiringType $type, string|\Stringable|\UnitEnum $qualifier): ?Ref
     {
-        return $this->bindings[self::key($type, $qualifier)] ?? null;
+        /** @var ?Ref<T> */
+        return $this->bindings[$type->string][self::stringifyQualifier($qualifier)] ?? null;
     }
 
-    /**
-     * @return non-empty-string
-     */
-    private static function key(Type $type, string|\Stringable|\UnitEnum $qualifier): string
+    private static function stringifyQualifier(string|\Stringable|\UnitEnum $qualifier): string
     {
-        return Type\stringify($type) . '.' . match (true) {
-            $qualifier instanceof \UnitEnum => \sprintf('%s::%s', $qualifier::class, $qualifier->name),
-            default => (string) $qualifier,
-        };
+        if ($qualifier instanceof \UnitEnum) {
+            return \sprintf('%s::%s', $qualifier::class, $qualifier->name);
+        }
+
+        return (string) $qualifier;
     }
 }

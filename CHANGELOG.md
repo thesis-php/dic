@@ -9,23 +9,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `DIC\qualifier()` function.
-- `Mapping\Attribute` interface for creating custom service attributes.
-- `Mapping\TagAttribute` base class for tags that can be used as attributes.
-- `$dic->obj($class)->call($method, $args)` — call a method on the object after construction.
-- `$dic->obj($class)->chainCall($method, $args)` — call a method and use the returned instance.
-- `$dic->obj($class)->methodFactory($method)` — use object's method as a service factory.
+- `Dic::run(callable $module, callable $function)` — recommended entry point. Resolves the service the module returns, runs `$function` with it, then disposes the scope and the container even on throw.
+- `Dic::assemble(callable $module)` — resolves a service without disposing anything; meant for tests and debugging.
+- `Dic::autoconfigure(callable $configurator)` — apply configuration to every service.
+- `Dic::object()` now accepts an optional factory: `object(string $class, null|Ref|callable $factory = null)`.
+- Typed error hierarchy under `Thesis\Dic\Error\*`: the root marker interface `Thesis\Dic\Error`, the phase bases `ConfigurationError` and `RuntimeError`, and concrete errors (`CircularDependency`, `SingletonDependsOnScoped`, `UnknownRef`, `CannotAutowire`, `UnsupportedBindingType`, `ConfigurationFrozen`, `TaggedAfterResolution`, `InvalidArgument`, …).
+- `#[Autowire]` parameter attribute, with the `autowire()` helper and `autowire` constant, to set a binding qualifier per parameter.
+- New configurator methods on the shared `Config` / `Autoconfig` base:
+  - `bind(Type $type, qualifier)` — bind a service to a type.
+  - `label(string $label)` — human-readable label.
+  - `disposer(callable $disposer)` — register a disposer.
+  - `canBeScoped()` lifetime.
+- New `ObjectConfig` methods: `call()` (call a method after construction), `chain()` (call a method and use the returned instance), `variadic()`, `eager()`.
 
 ### Changed
 
-- **BC break:** `DIC::init()` now returns `T` inferred from the `Ref<T>` returned by `$app`.
-- **BC break:** `DIC::call()` renamed to `DIC::factory()`.
-- **BC break:** PHP attributes on classes, methods, and functions are now scanned for `Mapping\Attribute` instead of `Tag`. Existing tag attributes must implement `Mapping\Attribute` (or extend `Mapping\TagAttribute`).
-- **BC break:** Union types are not autowired anymore.
+- **BC break:** Namespace and facade renamed `Thesis\DIC` → `Thesis\Dic` (class `DIC` → `Dic`).
+- **BC break:** Configurators moved and renamed `Thesis\DIC\Configurator\*` → `Thesis\Dic\Configuration\*Config`: `Value` → `ValueConfig`, `Obj` → `ObjectConfig`, `Func`/`Call` → `ClosureConfig`, `ScopedOf` → `ScopedConfig`, `TaggedList` → `TaggedListConfig`, `Method` → `MethodConfig`.
+- **BC break:** `DIC::init()` replaced by `Dic::run()` and `Dic::assemble()`.
+- **BC break:** `DIC::function()` renamed to `Dic::closure()` and now takes the closure `Type` explicitly.
+- **BC break:** `DIC::scopedOf()` renamed to `Dic::scoped()`.
+- **BC break:** `DIC::onResolveTags()` renamed to `Dic::onTagResolution()`.
+- **BC break:** Lifetime `transient` replaced by `canBeScoped`; the `Lifetime` enum is now internal (configure via `singleton()` / `scoped()` / `canBeScoped()`).
+- **BC break:** Qualifier mapping moved from the `#[Qualifier]` attribute to the `#[Autowire]` parameter attribute.
+- **BC break:** `Mapping\DoNotAutowire` → `Thesis\Dic\DoNotAutowire`.
+- **BC break:** Union types are now autowired as a single composite type (`A|B`) instead of matching each member individually. Intersection types (`A&B`) are now autowirable too.
 
 ### Removed
 
 - **BC break:** `DIC::inheritAutowiring()`.
+- **BC break:** Instance-level `DIC::bind()` and `DIC::tag()` — bind via `Config::bind()`, tag via `Config::tag()`.
+- **BC break:** Top-level `DIC::call()` entry — use `Dic::closure()`.
+- **BC break:** The `Thesis\DIC\Mapping` namespace, including the `#[Singleton]`, `#[Scoped]`, `#[Transient]` and `#[Qualifier]` attributes.
+- **BC break:** Public `Thesis\DIC\Lifetime` enum (now internal).
 
 ## [0.4.0] - 2026-04-23
 

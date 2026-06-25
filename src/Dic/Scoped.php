@@ -22,8 +22,8 @@ final readonly class Scoped
      * @param Ref<T> $ref
      */
     public function __construct(
-        private Ref $ref,
         private Container $container,
+        private Ref $ref,
     ) {}
 
     /**

@@ -4,17 +4,15 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Internal;
 
-use Thesis\Dic\Ref;
-
 /**
  * @internal
  *
- * @template-covariant T = mixed
+ * @template-covariant T
  */
 interface Factory
 {
     /**
-     * @return iterable<string, Ref<*>>
+     * @return iterable<Dependency>
      */
     public function dependencies(): iterable;
 
