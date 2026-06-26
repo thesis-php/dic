@@ -12,6 +12,7 @@ use Thesis\Dic\Configuration\TaggedListConfig;
 use Thesis\Dic\Configuration\ValueConfig;
 use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\Builder;
+use Thesis\Dic\Internal\Factory\ValueFactory;
 use Thesis\Dic\Internal\NonCopyable;
 use Thesis\Dic\Location;
 use Thesis\Dic\Ref;
@@ -33,23 +34,27 @@ final readonly class Dic
      *
      * @template T
      * @template R
-     * @param callable(self): Ref<T> $module
-     * @param callable(T): R $function
+     * @param callable(self): (Ref<T>|mixed) $module
+     * @param callable(T): R $main
      * @return R
      */
-    public static function run(callable $module, callable $function): mixed
+    public static function run(callable $module, callable $main): mixed
     {
         $builder = new Builder();
 
-        $ref = $module(new self($builder));
+        $result = $module(new self($builder));
+        $factory = ValueFactory::from($result);
 
         $container = $builder->build();
 
+        // a scope is used to resolve a service of any lifetime: singleton or scoped
         $scope = $container->startScope();
         $error = null;
 
         try {
-            return $function($scope->get($ref));
+            $value = $factory->create($scope);
+
+            return $main($value);
         } catch (\Throwable $error) {
             throw $error;
         } finally {
@@ -63,19 +68,19 @@ final readonly class Dic
      * Meant for tests and debugging modules; otherwise prefer {@see self::run()}.
      *
      * @template T
-     * @param callable(self): Ref<T> $module
-     * @return T
+     * @param callable(self): mixed $module
+     * @return ($module is (callable(self): Ref<T>) ? T : mixed)
      */
     public static function assemble(callable $module): mixed
     {
         $builder = new Builder();
 
-        $ref = $module(new self($builder));
+        $result = $module(new self($builder));
 
-        return $builder
-            ->build()
-            ->startScope()
-            ->get($ref);
+        // a scope is used to resolve a service of any lifetime: singleton or scoped
+        $scope = $builder->build()->startScope();
+
+        return ValueFactory::from($result)->create($scope);
     }
 
     private Autowiring $autowiring;
