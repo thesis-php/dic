@@ -40,7 +40,10 @@
     "autoload-dev": {
         "psr-4": {
             "Thesis\\": "tests/"
-        }
+        },
+        "files": [
+            "tests/Fixture/ref.php"
+        ]
     },
     "config": {
         "lock": false,

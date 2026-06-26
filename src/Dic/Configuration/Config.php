@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Configuration;
 
-use Thesis\Dic\Error\UnsupportedBindingType;
+use Thesis\Dic\Error;
 use Thesis\Dic\Internal\Autowiring;
-use Thesis\Dic\Internal\Autowiring\AutowiringType;
+use Thesis\Dic\Internal\Autowiring\BindingType;
+use Thesis\Dic\Internal\Autowiring\UnsupportedBindingType;
 use Thesis\Dic\Internal\Builder;
 use Thesis\Dic\Internal\Factory;
 use Thesis\Dic\Location;
@@ -56,17 +57,16 @@ abstract class Config extends Autoconfig
 
     /**
      * @param Type<contravariant T> $type
-     * @throws UnsupportedBindingType
      */
     final public function bind(Type $type, string|\Stringable|\UnitEnum $qualifier = ''): static
     {
         try {
-            $autowiringType = AutowiringType::ofTyphoonType($type);
-        } catch (Autowiring\UnsupportedType $error) {
-            throw new UnsupportedBindingType($type, $error);
+            $bindingType = BindingType::ofTyphoonType($type);
+        } catch (UnsupportedBindingType $error) {
+            throw Error::unsupportedBindingType($type, $error);
         }
 
-        $this->autowiring->bind($this, $autowiringType, $qualifier);
+        $this->autowiring->bind($this, $bindingType, $qualifier);
 
         return $this;
     }

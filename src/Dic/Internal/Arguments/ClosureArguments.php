@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Internal\Arguments;
 
-use Thesis\Dic\Error\InvalidArgument;
-use Thesis\Dic\Internal\Autowiring\AutowiringType;
-use Thesis\Dic\Internal\Autowiring\UnsupportedType;
+use Thesis\Dic\Error;
+use Thesis\Dic\Internal\Autowiring\BindingType;
+use Thesis\Dic\Internal\Autowiring\UnsupportedBindingType;
 use Thesis\Dic\Internal\Signature\Parameter;
 use Typhoon\Type\ClosureT;
 use Typhoon\Type\Parameter as ClosureParameter;
@@ -44,15 +44,15 @@ final readonly class ClosureArguments
     public function validate(Parameter $parameter, ClosureParameter $argument): void
     {
         if (!\in_array($argument, $this->arguments, strict: true)) {
-            throw new InvalidArgument(\sprintf('Unknown closure parameter mapped to "%s"', $parameter));
+            throw Error::unknownClosureParameterMapping($parameter);
         }
 
         if (($argument->isVariadic || $argument->hasDefault) && !$parameter->isOptional) {
-            throw new InvalidArgument(\sprintf('Cannot map an optional closure parameter to the non-optional "%s"', $parameter));
+            throw Error::optionalClosureParameterMapping($parameter);
         }
 
         if ($argument->isPassedByReference && !$parameter->isPassedByReference) {
-            throw new InvalidArgument(\sprintf('Cannot map a by-reference closure parameter to the non-by-reference "%s"', $parameter));
+            throw Error::byReferenceClosureParameterMapping($parameter);
         }
     }
 
@@ -88,8 +88,8 @@ final readonly class ClosureArguments
         }
 
         try {
-            return AutowiringType::ofTyphoonType($argument->type)->equals($parameter->autowiringType);
-        } catch (UnsupportedType) {
+            return BindingType::ofTyphoonType($argument->type)->equals($parameter->bindingType);
+        } catch (UnsupportedBindingType) {
             return false;
         }
     }

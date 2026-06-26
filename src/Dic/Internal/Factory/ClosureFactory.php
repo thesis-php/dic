@@ -114,7 +114,7 @@ final readonly class ClosureFactory implements Factory
                 $code,
                 $variable,
                 ClosureDefaultValue::Value->print(),
-                $parameter->defaultValue?->print() ?? throw new ShouldNotHappen('Optional parameter has no printable default value'),
+                $parameter->defaultValue?->print() ?? throw new ShouldNotHappen('ClosureArguments::validate() only allows an optional closure parameter to map onto an optional one, so the default value is always set here'),
                 $variable,
             );
         }

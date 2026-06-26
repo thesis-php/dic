@@ -31,15 +31,15 @@ use const Typhoon\Type\objectT;
 use const Typhoon\Type\stringT;
 use const Typhoon\Type\trueT;
 
-#[Covers(AutowiringType::class)]
-#[Covers(AutowiringTypeStringifier::class)]
+#[Covers(BindingType::class)]
+#[Covers(BindingTypeStringifier::class)]
 final class AutowiringTypeTest
 {
     #[Test]
     #[DataProvider('typhoonTypes')]
     public function typhoon(Type $type, string $expected): void
     {
-        Assert::same(AutowiringType::ofTyphoonType($type)->string, $expected);
+        Assert::same(BindingType::ofTyphoonType($type)->string, $expected);
     }
 
     /**
@@ -69,9 +69,9 @@ final class AutowiringTypeTest
     #[DataProvider('unsupportedTyphoonTypes')]
     public function unsupportedTyphoon(Type $type): void
     {
-        Expect::exception(UnsupportedType::class);
+        Expect::exception(UnsupportedBindingType::class);
 
-        AutowiringType::ofTyphoonType($type);
+        BindingType::ofTyphoonType($type);
     }
 
     /**
@@ -89,7 +89,7 @@ final class AutowiringTypeTest
     {
         $parameter = new \ReflectionParameter($function, 0);
 
-        Assert::same(AutowiringType::ofParameter($parameter)->string, $expected);
+        Assert::same(BindingType::ofParameter($parameter)->string, $expected);
     }
 
     /**
@@ -110,9 +110,9 @@ final class AutowiringTypeTest
     #[DataProvider('unsupportedParameters')]
     public function unsupportedParameter(\Closure $function): void
     {
-        Expect::exception(UnsupportedType::class);
+        Expect::exception(UnsupportedBindingType::class);
 
-        AutowiringType::ofParameter(new \ReflectionParameter($function, 0));
+        BindingType::ofParameter(new \ReflectionParameter($function, 0));
     }
 
     /**
@@ -126,8 +126,8 @@ final class AutowiringTypeTest
     #[Test]
     public function equalsComparesNormalizedString(): void
     {
-        $typhoon = AutowiringType::ofTyphoonType(intT);
-        $parameter = AutowiringType::ofParameter(new \ReflectionParameter(static fn(int $p) => null, 0));
+        $typhoon = BindingType::ofTyphoonType(intT);
+        $parameter = BindingType::ofParameter(new \ReflectionParameter(static fn(int $p) => null, 0));
 
         Assert::true($typhoon->equals($parameter));
     }

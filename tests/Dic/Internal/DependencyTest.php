@@ -7,9 +7,7 @@ namespace Thesis\Dic\Internal;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Test;
-use Thesis\Dic\Configuration\ValueConfig;
-use Thesis\Dic\Location;
-use Thesis\Dic\Ref;
+use function Thesis\Fixture\ref;
 
 #[Covers(Dependency::class)]
 final class DependencyTest
@@ -17,7 +15,7 @@ final class DependencyTest
     #[Test]
     public function ofHasEmptyPath(): void
     {
-        $ref = self::ref();
+        $ref = ref();
 
         $dependency = Dependency::of($ref);
 
@@ -28,7 +26,7 @@ final class DependencyTest
     #[Test]
     public function factoryHasFactoryPath(): void
     {
-        $dependency = Dependency::factory(self::ref());
+        $dependency = Dependency::factory(ref());
 
         Assert::same($dependency->path, 'factory');
     }
@@ -36,7 +34,7 @@ final class DependencyTest
     #[Test]
     public function argPrependsParameterName(): void
     {
-        $dependency = Dependency::of(self::ref())->arg('value');
+        $dependency = Dependency::of(ref())->arg('value');
 
         Assert::same($dependency->path, '$value');
     }
@@ -44,14 +42,14 @@ final class DependencyTest
     #[Test]
     public function keyPrependsBrackets(): void
     {
-        Assert::same(Dependency::of(self::ref())->key(0)->path, '[0]');
-        Assert::same(Dependency::of(self::ref())->key('name')->path, '[name]');
+        Assert::same(Dependency::of(ref())->key(0)->path, '[0]');
+        Assert::same(Dependency::of(ref())->key('name')->path, '[name]');
     }
 
     #[Test]
     public function methodWrapsPath(): void
     {
-        $dependency = Dependency::of(self::ref())->method('setLogger');
+        $dependency = Dependency::of(ref())->method('setLogger');
 
         Assert::same($dependency->path, '->setLogger()');
     }
@@ -59,7 +57,7 @@ final class DependencyTest
     #[Test]
     public function buildersNestFromInnerToOuter(): void
     {
-        $ref = self::ref();
+        $ref = ref();
 
         Assert::same(Dependency::of($ref)->key(0)->arg('value')->path, '$value[0]');
         Assert::same(Dependency::of($ref)->arg('logger')->method('setLogger')->path, '->setLogger($logger)');
@@ -68,21 +66,8 @@ final class DependencyTest
     #[Test]
     public function buildersPreserveRef(): void
     {
-        $ref = self::ref();
+        $ref = ref();
 
         Assert::same(Dependency::of($ref)->arg('x')->key(1)->method('m')->ref, $ref);
-    }
-
-    /**
-     * @return Ref<int>
-     */
-    private static function ref(): Ref
-    {
-        return new ValueConfig(
-            builder: new Builder(),
-            autowiring: new Autowiring(),
-            value: 1,
-            declaredAt: Location::caller(),
-        );
     }
 }

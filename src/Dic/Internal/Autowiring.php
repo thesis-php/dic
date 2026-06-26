@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Internal;
 
-use Thesis\Dic\Error\InvalidArgument;
-use Thesis\Dic\Internal\Autowiring\AutowiringType;
+use Thesis\Dic\Error;
+use Thesis\Dic\Internal\Autowiring\BindingType;
 use Thesis\Dic\Ref;
 
 /**
@@ -21,21 +21,16 @@ final class Autowiring
     /**
      * @template T
      * @param Ref<T> $ref
-     * @param AutowiringType<T> $type
+     * @param BindingType<T> $type
      */
-    public function bind(Ref $ref, AutowiringType $type, string|\Stringable|\UnitEnum $qualifier): void
+    public function bind(Ref $ref, BindingType $type, string|\Stringable|\UnitEnum $qualifier): void
     {
         $qualifierAsString = self::stringifyQualifier($qualifier);
 
         $boundRef = $this->bindings[$type->string][$qualifierAsString] ?? null;
 
         if ($boundRef !== null) {
-            throw new InvalidArgument(\sprintf(
-                'Cannot bind %s to type "%s": it is already bound to %s',
-                $ref,
-                $type->string,
-                $boundRef,
-            ));
+            throw Error::duplicateBinding($ref, $type->string, $boundRef);
         }
 
         $this->bindings[$type->string][$qualifierAsString] = $ref;
@@ -43,10 +38,10 @@ final class Autowiring
 
     /**
      * @template T
-     * @param AutowiringType<T> $type
+     * @param BindingType<T> $type
      * @return ?Ref<T>
      */
-    public function autowire(AutowiringType $type, string|\Stringable|\UnitEnum $qualifier): ?Ref
+    public function autowire(BindingType $type, string|\Stringable|\UnitEnum $qualifier): ?Ref
     {
         /** @var ?Ref<T> */
         return $this->bindings[$type->string][self::stringifyQualifier($qualifier)] ?? null;

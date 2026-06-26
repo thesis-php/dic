@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Configuration;
 
-use Thesis\Dic\Error\InvalidArgument;
+use Thesis\Dic\Error;
 use Thesis\Dic\Internal\Arguments;
 use Thesis\Dic\Internal\Arguments\ClosureArguments;
 use Thesis\Dic\Internal\Autowiring;
@@ -20,7 +20,6 @@ use Thesis\Dic\Internal\Signature\ReflectionFunctionSignature;
 use Thesis\Dic\Location;
 use Thesis\Dic\Ref;
 use function Thesis\Formatter\formatReflectedClass;
-use function Thesis\Formatter\formatReflectedFunction;
 
 /**
  * @api
@@ -63,7 +62,7 @@ final class ObjectConfig extends Config
     {
         if ($factory === null) {
             if (!$this->class->isInstantiable()) {
-                throw new InvalidArgument(\sprintf('Class "%s" is not instantiable', formatReflectedClass($this->class)));
+                throw Error::classNotInstantiable($this->class);
             }
 
             return Signature::ofConstructor($this->class);
@@ -73,7 +72,7 @@ final class ObjectConfig extends Config
             return Signature::ofCallable($factory);
         }
 
-        return $factory->signature ?? throw new InvalidArgument("Factory {$factory} is not callable");
+        return $factory->signature ?? throw Error::factoryNotCallable($factory);
     }
 
     protected function defaultLabel(): string
@@ -191,7 +190,7 @@ final class ObjectConfig extends Config
         $reflection = $this->class->getMethod($name);
 
         if (!$reflection->isPublic()) {
-            throw new InvalidArgument(\sprintf('Method "%s" is not public', formatReflectedFunction($reflection)));
+            throw Error::calledMethodNotPublic($reflection);
         }
 
         $arguments = new Arguments(

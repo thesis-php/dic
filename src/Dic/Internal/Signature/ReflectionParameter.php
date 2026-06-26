@@ -6,8 +6,8 @@ namespace Thesis\Dic\Internal\Signature;
 
 use Thesis\Dic\Autowire;
 use Thesis\Dic\DoNotAutowire;
-use Thesis\Dic\Error\InvalidArgument;
-use Thesis\Dic\Internal\Autowiring\AutowiringType;
+use Thesis\Dic\Error;
+use Thesis\Dic\Internal\Autowiring\BindingType;
 use function Thesis\Formatter\formatReflectedParameter;
 
 /**
@@ -55,9 +55,9 @@ final class ReflectionParameter extends Parameter
         }
     }
 
-    protected function reflectAutowiringType(): AutowiringType
+    protected function inferBindingType(): BindingType
     {
-        return AutowiringType::ofParameter($this->reflection);
+        return BindingType::ofParameter($this->reflection);
     }
 
     private bool $isAutowiringModeSet = false;
@@ -83,7 +83,7 @@ final class ReflectionParameter extends Parameter
         return match (\count($attributes)) {
             0 => null,
             1 => $attributes[0]->newInstance(),
-            default => throw new InvalidArgument('Cannot combine #[Autowire] and #[DoNotAutowire] on the same target'),
+            default => throw Error::conflictingAutowireMarkers(),
         };
     }
 }

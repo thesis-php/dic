@@ -6,8 +6,8 @@ namespace Thesis\Dic\Internal\Signature;
 
 use Thesis\Dic\Autowire;
 use Thesis\Dic\DoNotAutowire;
-use Thesis\Dic\Internal\Autowiring\AutowiringType;
-use Thesis\Dic\Internal\Autowiring\UnsupportedType;
+use Thesis\Dic\Internal\Autowiring\BindingType;
+use Thesis\Dic\Internal\Autowiring\UnsupportedBindingType;
 
 /**
  * @internal
@@ -38,25 +38,25 @@ abstract class Parameter
 
     abstract public null|Autowire|DoNotAutowire $autowiringMode { get; }
 
-    private null|AutowiringType|UnsupportedType $autowiringTypeCache = null;
+    private null|BindingType|UnsupportedBindingType $bindingTypeCache = null;
 
-    final public AutowiringType $autowiringType {
+    final public BindingType $bindingType {
         /**
-         * @throws UnsupportedType
+         * @throws UnsupportedBindingType
          */
         get {
-            if ($this->autowiringTypeCache instanceof AutowiringType) {
-                return $this->autowiringTypeCache;
+            if ($this->bindingTypeCache instanceof BindingType) {
+                return $this->bindingTypeCache;
             }
 
-            if ($this->autowiringTypeCache instanceof UnsupportedType) {
-                throw $this->autowiringTypeCache;
+            if ($this->bindingTypeCache instanceof UnsupportedBindingType) {
+                throw $this->bindingTypeCache;
             }
 
             try {
-                return $this->autowiringTypeCache = $this->reflectAutowiringType();
-            } catch (UnsupportedType $error) {
-                $this->autowiringTypeCache = $error;
+                return $this->bindingTypeCache = $this->inferBindingType();
+            } catch (UnsupportedBindingType $error) {
+                $this->bindingTypeCache = $error;
 
                 throw $error;
             }
@@ -64,12 +64,12 @@ abstract class Parameter
     }
 
     /**
-     * @throws UnsupportedType
+     * @throws UnsupportedBindingType
      */
-    abstract protected function reflectAutowiringType(): AutowiringType;
+    abstract protected function inferBindingType(): BindingType;
 
     /**
-     * @return non-empty-string a function-reference rendering of this parameter, e.g. Foo\Bar::method($baz)
+     * @return non-empty-string
      */
     abstract public function __toString(): string;
 }

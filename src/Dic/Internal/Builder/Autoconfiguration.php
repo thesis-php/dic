@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Thesis\Dic\Internal\Builder;
 
 use Thesis\Dic\Configuration\Autoconfig;
-use Thesis\Dic\Error\ConfigurationFrozen;
+use Thesis\Dic\Error;
 
 /**
  * @internal
@@ -25,7 +25,7 @@ final class Autoconfiguration
     public function addAutoconfigurator(callable $autoconfigurator): void
     {
         if ($this->autoconfigured) {
-            throw new ConfigurationFrozen();
+            throw Error::configurationFrozen();
         }
 
         $this->autoconfigurators[] = $autoconfigurator;

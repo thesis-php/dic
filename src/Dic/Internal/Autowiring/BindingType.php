@@ -11,26 +11,26 @@ use Typhoon\Type;
  *
  * @template T = mixed
  */
-final readonly class AutowiringType
+final readonly class BindingType
 {
     /**
      * @template TT
      * @param Type<contravariant TT> $type
      * @return self<TT>
-     * @throws UnsupportedType
+     * @throws UnsupportedBindingType
      */
     public static function ofTyphoonType(Type $type): self
     {
         /** @var self<TT> */
-        return new self(AutowiringTypeStringifier::stringifyTyphoonType($type));
+        return new self(BindingTypeStringifier::stringifyTyphoonType($type));
     }
 
     /**
-     * @throws UnsupportedType
+     * @throws UnsupportedBindingType
      */
     public static function ofParameter(\ReflectionParameter $parameter): self
     {
-        return new self(AutowiringTypeStringifier::stringifyParameterType($parameter));
+        return new self(BindingTypeStringifier::stringifyParameterType($parameter));
     }
 
     /**

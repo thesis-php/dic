@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Thesis\Dic\Internal\Builder;
 
 use Thesis\Dic\Configuration\ScopedConfig;
-use Thesis\Dic\Error\CircularDependency;
-use Thesis\Dic\Error\InvalidConfigurationError;
-use Thesis\Dic\Error\SingletonDependsOnScoped;
+use Thesis\Dic\Error;
 use Thesis\Dic\Internal\Container\Factories;
 use Thesis\Dic\Internal\Dependency;
 use Thesis\Dic\Internal\Factory;
@@ -116,10 +114,8 @@ final class Services
 
         try {
             $factory = $resolution();
-        } catch (ShouldNotHappen $exception) {
-            throw $exception;
-        } catch (\Throwable $exception) {
-            throw new InvalidConfigurationError($ref, $exception);
+        } catch (Error $error) {
+            throw Error::invalidServiceFactory($ref, $error);
         }
 
         $resolvedLifetime = $this->resolveRefLifetime($ref, $factory->dependencies());
@@ -167,7 +163,7 @@ final class Services
         }
 
         if ($invalidSingletonDependencies !== []) {
-            throw new SingletonDependsOnScoped($ref, $invalidSingletonDependencies);
+            throw Error::singletonDependsOnScoped($ref, $invalidSingletonDependencies);
         }
 
         return match ($lifetime) {
@@ -197,7 +193,7 @@ final class Services
             $cycle->prependDependency($dependency);
 
             if ($cycle->anchor === $ref) {
-                throw new CircularDependency($ref, $cycle->dependencies);
+                throw Error::circularDependency($ref, $cycle->dependencies);
             }
 
             throw $cycle;

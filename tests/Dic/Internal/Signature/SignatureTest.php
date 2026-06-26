@@ -39,7 +39,7 @@ final class SignatureTest
         Assert::same($parameter->name, 'greeter');
         Assert::false($parameter->isVariadic);
 
-        Assert::same($parameter->autowiringType->string, strtolower(Greeter::class));
+        Assert::same($parameter->bindingType->string, strtolower(Greeter::class));
     }
 
     #[Test]

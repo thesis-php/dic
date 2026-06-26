@@ -8,16 +8,12 @@ use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Expect;
 use Testo\Test;
-use Thesis\Dic\Configuration\ValueConfig;
-use Thesis\Dic\Error\TaggedDuringResolution;
-use Thesis\Dic\Internal\Autowiring;
-use Thesis\Dic\Internal\Builder;
-use Thesis\Dic\Location;
-use Thesis\Dic\Ref;
+use Thesis\Dic\Error;
 use Thesis\Dic\TaggedRefs;
-use Thesis\Fixture\EnGreeter;
 use Thesis\Fixture\Greeter;
 use Thesis\Fixture\GreeterTag;
+use function Thesis\Fixture\ref;
+use function Typhoon\Type\objectT;
 
 #[Covers(Tags::class)]
 final class TagsTest
@@ -26,7 +22,7 @@ final class TagsTest
     public function onResolveListenerReceivesCollectedTags(): void
     {
         $tags = new Tags();
-        $tags->add(self::ref(), new GreeterTag());
+        $tags->add(ref(objectT(Greeter::class)), new GreeterTag());
 
         $found = null;
         $tags->onResolution(static function (TaggedRefs $taggedRefs) use (&$found): void {
@@ -45,21 +41,8 @@ final class TagsTest
         $tags = new Tags();
         $tags->resolve();
 
-        Expect::exception(TaggedDuringResolution::class);
+        Expect::exception(Error::class);
 
-        $tags->add(self::ref(), new GreeterTag());
-    }
-
-    /**
-     * @return Ref<Greeter>
-     */
-    private static function ref(): Ref
-    {
-        return new ValueConfig(
-            builder: new Builder(),
-            autowiring: new Autowiring(),
-            value: new EnGreeter(),
-            declaredAt: Location::caller(),
-        );
+        $tags->add(ref(objectT(Greeter::class)), new GreeterTag());
     }
 }

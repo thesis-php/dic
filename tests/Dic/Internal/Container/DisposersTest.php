@@ -7,11 +7,7 @@ namespace Thesis\Dic\Internal\Container;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Test;
-use Thesis\Dic\Configuration\ValueConfig;
-use Thesis\Dic\Internal\Autowiring;
-use Thesis\Dic\Internal\Builder;
-use Thesis\Dic\Location;
-use Thesis\Dic\Ref;
+use function Thesis\Fixture\ref;
 
 #[Covers(Disposers::class)]
 final class DisposersTest
@@ -20,7 +16,7 @@ final class DisposersTest
     public function disposeCallsDisposerWithValueAndError(): void
     {
         $disposers = new Disposers();
-        $ref = self::ref();
+        $ref = ref();
         $error = new \RuntimeException('boom');
         $received = [];
 
@@ -37,7 +33,7 @@ final class DisposersTest
     public function disposersRunInRegistrationOrder(): void
     {
         $disposers = new Disposers();
-        $ref = self::ref();
+        $ref = ref();
         $log = [];
 
         $disposers->add($ref, static function () use (&$log): void {
@@ -56,8 +52,8 @@ final class DisposersTest
     public function disposeOnlyRunsDisposersForTheGivenRef(): void
     {
         $disposers = new Disposers();
-        $ref = self::ref();
-        $other = self::ref();
+        $ref = ref();
+        $other = ref();
         $log = [];
 
         $disposers->add($other, static function () use (&$log): void {
@@ -67,18 +63,5 @@ final class DisposersTest
         $disposers->dispose($ref, 'value', null);
 
         Assert::same($log, []);
-    }
-
-    /**
-     * @return Ref<int>
-     */
-    private static function ref(): Ref
-    {
-        return new ValueConfig(
-            builder: new Builder(),
-            autowiring: new Autowiring(),
-            value: 1,
-            declaredAt: Location::caller(),
-        );
     }
 }

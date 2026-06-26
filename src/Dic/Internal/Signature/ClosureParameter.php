@@ -6,7 +6,7 @@ namespace Thesis\Dic\Internal\Signature;
 
 use Thesis\Dic\Autowire;
 use Thesis\Dic\DoNotAutowire;
-use Thesis\Dic\Internal\Autowiring\AutowiringType;
+use Thesis\Dic\Internal\Autowiring\BindingType;
 use Typhoon\Type;
 
 /**
@@ -30,9 +30,9 @@ final class ClosureParameter extends Parameter
         get => null;
     }
 
-    protected function reflectAutowiringType(): AutowiringType
+    protected function inferBindingType(): BindingType
     {
-        return AutowiringType::ofTyphoonType($this->parameter->type);
+        return BindingType::ofTyphoonType($this->parameter->type);
     }
 
     /**
@@ -45,12 +45,8 @@ final class ClosureParameter extends Parameter
         public readonly Type\Parameter $parameter,
     ) {}
 
-    /**
-     * Emulate the {@see formatReflectedParameter()} shape without building the
-     * closure's ReflectionFunction.
-     */
     public function __toString(): string
     {
-        return \sprintf('function($%s)', $this->name);
+        return \sprintf('closure($%s)', $this->name);
     }
 }

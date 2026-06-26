@@ -6,15 +6,13 @@ namespace Thesis\Dic\Internal;
 
 use Thesis\Dic\Autowire;
 use Thesis\Dic\DoNotAutowire;
-use Thesis\Dic\Error\CannotAutowire;
-use Thesis\Dic\Error\InvalidArgument;
+use Thesis\Dic\Error;
 use Thesis\Dic\Internal\Arguments\ClosureArguments;
-use Thesis\Dic\Internal\Autowiring\UnsupportedType;
+use Thesis\Dic\Internal\Autowiring\UnsupportedBindingType;
 use Thesis\Dic\Internal\Factory\ValueFactory;
 use Thesis\Dic\Internal\Signature\DefaultValue;
 use Thesis\Dic\Internal\Signature\Parameter;
 use Thesis\Dic\Ref;
-use Typhoon\Type;
 use Typhoon\Type\Parameter as ClosureParameter;
 use const Thesis\Dic\doNotAutowire;
 
@@ -55,10 +53,10 @@ final class Arguments
     {
         $parameter = $this->signature->findParameter($positionOrName)
             ?? $this->signature->variadicParameter
-            ?? throw new InvalidArgument(\sprintf('Unknown parameter "%s"', $positionOrName));
+            ?? throw Error::unknownSignatureParameter($this->signature, $positionOrName);
 
         if ($parameter->isVariadic) {
-            $this->appendVariadic($positionOrName, $value);
+            $this->appendVariadic($parameter, $positionOrName, $value);
 
             return;
         }
@@ -74,7 +72,7 @@ final class Arguments
     public function variadic(iterable|Ref|ClosureParameter $value): void
     {
         $parameter = $this->signature->variadicParameter
-            ?? throw new InvalidArgument('Cannot set a variadic: the function has no variadic parameter');
+            ?? throw Error::unknownSignatureParameter($this->signature, true);
 
         $this->validate($parameter, $value);
 
@@ -91,19 +89,19 @@ final class Arguments
         }
     }
 
-    private function appendVariadic(int|string $positionOrName, mixed $value): void
+    private function appendVariadic(Parameter $parameter, int|string $positionOrName, mixed $value): void
     {
         $this->validateNestedElement($value);
 
         if (!\is_array($this->variadic)) {
-            throw new InvalidArgument('Cannot append to a variadic that was set to a non-array value');
+            throw Error::cannotAppendToNonArrayVariadic($parameter);
         }
 
         if (\is_int($positionOrName)
             && !\array_key_exists($positionOrName, $this->variadic)
             && \is_string(array_key_last($this->variadic))
         ) {
-            throw new InvalidArgument('Cannot set a positional variadic element after a named one');
+            throw Error::positionalVariadicAfterNamed($parameter);
         }
 
         $this->variadic[$positionOrName] = $value;
@@ -120,7 +118,7 @@ final class Arguments
         }
 
         if ($parameter->isVariadic && $value instanceof Autowire) {
-            throw new ShouldNotHappen('A variadic parameter cannot be combined with #[Autowire]');
+            throw Error::variadicNotAutowirable($parameter);
         }
 
         if ($value instanceof ClosureParameter) {
@@ -139,7 +137,7 @@ final class Arguments
         }
 
         if ($value instanceof ClosureParameter || $value instanceof Autowire || $value instanceof DoNotAutowire) {
-            throw new InvalidArgument('Autowire, DoNotAutowire and signature parameter markers cannot be used as array elements');
+            throw Error::markersNotAllowedAsArrayElements();
         }
     }
 
@@ -208,10 +206,7 @@ final class Arguments
         }
 
         if ($argument instanceof DoNotAutowire) {
-            return $parameter->defaultValue ?? throw new CannotAutowire(
-                parameter: $parameter,
-                reason: 'it is marked as not autowired and has no default value',
-            );
+            return $parameter->defaultValue ?? throw Error::cannotAutowireMarkedNotAutowired($parameter);
         }
 
         return ValueFactory::from($argument);
@@ -239,13 +234,9 @@ final class Arguments
     private function autowire(Parameter $parameter, ?Autowire $autowire): ValueFactory|ClosureParameter|DefaultValue
     {
         try {
-            $autowiringType = $parameter->autowiringType;
-        } catch (UnsupportedType $error) {
-            return $parameter->defaultValue ?? throw new CannotAutowire(
-                parameter: $parameter,
-                reason: $error->getMessage(),
-                previous: $error,
-            );
+            $bindingType = $parameter->bindingType;
+        } catch (UnsupportedBindingType $error) {
+            return $parameter->defaultValue ?? throw Error::cannotAutowireUnsupportedBindingType($parameter, $error);
         }
 
         $candidates = [];
@@ -254,27 +245,18 @@ final class Arguments
             $candidates = $this->closureArguments->autowire($parameter);
         }
 
-        $ref = $this->autowiring->autowire($autowiringType, $autowire->qualifier ?? '');
+        $ref = $this->autowiring->autowire($bindingType, $autowire->qualifier ?? '');
 
         if ($ref !== null) {
             $candidates[] = $ref;
         }
 
         if ($candidates === []) {
-            return $parameter->defaultValue ?? throw new CannotAutowire(
-                parameter: $parameter,
-                reason: 'no autowiring candidate found',
-            );
+            return $parameter->defaultValue ?? throw Error::cannotAutowireNoCandidate($parameter);
         }
 
         if (\count($candidates) > 1) {
-            throw new CannotAutowire(
-                parameter: $parameter,
-                reason: \sprintf(
-                    'multiple autowiring candidates found: %s',
-                    implode(', ', array_map(self::describeCandidate(...), $candidates)),
-                ),
-            );
+            throw Error::cannotAutowireAmbiguous($parameter, $candidates);
         }
 
         if ($candidates[0] instanceof Ref) {
@@ -282,20 +264,5 @@ final class Arguments
         }
 
         return $candidates[0];
-    }
-
-    /**
-     * @param Ref<mixed>|ClosureParameter $candidate
-     * @return non-empty-string
-     */
-    private static function describeCandidate(Ref|ClosureParameter $candidate): string
-    {
-        if ($candidate instanceof Ref) {
-            return (string) $candidate;
-        }
-
-        return $candidate->name === null
-            ? Type\stringify($candidate->type)
-            : \sprintf('%s $%s', Type\stringify($candidate->type), $candidate->name);
     }
 }

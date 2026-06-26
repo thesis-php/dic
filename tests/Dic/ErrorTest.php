@@ -6,195 +6,68 @@ namespace Thesis\Dic;
 
 use Testo\Assert;
 use Testo\Codecov\Covers;
-use Testo\Expect;
 use Testo\Test;
-use Thesis\Dic;
-use Thesis\Dic\Internal\Autowiring;
-use Thesis\Dic\Internal\Builder;
-use Thesis\Fixture\ConflictingConsumer;
-use Thesis\Fixture\Consumer;
-use Thesis\Fixture\Counter;
-use Thesis\Fixture\EnGreeter;
-use Thesis\Fixture\Greeter;
-use Thesis\Fixture\RuGreeter;
-use Thesis\TestService;
-use function Typhoon\Type\objectT;
-use function Typhoon\Type\stringify;
-use const Typhoon\Type\intT;
+use Thesis\Dic\Internal\Signature;
+use function Thesis\Fixture\ref;
 
-#[Covers(Error\UnsupportedBindingType::class)]
-#[Covers(Error\ConfigurationFrozen::class)]
-#[Covers(Error\InvalidConfigurationError::class)]
-#[Covers(Error\CannotAutowire::class)]
-#[Covers(Error\InvalidArgument::class)]
 #[Covers(Error::class)]
-#[Covers(Error\CircularDependency::class)]
-#[Covers(Error\SingletonDependsOnScoped::class)]
 final class ErrorTest
 {
     #[Test]
-    public function unsupportedBindingTypeMessage(): void
+    public function cannotAutowireMessage(): void
     {
-        $type = objectT(\ArrayObject::class, [intT]);
-        $error = new Error\UnsupportedBindingType($type);
+        $parameter = Signature::ofCallable(static fn(int $value) => null)->findParameter(0);
+        Assert::notNull($parameter);
 
-        Assert::same($error->getMessage(), \sprintf('Type "%s" is not supported for binding', stringify($type)));
+        $error = Error::cannotAutowireNoCandidate($parameter);
+
+        Assert::same($error->getMessage(), \sprintf('Cannot autowire "%s": no autowiring candidate found', $parameter));
     }
 
     #[Test]
     public function configurationFrozenMessage(): void
     {
-        $ref = self::ref();
-        $error = new Error\ConfigurationFrozen($ref);
+        $error = Error::configurationFrozen();
 
         Assert::same(
             $error->getMessage(),
-            \sprintf('Cannot configure %s: configuration is frozen once the container starts building', $ref),
+            'Cannot configure the container: configuration is frozen once it starts building',
         );
     }
 
     #[Test]
-    public function invalidConfigurationAppendsPreviousDetail(): void
+    public function invalidServiceFactoryWrapsPreviousWithRefAndDetail(): void
     {
-        $ref = self::ref();
-        $previous = new \RuntimeException('detail');
-        $error = new Error\InvalidConfigurationError($ref, $previous);
+        $ref = ref();
+        $previous = Error::configurationFrozen();
+        $error = Error::invalidServiceFactory($ref, $previous);
 
         Assert::same($error->getPrevious(), $previous);
-        Assert::same($error->getMessage(), \sprintf('Invalid configuration for %s: detail', $ref));
+        Assert::same($error->getMessage(), \sprintf('Invalid factory for %s: %s', $ref, lcfirst($previous->getMessage())));
     }
 
     #[Test]
-    public function invalidConfigurationWithoutDetail(): void
+    public function fileAndLinePointAtFactoryCallSite(): void
     {
-        $ref = self::ref();
-        $error = new Error\InvalidConfigurationError($ref, new \RuntimeException(''));
+        $line = __LINE__ + 1;
+        $error = Error::configurationFrozen();
 
-        Assert::same($error->getMessage(), \sprintf('Invalid configuration for %s', $ref));
+        Assert::same($error->getFile(), __FILE__);
+        Assert::same($error->getLine(), $line);
     }
 
     #[Test]
-    public function cannotAutowireMessage(): void
+    public function fileAndLinePointAtCallSiteThroughDelegatingFactory(): void
     {
-        $parameter = Internal\Signature::ofCallable(static fn(int $value) => null)->findParameter(0);
+        $parameter = Signature::ofCallable(static fn(int $value) => null)->findParameter(0);
         Assert::notNull($parameter);
 
-        $error = new Error\CannotAutowire($parameter, 'nope');
+        // cannotAutowireNoCandidate() delegates through the private cannotAutowire()
+        // helper, so there is an extra in-file frame between the call and `new self`.
+        $line = __LINE__ + 1;
+        $error = Error::cannotAutowireNoCandidate($parameter);
 
-        Assert::same($error->getMessage(), \sprintf('Cannot autowire "%s": nope', $parameter));
-    }
-
-    // todo
-    #[Test]
-    public function unboundDependencyWrapsCannotAutowire(): void
-    {
-        $caught = null;
-
-        try {
-            Dic::assemble(static fn(Dic $dic) => $dic->object(Consumer::class));
-        } catch (Error\InvalidConfigurationError $error) {
-            $caught = $error;
-        }
-
-        Assert::notNull($caught);
-        Assert::instanceOf($caught->getPrevious(), Error\CannotAutowire::class);
-    }
-
-    #[Test]
-    public function circularDependencyIsReported(): void
-    {
-        Expect::exception(Error\CircularDependency::class)
-            ->withMessageContaining('Circular dependency detected');
-
-        Dic::assemble(static function (Dic $dic) {
-            $service = $dic->object(TestService::class);
-
-            return $service->arg('value', $service);
-        });
-    }
-
-    #[Test]
-    public function singletonDependingOnScopedIsReported(): void
-    {
-        Expect::exception(Error\SingletonDependsOnScoped::class)
-            ->withMessageContaining('cannot depend on non-singleton services');
-
-        Dic::assemble(static function (Dic $dic) {
-            $scoped = $dic->object(TestService::class)->scoped();
-
-            return $dic->object(TestService::class)->args([$scoped]);
-        });
-    }
-
-    #[Test]
-    public function nonInstantiableClassRejected(): void
-    {
-        Expect::exception(Error\InvalidArgument::class)->withMessageContaining('is not instantiable');
-
-        Dic::assemble(static fn(Dic $dic) => $dic->object(Greeter::class));
-    }
-
-    #[Test]
-    public function factoryRefThatIsNotCallableRejected(): void
-    {
-        Expect::exception(Error\InvalidArgument::class)->withMessageContaining('is not callable');
-
-        Dic::assemble(
-            /** @phpstan-ignore argument.type */
-            static fn(Dic $dic) => $dic->object(Counter::class, factory: $dic->value(42)),
-        );
-    }
-
-    #[Test]
-    public function duplicateBindRejected(): void
-    {
-        Expect::exception(Error\InvalidArgument::class)->withMessageContaining('already bound');
-
-        Dic::assemble(static function (Dic $dic) {
-            $dic->object(EnGreeter::class)->bind(objectT(Greeter::class));
-            $dic->object(RuGreeter::class)->bind(objectT(Greeter::class));
-
-            return $dic->value(null);
-        });
-    }
-
-    #[Test]
-    public function bindUnsupportedTypeRejected(): void
-    {
-        Expect::exception(Error\UnsupportedBindingType::class);
-
-        Dic::assemble(static function (Dic $dic) {
-            $dic->value(new \ArrayObject())->bind(objectT(\ArrayObject::class, [intT]));
-
-            return $dic->value(null);
-        });
-    }
-
-    #[Test]
-    public function combinedAutowireAndDoNotAutowireRejected(): void
-    {
-        $caught = null;
-
-        try {
-            Dic::assemble(static fn(Dic $dic) => $dic->object(ConflictingConsumer::class));
-        } catch (Error\InvalidConfigurationError $error) {
-            $caught = $error;
-        }
-
-        Assert::notNull($caught);
-        Assert::instanceOf($caught->getPrevious(), Error\InvalidArgument::class);
-    }
-
-    /**
-     * @return Ref<int>
-     */
-    private static function ref(): Ref
-    {
-        return new Configuration\ValueConfig(
-            builder: new Builder(),
-            autowiring: new Autowiring(),
-            value: 1,
-            declaredAt: Location::caller(),
-        );
+        Assert::same($error->getFile(), __FILE__);
+        Assert::same($error->getLine(), $line);
     }
 }
