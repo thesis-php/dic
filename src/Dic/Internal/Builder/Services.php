@@ -11,7 +11,6 @@ use Thesis\Dic\Error\SingletonDependsOnScoped;
 use Thesis\Dic\Internal\Container\Factories;
 use Thesis\Dic\Internal\Dependency;
 use Thesis\Dic\Internal\Factory;
-use Thesis\Dic\Internal\Factory\AliasFactory;
 use Thesis\Dic\Internal\Lifetime;
 use Thesis\Dic\Internal\ShouldNotHappen;
 use Thesis\Dic\Ref;
@@ -122,12 +121,7 @@ final class Services
             throw new InvalidConfigurationError($ref, $exception);
         }
 
-        // An alias is transparent: it shares its target's resolved lifetime and
-        // bucket, so the alias edge is not subject to the singleton-on-scoped
-        // check (it is identity, not a dependency) — but it is still cycle-checked.
-        $resolvedLifetime = $factory instanceof AliasFactory
-            ? $this->resolveDependencyLifetime($ref, Dependency::of($factory->ref))
-            : $this->resolveRefLifetime($ref, $factory->dependencies());
+        $resolvedLifetime = $this->resolveRefLifetime($ref, $factory->dependencies());
 
         match ($resolvedLifetime) {
             Lifetime::Singleton => $this->singletonFactories->register($ref, $factory),
