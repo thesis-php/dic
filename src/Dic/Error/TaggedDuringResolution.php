@@ -19,6 +19,6 @@ final class TaggedDuringResolution extends ConfigurationError
      */
     public function __construct(Ref $ref, Tag $tag)
     {
-        parent::__construct(\sprintf('Cannot tag %s with %s during tag resolution', $ref, $tag::class));
+        parent::__construct(\sprintf('Cannot tag %s with "%s" during tag resolution', $ref, $tag::class));
     }
 }

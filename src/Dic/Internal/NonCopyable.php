@@ -14,7 +14,7 @@ trait NonCopyable
      */
     final public function __clone(): never
     {
-        throw new \BadMethodCallException(static::class . ' is not cloneable');
+        throw new \BadMethodCallException(\sprintf('"%s" is not cloneable', static::class));
     }
 
     /**
@@ -22,7 +22,7 @@ trait NonCopyable
      */
     final public function __serialize(): never
     {
-        throw new \BadMethodCallException(static::class . ' is not serializable');
+        throw new \BadMethodCallException(\sprintf('"%s" is not serializable', static::class));
     }
 
     /**
@@ -31,6 +31,6 @@ trait NonCopyable
      */
     final public function __unserialize(array $data): never
     {
-        throw new \BadMethodCallException(static::class . ' is not serializable');
+        throw new \BadMethodCallException(\sprintf('"%s" is not serializable', static::class));
     }
 }

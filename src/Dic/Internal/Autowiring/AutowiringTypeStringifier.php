@@ -37,7 +37,10 @@ final class AutowiringTypeStringifier extends Fallback
     public static function stringifyParameterType(\ReflectionParameter $parameter): string
     {
         return self::stringifyReflectionType(
-            type: $parameter->getType() ?? throw new UnsupportedType(\sprintf('Parameter %s does not have a type', formatReflectedParameter($parameter))),
+            type: $parameter->getType() ?? throw new UnsupportedType(\sprintf(
+                'Parameter "%s" does not have a type',
+                formatReflectedParameter($parameter),
+            )),
             self: $parameter->getDeclaringClass() ?? $parameter->getDeclaringFunction()->getClosureScopeClass(),
         );
     }
@@ -70,14 +73,14 @@ final class AutowiringTypeStringifier extends Fallback
         }
 
         if (!$type instanceof \ReflectionNamedType) {
-            throw new UnsupportedType(\sprintf('Reflection type %s (%s) is not supported for autowiring', $type, $type::class));
+            throw new UnsupportedType(\sprintf('Reflection type "%s" ("%s") is not supported for autowiring', $type, $type::class));
         }
 
         $name = strtolower($type->getName());
 
         if ($name === 'self') {
             if ($self === null) {
-                throw new UnsupportedType('Cannot resolve self type outside the class context');
+                throw new UnsupportedType('Cannot resolve "self" type outside the class context');
             }
 
             return strtolower($self->name);
@@ -85,20 +88,20 @@ final class AutowiringTypeStringifier extends Fallback
 
         if ($name === 'parent') {
             if ($self === null) {
-                throw new UnsupportedType('Cannot resolve parent type outside the class context');
+                throw new UnsupportedType('Cannot resolve "parent" type outside the class context');
             }
 
             $parent = $self->getParentClass();
 
             if ($parent === false) {
-                throw new UnsupportedType(\sprintf('Class %s does not have a parent', formatReflectedClass($self)));
+                throw new UnsupportedType(\sprintf('Class "%s" does not have a parent', formatReflectedClass($self)));
             }
 
             return strtolower($parent->name);
         }
 
         if ($name === 'static') {
-            throw new UnsupportedType('static type cannot be safely autowired');
+            throw new UnsupportedType('"static" type cannot be safely autowired');
         }
 
         \assert($name !== '');
@@ -221,6 +224,6 @@ final class AutowiringTypeStringifier extends Fallback
 
     protected function fallback(Type $type): never
     {
-        throw new UnsupportedType(\sprintf('Type %s is not supported for autowiring', Type\stringify($type)));
+        throw new UnsupportedType(\sprintf('Type "%s" is not supported for autowiring', Type\stringify($type)));
     }
 }

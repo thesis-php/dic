@@ -30,7 +30,12 @@ final class Autowiring
         $boundRef = $this->bindings[$type->string][$qualifierAsString] ?? null;
 
         if ($boundRef !== null) {
-            throw new InvalidArgument("Cannot bind {$ref} to type {$type->string}: it is already bound to {$boundRef}");
+            throw new InvalidArgument(\sprintf(
+                'Cannot bind %s to type "%s": it is already bound to %s',
+                $ref,
+                $type->string,
+                $boundRef,
+            ));
         }
 
         $this->bindings[$type->string][$qualifierAsString] = $ref;

@@ -14,7 +14,7 @@ final class UnsupportedBindingType extends ConfigurationError
     public function __construct(Type $type, ?\Throwable $previous = null)
     {
         parent::__construct(
-            \sprintf('Type %s is not supported for binding', Type\stringify($type)),
+            \sprintf('Type "%s" is not supported for binding', Type\stringify($type)),
             previous: $previous,
         );
     }

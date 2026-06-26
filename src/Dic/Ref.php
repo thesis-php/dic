@@ -40,6 +40,6 @@ abstract class Ref
      */
     final public function __toString(): string
     {
-        return \sprintf('%s (%s)', $this->label, $this->declaredAt);
+        return \sprintf('"%s" (%s)', $this->label, $this->declaredAt);
     }
 }

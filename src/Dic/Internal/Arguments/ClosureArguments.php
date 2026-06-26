@@ -44,15 +44,15 @@ final readonly class ClosureArguments
     public function validate(Parameter $parameter, ClosureParameter $argument): void
     {
         if (!\in_array($argument, $this->arguments, strict: true)) {
-            throw new InvalidArgument("Unknown closure parameter mapped to {$parameter}");
+            throw new InvalidArgument(\sprintf('Unknown closure parameter mapped to "%s"', $parameter));
         }
 
         if (($argument->isVariadic || $argument->hasDefault) && !$parameter->isOptional) {
-            throw new InvalidArgument("Cannot map an optional closure parameter to the non-optional {$parameter}");
+            throw new InvalidArgument(\sprintf('Cannot map an optional closure parameter to the non-optional "%s"', $parameter));
         }
 
         if ($argument->isPassedByReference && !$parameter->isPassedByReference) {
-            throw new InvalidArgument("Cannot map a by-reference closure parameter to the non-by-reference {$parameter}");
+            throw new InvalidArgument(\sprintf('Cannot map a by-reference closure parameter to the non-by-reference "%s"', $parameter));
         }
     }
 

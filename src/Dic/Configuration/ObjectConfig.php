@@ -63,7 +63,7 @@ final class ObjectConfig extends Config
     {
         if ($factory === null) {
             if (!$this->class->isInstantiable()) {
-                throw new InvalidArgument(\sprintf('Class %s is not instantiable', formatReflectedClass($this->class)));
+                throw new InvalidArgument(\sprintf('Class "%s" is not instantiable', formatReflectedClass($this->class)));
             }
 
             return Signature::ofConstructor($this->class);
@@ -73,7 +73,7 @@ final class ObjectConfig extends Config
             return Signature::ofCallable($factory);
         }
 
-        return $factory->signature ?? throw new InvalidArgument('The factory Ref does not reference a callable');
+        return $factory->signature ?? throw new InvalidArgument("Factory {$factory} is not callable");
     }
 
     protected function defaultLabel(): string
@@ -191,7 +191,7 @@ final class ObjectConfig extends Config
         $reflection = $this->class->getMethod($name);
 
         if (!$reflection->isPublic()) {
-            throw new InvalidArgument(\sprintf('Method %s is not public', formatReflectedFunction($reflection)));
+            throw new InvalidArgument(\sprintf('Method "%s" is not public', formatReflectedFunction($reflection)));
         }
 
         $arguments = new Arguments(

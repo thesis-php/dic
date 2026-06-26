@@ -37,7 +37,7 @@ final class MethodConfig extends Config
     ) {
         if (!$function->isPublic()) {
             throw new InvalidArgument(\sprintf(
-                'Method %s is not public',
+                'Method "%s" is not public',
                 formatReflectedFunction($function),
             ));
         }

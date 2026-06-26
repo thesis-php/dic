@@ -43,7 +43,7 @@ final class ErrorTest
         Assert::instanceOf($error, Error\RuntimeError::class);
         Assert::instanceOf($error, \RuntimeException::class);
         Assert::instanceOf($error, Error::class);
-        Assert::same($error->getMessage(), "{$ref} is not registered");
+        Assert::same($error->getMessage(), \sprintf('%s is not registered', $ref));
     }
 
     #[Test]
@@ -55,7 +55,7 @@ final class ErrorTest
         Assert::instanceOf($error, Error\ConfigurationError::class);
         Assert::instanceOf($error, \LogicException::class);
         Assert::instanceOf($error, Error::class);
-        Assert::same($error->getMessage(), \sprintf('Type %s is not supported for binding', stringify($type)));
+        Assert::same($error->getMessage(), \sprintf('Type "%s" is not supported for binding', stringify($type)));
     }
 
     #[Test]
@@ -67,7 +67,7 @@ final class ErrorTest
         Assert::instanceOf($error, Error\ConfigurationError::class);
         Assert::same(
             $error->getMessage(),
-            "Cannot configure {$ref}: configuration is frozen once the container starts building",
+            \sprintf('Cannot configure %s: configuration is frozen once the container starts building', $ref),
         );
     }
 
@@ -80,7 +80,7 @@ final class ErrorTest
 
         Assert::instanceOf($error, Error\ConfigurationError::class);
         Assert::same($error->getPrevious(), $previous);
-        Assert::same($error->getMessage(), "Invalid configuration for {$ref}: detail");
+        Assert::same($error->getMessage(), \sprintf('Invalid configuration for %s: detail', $ref));
     }
 
     #[Test]
@@ -89,7 +89,7 @@ final class ErrorTest
         $ref = self::ref();
         $error = new Error\InvalidConfigurationError($ref, new \RuntimeException(''));
 
-        Assert::same($error->getMessage(), "Invalid configuration for {$ref}");
+        Assert::same($error->getMessage(), \sprintf('Invalid configuration for %s', $ref));
     }
 
     #[Test]
@@ -165,7 +165,7 @@ final class ErrorTest
     #[Test]
     public function factoryRefThatIsNotCallableRejected(): void
     {
-        Expect::exception(Error\InvalidArgument::class)->withMessageContaining('does not reference a callable');
+        Expect::exception(Error\InvalidArgument::class)->withMessageContaining('is not callable');
 
         Dic::assemble(
             /** @phpstan-ignore argument.type */

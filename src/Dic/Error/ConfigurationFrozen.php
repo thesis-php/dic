@@ -16,8 +16,10 @@ final class ConfigurationFrozen extends ConfigurationError
      */
     public function __construct(?Ref $ref = null)
     {
-        parent::__construct($ref === null
+        parent::__construct(
+            $ref === null
             ? 'Cannot configure the container: configuration is frozen once it starts building'
-            : "Cannot configure {$ref}: configuration is frozen once the container starts building");
+            : "Cannot configure {$ref}: configuration is frozen once the container starts building",
+        );
     }
 }

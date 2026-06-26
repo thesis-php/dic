@@ -27,7 +27,7 @@ final readonly class ReflectionDefaultValue implements DefaultValue
     {
         if (preg_match('/(?<== )(.+) ]$/', (string) $this->reflection, $matches) !== 1) {
             throw new ShouldNotHappen(\sprintf(
-                'Failed to parse default parameter %s: unexpected reflection string %s',
+                "Failed to parse default parameter \"%s\". Unexpected reflection string:\n%s",
                 formatReflectedParameter($this->reflection),
                 $this->reflection,
             ));

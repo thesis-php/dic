@@ -173,10 +173,10 @@ final readonly class DicTest
                 <<<'MSG'
                     Circular dependency detected:
 
-                      Thesis\TestService (tests/DicTest.php:%1$s)
-                      └─ $value → Thesis\TestService (tests/DicTest.php:%2$s)
-                         └─ $value → Thesis\TestService (tests/DicTest.php:%3$s)
-                            └─ $value[0] → Thesis\TestService (tests/DicTest.php:%1$s)  ← cycle
+                      "Thesis\TestService" (tests/DicTest.php:%1$s)
+                      └─ $value → "Thesis\TestService" (tests/DicTest.php:%2$s)
+                         └─ $value → "Thesis\TestService" (tests/DicTest.php:%3$s)
+                            └─ $value[0] → "Thesis\TestService" (tests/DicTest.php:%1$s)  ← cycle
 
                     Break the cycle by removing one of the dependencies above.
                     MSG,
@@ -246,12 +246,12 @@ final readonly class DicTest
         Expect::exception(SingletonDependsOnScoped::class)
             ->withMessage(\sprintf(
                 <<<'MSG'
-                    Singleton Thesis\TestService (tests/DicTest.php:%1$s) cannot depend on non-singleton services:
+                    Singleton "Thesis\TestService" (tests/DicTest.php:%1$s) cannot depend on non-singleton services:
 
-                      Thesis\TestService (tests/DicTest.php:%1$s)
-                      └─ $factory → Thesis\TestService (tests/DicTest.php:%2$s)  ← Scoped
+                      "Thesis\TestService" (tests/DicTest.php:%1$s)
+                      └─ $factory → "Thesis\TestService" (tests/DicTest.php:%2$s)  ← Scoped
 
-                    Make Thesis\TestService (tests/DicTest.php:%1$s) scoped (or canBeScoped()), or make these dependencies singletons.
+                    Make "Thesis\TestService" (tests/DicTest.php:%1$s) scoped (or canBeScoped()), or make these dependencies singletons.
                     MSG,
                 $line + 20,
                 $line + 17,

@@ -55,7 +55,7 @@ final readonly class ClosureVariables
      */
     public function parameter(Parameter $parameter): string
     {
-        return $this->parameters[$parameter] ?? throw new ShouldNotHappen(\sprintf('Unknown parameter %s', $parameter->name ?? 'unnamed'));
+        return $this->parameters[$parameter] ?? throw new ShouldNotHappen(\sprintf('Unknown parameter "%s"', $parameter->name ?? 'unnamed'));
     }
 
     /**

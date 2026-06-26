@@ -54,7 +54,7 @@ final class Arguments
     {
         $parameter = $this->signature->findParameter($positionOrName)
             ?? $this->signature->variadicParameter
-            ?? throw new InvalidArgument("Unknown parameter {$positionOrName}");
+            ?? throw new InvalidArgument(\sprintf('Unknown parameter "%s"', $positionOrName));
 
         if ($parameter->isVariadic) {
             $this->appendVariadic($positionOrName, $value);
@@ -207,7 +207,7 @@ final class Arguments
         }
 
         if ($argument instanceof DoNotAutowire) {
-            return $parameter->defaultValue ?? throw new CannotAutowire("{$parameter} is marked as not autowired and has no default value");
+            return $parameter->defaultValue ?? throw new CannotAutowire(\sprintf('"%s" is marked as not autowired and has no default value', $parameter));
         }
 
         return ValueFactory::from($argument);
@@ -222,7 +222,7 @@ final class Arguments
             $autowiringType = $parameter->autowiringType;
         } catch (UnsupportedType $error) {
             return $parameter->defaultValue ?? throw new CannotAutowire(
-                message: "{$parameter} cannot be autowired: {$error->getMessage()}",
+                message: \sprintf('"%s" cannot be autowired: %s', $parameter, $error->getMessage()),
                 previous: $error,
             );
         }
@@ -240,9 +240,9 @@ final class Arguments
         }
 
         return match (\count($candidates)) {
-            0 => $parameter->defaultValue ?? throw new ShouldNotHappen("No autowiring candidate and no default value for {$parameter}"),
+            0 => $parameter->defaultValue ?? throw new ShouldNotHappen(\sprintf('No autowiring candidate and no default value for "%s"', $parameter)),
             1 => array_first($candidates),
-            default => throw new ShouldNotHappen("Multiple autowiring candidates for {$parameter}"),
+            default => throw new ShouldNotHappen(\sprintf('Multiple autowiring candidates for "%s"', $parameter)),
         };
     }
 

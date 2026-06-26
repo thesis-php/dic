@@ -101,7 +101,8 @@ final class Services
      */
     private function resolveRef(Ref $ref): Lifetime
     {
-        $resolution = $this->resolution[$ref] ?? throw new ShouldNotHappen("Cannot resolve {$ref}: it is not registered");
+        $resolution = $this->resolution[$ref]
+            ?? throw new ShouldNotHappen("Cannot resolve {$ref}: it is not registered");
 
         if ($resolution instanceof Lifetime) {
             return $resolution;
