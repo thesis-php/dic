@@ -53,7 +53,7 @@ final class Services
             throw new ShouldNotHappen("Cannot register {$ref}: service resolution has already started");
         }
 
-        if ($this->resolution->contains($ref)) {
+        if ($this->resolution->offsetExists($ref)) {
             throw new ShouldNotHappen("{$ref} is already registered");
         }
 
