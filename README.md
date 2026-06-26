@@ -19,6 +19,8 @@ composer require thesis/dic
 
 ## Quick start
 
+> This guide covers only a fraction of what Dic can do — just enough to get you started.
+
 ### Dic
 
 The [`Thesis\Dic`](src/Dic.php) class is the heart of container configuration.
