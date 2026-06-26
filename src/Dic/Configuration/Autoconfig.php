@@ -19,6 +19,8 @@ use Thesis\Dic\Tag;
  */
 abstract class Autoconfig extends Ref
 {
+    protected bool $isAutoconfigurable = true;
+
     protected function __construct(
         protected readonly Builder $builder,
     ) {}

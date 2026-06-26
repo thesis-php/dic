@@ -71,6 +71,13 @@ abstract class Config extends Autoconfig
         return $this;
     }
 
+    final public function doNotAutoconfigure(): static
+    {
+        $this->isAutoconfigurable = false;
+
+        return $this;
+    }
+
     /**
      * @return Factory<T>
      */

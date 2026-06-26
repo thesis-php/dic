@@ -62,6 +62,10 @@ final class Autoconfiguration
 
         $autoconfigurators = $this->autoconfigurators;
         $autoconfigurator = \Closure::bind(static function (Autoconfig $config) use ($autoconfigurators): void {
+            if (!$config->isAutoconfigurable) {
+                return;
+            }
+
             $config->isAutoconfiguring = true;
 
             try {
