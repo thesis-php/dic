@@ -14,6 +14,7 @@ use Thesis\Dic\Internal\Factory\ValueFactory;
 use Thesis\Dic\Internal\Signature\DefaultValue;
 use Thesis\Dic\Internal\Signature\Parameter;
 use Thesis\Dic\Ref;
+use Typhoon\Type;
 use Typhoon\Type\Parameter as ClosureParameter;
 use const Thesis\Dic\doNotAutowire;
 
@@ -207,43 +208,13 @@ final class Arguments
         }
 
         if ($argument instanceof DoNotAutowire) {
-            return $parameter->defaultValue ?? throw new CannotAutowire(\sprintf('"%s" is marked as not autowired and has no default value', $parameter));
-        }
-
-        return ValueFactory::from($argument);
-    }
-
-    /**
-     * @return ValueFactory|TClosureParameter|DefaultValue
-     */
-    private function autowire(Parameter $parameter, ?Autowire $autowire): ValueFactory|ClosureParameter|DefaultValue
-    {
-        try {
-            $autowiringType = $parameter->autowiringType;
-        } catch (UnsupportedType $error) {
             return $parameter->defaultValue ?? throw new CannotAutowire(
-                message: \sprintf('"%s" cannot be autowired: %s', $parameter, $error->getMessage()),
-                previous: $error,
+                parameter: $parameter,
+                reason: 'it is marked as not autowired and has no default value',
             );
         }
 
-        $candidates = [];
-
-        if ($autowire === null) {
-            $candidates = $this->closureArguments->autowire($parameter);
-        }
-
-        $ref = $this->autowiring->autowire($autowiringType, $autowire->qualifier ?? '');
-
-        if ($ref !== null) {
-            $candidates[] = ValueFactory::from($ref);
-        }
-
-        return match (\count($candidates)) {
-            0 => $parameter->defaultValue ?? throw new ShouldNotHappen(\sprintf('No autowiring candidate and no default value for "%s"', $parameter)),
-            1 => array_first($candidates),
-            default => throw new ShouldNotHappen(\sprintf('Multiple autowiring candidates for "%s"', $parameter)),
-        };
+        return ValueFactory::from($argument);
     }
 
     /**
@@ -260,5 +231,71 @@ final class Arguments
         }
 
         return ValueFactory::from($this->variadic);
+    }
+
+    /**
+     * @return ValueFactory|TClosureParameter|DefaultValue
+     */
+    private function autowire(Parameter $parameter, ?Autowire $autowire): ValueFactory|ClosureParameter|DefaultValue
+    {
+        try {
+            $autowiringType = $parameter->autowiringType;
+        } catch (UnsupportedType $error) {
+            return $parameter->defaultValue ?? throw new CannotAutowire(
+                parameter: $parameter,
+                reason: $error->getMessage(),
+                previous: $error,
+            );
+        }
+
+        $candidates = [];
+
+        if ($autowire === null) {
+            $candidates = $this->closureArguments->autowire($parameter);
+        }
+
+        $ref = $this->autowiring->autowire($autowiringType, $autowire->qualifier ?? '');
+
+        if ($ref !== null) {
+            $candidates[] = $ref;
+        }
+
+        if ($candidates === []) {
+            return $parameter->defaultValue ?? throw new CannotAutowire(
+                parameter: $parameter,
+                reason: 'no autowiring candidate found',
+            );
+        }
+
+        if (\count($candidates) > 1) {
+            throw new CannotAutowire(
+                parameter: $parameter,
+                reason: \sprintf(
+                    'multiple autowiring candidates found: %s',
+                    implode(', ', array_map(self::describeCandidate(...), $candidates)),
+                ),
+            );
+        }
+
+        if ($candidates[0] instanceof Ref) {
+            return ValueFactory::from($candidates[0]);
+        }
+
+        return $candidates[0];
+    }
+
+    /**
+     * @param Ref<mixed>|ClosureParameter $candidate
+     * @return non-empty-string
+     */
+    private static function describeCandidate(Ref|ClosureParameter $candidate): string
+    {
+        if ($candidate instanceof Ref) {
+            return (string) $candidate;
+        }
+
+        return $candidate->name === null
+            ? Type\stringify($candidate->type)
+            : \sprintf('%s $%s', Type\stringify($candidate->type), $candidate->name);
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Error;
 
+use Thesis\Dic\Error;
 use Thesis\Dic\Internal\Dependency;
 use Thesis\Dic\Internal\Lifetime;
 use Thesis\Dic\Ref;
@@ -11,7 +12,7 @@ use Thesis\Dic\Ref;
 /**
  * @api
  */
-final class SingletonDependsOnScoped extends ConfigurationError
+final class SingletonDependsOnScoped extends Error
 {
     /**
      * @internal

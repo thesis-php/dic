@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Error;
 
+use Thesis\Dic\Error;
 use Typhoon\Type;
 
 /**
  * @api
  */
-final class UnsupportedBindingType extends ConfigurationError
+final class UnsupportedBindingType extends Error
 {
     public function __construct(Type $type, ?\Throwable $previous = null)
     {

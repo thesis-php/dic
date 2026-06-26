@@ -14,15 +14,16 @@ After any source change run `make phpstan` and `make test`; before finishing, `m
 
 ## Errors (namespace `Thesis\Dic\Error`)
 
-- The root marker is the **interface** `Thesis\Dic\Error` — it deliberately shares its name with the `Error\*` namespace (legal in PHP; reference it from inside the namespace via `use Thesis\Dic\Error;`).
-- Two abstract phase bases: `Error\ConfigurationError extends \LogicException` (build-time) and `Error\RuntimeError extends \RuntimeException` (resolution-time). Every concrete error `extends` one of them — do not `implements` the markers directly.
-- **Never throw a message-less exception.** User-triggerable problems → a typed `@api` error under `Error/` with context (ref / parameter / class). Internal "can't happen" invariants → `Internal\ShouldNotHappen('reason')` (always a reason; not part of the public hierarchy; `Ref::resolve()` rethrows it as-is and never wraps it in `InvalidConfiguration`).
+- The root base is the abstract class `Thesis\Dic\Error extends \LogicException` — it deliberately shares its name with the `Error\*` namespace (legal in PHP; reference it from inside that namespace via `use Thesis\Dic\Error;`). Catch it to handle any container error. All errors are build-time: the full dependency graph is validated eagerly at build, so resolving from a built container raises no DIC-specific error — there is no marker interface and no runtime-error phase.
+- Every concrete error lives under `Error\*` and `extends Thesis\Dic\Error`.
+- **Never throw a message-less exception.** User-triggerable problems → a typed `@api` error under `Error/` that takes structured context (ref / parameter / class / reason) and builds its own message — not a raw string (e.g. `CannotAutowire(Parameter $parameter, string $reason)`). Internal "can't happen" invariants → `Internal\ShouldNotHappen('reason')` (always a reason; not part of the public hierarchy; the builder's service resolution rethrows it as-is and never wraps it in `InvalidConfigurationError`).
 - PHPDoc on errors: `@api` always; prose only when it adds something beyond the class name (markers get prose; self-explanatory leaves get just `@api`).
 
 ## Rendering (error messages)
 
 - Dependency paths render as indented trees; an edge is `{path} → {node}`, and an empty `Dependency.path` renders as just the node (no `→`).
 - Node labels render the **real type**, not prose: `Scoped<X>`, `\Closure(…): …` (via `Typhoon\Type\stringify`) — never placeholders.
+- Injected values are wrapped in double quotes. A `Ref` quotes itself in `Ref::__toString` (`"{label}" ({location})`), so insert refs raw (`{$ref}`); for everything else use `sprintf` with `"%s"` rather than escaping quotes inside an interpolated string.
 
 ## Taste
 

@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Error;
 
+use Thesis\Dic\Error;
 use Thesis\Dic\Internal\Dependency;
 use Thesis\Dic\Ref;
 
 /**
  * @api
  */
-final class CircularDependency extends ConfigurationError
+final class CircularDependency extends Error
 {
     /**
      * @param Ref<mixed> $anchor node where the cycle closes

@@ -22,39 +22,22 @@ use function Typhoon\Type\objectT;
 use function Typhoon\Type\stringify;
 use const Typhoon\Type\intT;
 
-#[Covers(Error\UnknownRef::class)]
 #[Covers(Error\UnsupportedBindingType::class)]
 #[Covers(Error\ConfigurationFrozen::class)]
 #[Covers(Error\InvalidConfigurationError::class)]
 #[Covers(Error\CannotAutowire::class)]
 #[Covers(Error\InvalidArgument::class)]
-#[Covers(Error\ConfigurationError::class)]
-#[Covers(Error\RuntimeError::class)]
+#[Covers(Error::class)]
 #[Covers(Error\CircularDependency::class)]
 #[Covers(Error\SingletonDependsOnScoped::class)]
 final class ErrorTest
 {
     #[Test]
-    public function unknownRefIsRuntimeError(): void
-    {
-        $ref = self::ref();
-        $error = new Error\UnknownRef($ref);
-
-        Assert::instanceOf($error, Error\RuntimeError::class);
-        Assert::instanceOf($error, \RuntimeException::class);
-        Assert::instanceOf($error, Error::class);
-        Assert::same($error->getMessage(), \sprintf('%s is not registered', $ref));
-    }
-
-    #[Test]
-    public function unsupportedTypeIsConfigurationError(): void
+    public function unsupportedBindingTypeMessage(): void
     {
         $type = objectT(\ArrayObject::class, [intT]);
         $error = new Error\UnsupportedBindingType($type);
 
-        Assert::instanceOf($error, Error\ConfigurationError::class);
-        Assert::instanceOf($error, \LogicException::class);
-        Assert::instanceOf($error, Error::class);
         Assert::same($error->getMessage(), \sprintf('Type "%s" is not supported for binding', stringify($type)));
     }
 
@@ -64,7 +47,6 @@ final class ErrorTest
         $ref = self::ref();
         $error = new Error\ConfigurationFrozen($ref);
 
-        Assert::instanceOf($error, Error\ConfigurationError::class);
         Assert::same(
             $error->getMessage(),
             \sprintf('Cannot configure %s: configuration is frozen once the container starts building', $ref),
@@ -78,7 +60,6 @@ final class ErrorTest
         $previous = new \RuntimeException('detail');
         $error = new Error\InvalidConfigurationError($ref, $previous);
 
-        Assert::instanceOf($error, Error\ConfigurationError::class);
         Assert::same($error->getPrevious(), $previous);
         Assert::same($error->getMessage(), \sprintf('Invalid configuration for %s: detail', $ref));
     }
@@ -93,40 +74,31 @@ final class ErrorTest
     }
 
     #[Test]
-    public function cannotAutowireIsConfigurationError(): void
+    public function cannotAutowireMessage(): void
     {
-        $error = new Error\CannotAutowire('nope');
+        $parameter = Internal\Signature::ofCallable(static fn(int $value) => null)->findParameter(0);
+        Assert::notNull($parameter);
 
-        Assert::instanceOf($error, Error\ConfigurationError::class);
-        Assert::instanceOf($error, Error::class);
-        Assert::same($error->getMessage(), 'nope');
-    }
+        $error = new Error\CannotAutowire($parameter, 'nope');
 
-    #[Test]
-    public function invalidArgumentIsConfigurationError(): void
-    {
-        $error = new Error\InvalidArgument('bad');
-
-        Assert::instanceOf($error, Error\ConfigurationError::class);
-        Assert::instanceOf($error, Error::class);
-        Assert::same($error->getMessage(), 'bad');
+        Assert::same($error->getMessage(), \sprintf('Cannot autowire "%s": nope', $parameter));
     }
 
     // todo
-    // #[Test]
-    // public function unboundDependencyWrapsCannotAutowire(): void
-    // {
-    //     $caught = null;
-    //
-    //     try {
-    //         Dic::assemble(static fn(Dic $dic) => $dic->object(Consumer::class));
-    //     } catch (Error\InvalidConfiguration $error) {
-    //         $caught = $error;
-    //     }
-    //
-    //     Assert::notNull($caught);
-    //     Assert::instanceOf($caught->getPrevious(), Error\CannotAutowire::class);
-    // }
+    #[Test]
+    public function unboundDependencyWrapsCannotAutowire(): void
+    {
+        $caught = null;
+
+        try {
+            Dic::assemble(static fn(Dic $dic) => $dic->object(Consumer::class));
+        } catch (Error\InvalidConfigurationError $error) {
+            $caught = $error;
+        }
+
+        Assert::notNull($caught);
+        Assert::instanceOf($caught->getPrevious(), Error\CannotAutowire::class);
+    }
 
     #[Test]
     public function circularDependencyIsReported(): void

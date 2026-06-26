@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Error;
 
+use Thesis\Dic\Error;
 use Thesis\Dic\Ref;
 
 /**
  * @api
  */
-final class InvalidConfigurationError extends ConfigurationError
+final class InvalidConfigurationError extends Error
 {
     /**
      * @param Ref<mixed> $ref

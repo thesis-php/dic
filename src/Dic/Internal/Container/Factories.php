@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Internal\Container;
 
-use Thesis\Dic\Error\UnknownRef;
 use Thesis\Dic\Internal\Container;
 use Thesis\Dic\Internal\Factory;
 use Thesis\Dic\Internal\NonCopyable;
@@ -57,6 +56,6 @@ final readonly class Factories
      */
     public function create(Ref $ref, Container|Scope $container): mixed
     {
-        return ($this->factories[$ref] ?? throw new UnknownRef($ref))->create($container);
+        return ($this->factories[$ref] ?? throw new ShouldNotHappen("No factory registered for {$ref}"))->create($container);
     }
 }

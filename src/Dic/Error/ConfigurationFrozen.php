@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Error;
 
+use Thesis\Dic\Error;
 use Thesis\Dic\Ref;
 
 /**
  * @api
  */
-final class ConfigurationFrozen extends ConfigurationError
+final class ConfigurationFrozen extends Error
 {
     /**
      * @param ?Ref<mixed> $ref

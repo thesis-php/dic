@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Error;
 
+use Thesis\Dic\Error;
 use Thesis\Dic\Ref;
 use Thesis\Dic\Tag;
 
 /**
  * @api
  */
-final class TaggedDuringResolution extends ConfigurationError
+final class TaggedDuringResolution extends Error
 {
     /**
      * @template T
@@ -19,6 +20,10 @@ final class TaggedDuringResolution extends ConfigurationError
      */
     public function __construct(Ref $ref, Tag $tag)
     {
-        parent::__construct(\sprintf('Cannot tag %s with "%s" during tag resolution', $ref, $tag::class));
+        parent::__construct(\sprintf(
+            'Cannot tag %s with "%s" during tag resolution',
+            $ref,
+            $tag::class,
+        ));
     }
 }
