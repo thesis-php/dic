@@ -2,16 +2,14 @@
 
 A fresh take on the PHP dependency injection container, with all the features you expect.
 
-- **Type-safe** — types are resolved by local reasoning, so a small plugin can cover what static analyzers can't.
-- **Modular** — isolated modules, no global scope.
-- **Autowiring** at the module level.
-- **Autoconfiguration** via a flexible attribute.
-- **Tags** with flexible resolution.
-- **Scoped** service lifetimes.
-- **Fully encapsulated** container.
-- **Variadic parameters** supported.
-- **Callable** services out of the box (closures, invokables, methods, …).
-- Built for **long-running runtimes** (AMPHP, FrankenPHP, RoadRunner, Swoole, …).
+- **Modular** — isolated modules, no global scope
+- **Type-safe** with local reasoning
+- **Autowiring** at the module level
+- **Autoconfiguration** — plug in your attributes or autoconfigure by type
+- **Tags** with flexible resolution
+- **Scoped** service lifetimes
+- **Callable** services (closures, methods, …)
+- **Variadic parameters** supported
 
 ## Installation
 
@@ -23,19 +21,19 @@ composer require thesis/dic
 
 ### Dic
 
-The `Thesis\Dic` class is the heart of container configuration.
+The [`Thesis\Dic`](src/Dic.php) class is the heart of container configuration.
 It lets you declare services, require modules, subscribe to events and more.
 
 ### Module
 
 A module is the unit of composition: you assemble your application from modules, and the application itself is just the root module.
 
-A module is a `callable` that accepts `Thesis\Dic` and returns whatever it exports.
+A module is a `callable` that accepts `Dic` and returns whatever it exports.
 
 ### Ref
 
 No string identifiers to invent — they aren't type-safe.
-Instead, declaring a service returns a `Ref<T>`, its handle and identifier, with `T` inferred from configuration:
+Instead, declaring a service returns a [`Thesis\Dic\Ref<T>`](src/Dic/Ref.php), its handle and identifier, with `T` inferred from configuration:
 
 ```php
 $logger = $dic->object(NullLogger::class); // Ref<NullLogger>
