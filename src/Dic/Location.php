@@ -11,22 +11,11 @@ use Composer\Autoload\ClassLoader;
  */
 final class Location
 {
-    /**
-     * @param non-negative-int $index
-     */
-    public static function caller(int $index = 0): self
+    public static function caller(): self
     {
-        return self::fromTrace($index + 2);
-    }
+        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
 
-    /**
-     * @param non-negative-int $index
-     */
-    public static function fromTrace(int $index = 0): self
-    {
-        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $index + 1);
-
-        $trace = $backtrace[$index] ?? throw new \OutOfRangeException('Invalid trace index');
+        $trace = $backtrace[1] ?? throw new \OutOfRangeException('Invalid trace index');
 
         $file = $trace['file'] ?? '';
         $line = $trace['line'] ?? 0;
