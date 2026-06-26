@@ -94,7 +94,7 @@ final readonly class ConsoleModule
 }
 ```
 
-To use a module inside another one, call `Dic::require($module)` and get whatever that module exports.
+To use a module inside another one, call `require()` and get whatever that module exports.
 
 ```php
 use Psr\Log\NullLogger;
