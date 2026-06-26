@@ -9,7 +9,7 @@ use Testo\Codecov\Covers;
 use Testo\Expect;
 use Testo\Test;
 use Thesis\Dic\Configuration\ValueConfig;
-use Thesis\Dic\Error\TaggedAfterResolution;
+use Thesis\Dic\Error\TaggedDuringResolution;
 use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\Builder;
 use Thesis\Dic\Location;
@@ -45,7 +45,7 @@ final class TagsTest
         $tags = new Tags();
         $tags->resolve();
 
-        Expect::exception(TaggedAfterResolution::class);
+        Expect::exception(TaggedDuringResolution::class);
 
         $tags->add(self::ref(), new GreeterTag());
     }

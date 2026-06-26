@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Internal\Builder;
 
-use Thesis\Dic\Error\TaggedAfterResolution;
+use Thesis\Dic\Error\TaggedDuringResolution;
 use Thesis\Dic\Ref;
 use Thesis\Dic\Tag;
 use Thesis\Dic\TaggedRef;
@@ -30,7 +30,7 @@ final class Tags
     public function add(Ref $ref, Tag $tag): void
     {
         if ($this->resolving) {
-            throw new TaggedAfterResolution($ref, $tag);
+            throw new TaggedDuringResolution($ref, $tag);
         }
 
         $this->taggedRefs[] = new TaggedRef($ref, $tag);
