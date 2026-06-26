@@ -20,13 +20,12 @@
         "typhoon/type": "^0.8.1"
     },
     "require-dev": {
-        "dragon-code/benchmark": "^4.6",
-        "symfony/var-dumper": "^8.0.4",
-        "testo/assert": "^0.1.1",
-        "testo/codecov": "^0.1.4",
-        "testo/data": "^0.1.3",
-        "testo/test": "^0.1.1",
-        "testo/testo": "^0.10.2"
+        "symfony/var-dumper": "^8.1.0",
+        "testo/assert": "^0.1.9",
+        "testo/codecov": "^0.1.11",
+        "testo/data": "^0.1.6",
+        "testo/test": "^0.1.4",
+        "testo/testo": "^0.10.29"
     },
     "autoload": {
         "psr-4": {
