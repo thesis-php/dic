@@ -25,6 +25,11 @@ After any source change run `make phpstan` and `make test`; before finishing, `m
 - Node labels render the **real type**, not prose: `Scoped<X>`, `\Closure(…): …` (via `Typhoon\Type\stringify`) — never placeholders.
 - Injected values are wrapped in double quotes. A `Ref` quotes itself in `Ref::__toString` (`"{label}" ({location})`), so insert refs raw (`{$ref}`); for everything else use `sprintf` with `"%s"` rather than escaping quotes inside an interpolated string.
 
+## Markdown
+
+- One sentence per line: start each new sentence on its own line within the same paragraph (semantic line breaks). Blank line still separates paragraphs.
+- Soft-wrap at 120 columns; only wrap a single sentence onto the next line if it exceeds that.
+
 ## Taste
 
 - PHP 8.4 throughout: property hooks, asymmetric visibility (`public private(set)`), `readonly`.
