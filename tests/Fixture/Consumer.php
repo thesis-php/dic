@@ -7,6 +7,6 @@ namespace Thesis\Fixture;
 final readonly class Consumer
 {
     public function __construct(
-        public Greeter $greeter,
+        public Cache $cache,
     ) {}
 }

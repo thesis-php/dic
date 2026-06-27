@@ -12,22 +12,22 @@ use Thesis\Dic\BuildError;
 use Thesis\Dic\DisposalFailed;
 use Thesis\Dic\TaggedRef;
 use Thesis\Dic\TaggedRefs;
+use Thesis\Fixture\ApcuCache;
+use Thesis\Fixture\Cache;
+use Thesis\Fixture\CacheStore;
+use Thesis\Fixture\CacheTag;
 use Thesis\Fixture\ConflictingConsumer;
 use Thesis\Fixture\Consumer;
 use Thesis\Fixture\Counter;
 use Thesis\Fixture\CounterAndNumbers;
 use Thesis\Fixture\CounterHolder;
-use Thesis\Fixture\EnGreeter;
-use Thesis\Fixture\Greeter;
-use Thesis\Fixture\GreeterTag;
 use Thesis\Fixture\Holder;
-use Thesis\Fixture\Lang;
 use Thesis\Fixture\Numbers;
 use Thesis\Fixture\OptionalConsumer;
 use Thesis\Fixture\Pair;
 use Thesis\Fixture\PriorityTag;
 use Thesis\Fixture\QualifiedConsumer;
-use Thesis\Fixture\RuGreeter;
+use Thesis\Fixture\RedisCache;
 use Thesis\Fixture\WithDefault;
 use function Thesis\Dic\autowire;
 use function Typhoon\Type\closureT;
@@ -294,26 +294,26 @@ final readonly class DicTest
     public function autowiresConstructorByBoundType(): void
     {
         $consumer = Dic::assemble(static function (Dic $dic) {
-            $dic->object(EnGreeter::class)->bind(objectT(Greeter::class));
+            $dic->object(RedisCache::class)->bind(objectT(Cache::class));
 
             return $dic->object(Consumer::class);
         });
 
-        Assert::instanceOf($consumer->greeter, EnGreeter::class);
-        Assert::same($consumer->greeter->greet(), 'hello');
+        Assert::instanceOf($consumer->cache, RedisCache::class);
+        Assert::same($consumer->cache->get('key'), 'redis');
     }
 
     #[Test]
     public function bindWithQualifierSelectsImplementation(): void
     {
         $consumer = Dic::assemble(static function (Dic $dic) {
-            $dic->object(EnGreeter::class)->bind(objectT(Greeter::class), 'en');
-            $dic->object(RuGreeter::class)->bind(objectT(Greeter::class), 'ru');
+            $dic->object(RedisCache::class)->bind(objectT(Cache::class), 'redis');
+            $dic->object(ApcuCache::class)->bind(objectT(Cache::class), 'apcu');
 
-            return $dic->object(Consumer::class)->arg('greeter', autowire('ru'));
+            return $dic->object(Consumer::class)->arg('cache', autowire('apcu'));
         });
 
-        Assert::instanceOf($consumer->greeter, RuGreeter::class);
+        Assert::instanceOf($consumer->cache, ApcuCache::class);
     }
 
     #[Test]
@@ -401,7 +401,7 @@ final readonly class DicTest
 
         Dic::assemble(
             static fn(Dic $dic) => $dic
-                ->object(Greeter::class, static fn(): Greeter => new EnGreeter())
+                ->object(Cache::class, static fn(): Cache => new RedisCache())
                 ->lazy(),
         );
     }
@@ -574,26 +574,26 @@ final readonly class DicTest
     #[Test]
     public function taggedListCollectsTaggedServices(): void
     {
-        $greeters = Dic::assemble(static function (Dic $dic) {
-            $dic->object(EnGreeter::class)->tag(new GreeterTag());
-            $dic->object(RuGreeter::class)->tag(new GreeterTag());
+        $caches = Dic::assemble(static function (Dic $dic) {
+            $dic->object(RedisCache::class)->tag(new CacheTag());
+            $dic->object(ApcuCache::class)->tag(new CacheTag());
 
-            return $dic->taggedList(GreeterTag::class);
+            return $dic->taggedList(CacheTag::class);
         });
 
-        Assert::count($greeters, 2);
+        Assert::count($caches, 2);
         Assert::contains(
-            array_map(static fn(Greeter $greeter) => $greeter->greet(), $greeters),
-            'hello',
+            array_map(static fn(Cache $cache) => $cache->get('key'), $caches),
+            'redis',
         );
     }
 
     #[Test]
     public function taggedListRespectsSort(): void
     {
-        $greeters = Dic::assemble(static function (Dic $dic) {
-            $dic->object(EnGreeter::class)->tag(new PriorityTag(2));
-            $dic->object(RuGreeter::class)->tag(new PriorityTag(1));
+        $caches = Dic::assemble(static function (Dic $dic) {
+            $dic->object(RedisCache::class)->tag(new PriorityTag(2));
+            $dic->object(ApcuCache::class)->tag(new PriorityTag(1));
 
             return $dic->taggedList(
                 PriorityTag::class,
@@ -602,8 +602,8 @@ final readonly class DicTest
         });
 
         Assert::same(
-            array_map(static fn(Greeter $greeter) => $greeter->greet(), $greeters),
-            ['привет', 'hello'],
+            array_map(static fn(Cache $cache) => $cache->get('key'), $caches),
+            ['apcu', 'redis'],
         );
     }
 
@@ -613,10 +613,10 @@ final readonly class DicTest
         $found = null;
 
         Dic::assemble(static function (Dic $dic) use (&$found) {
-            $dic->object(EnGreeter::class)->tag(new GreeterTag());
+            $dic->object(RedisCache::class)->tag(new CacheTag());
 
             $dic->onTagResolution(static function (TaggedRefs $taggedRefs) use (&$found): void {
-                $found = $taggedRefs->find(GreeterTag::class);
+                $found = $taggedRefs->find(CacheTag::class);
             });
 
             return $dic->value(null);
@@ -632,11 +632,11 @@ final readonly class DicTest
         $signature = closureT([param(intT, name: 'n')], intT);
 
         $function = Dic::assemble(static function (Dic $dic) use ($signature) {
-            $dic->object(EnGreeter::class)->bind(objectT(Greeter::class));
+            $dic->object(RedisCache::class)->bind(objectT(Cache::class));
 
             return $dic->closure(
                 $signature,
-                static fn(Greeter $greeter, int $n): int => \strlen($greeter->greet()) + $n,
+                static fn(Cache $cache, int $n): int => \strlen($cache->get('key') ?? '') + $n,
             );
         });
 
@@ -662,13 +662,13 @@ final readonly class DicTest
     public function attributeAutowireQualifierSelectsImplementation(): void
     {
         $consumer = Dic::assemble(static function (Dic $dic) {
-            $dic->object(EnGreeter::class)->bind(objectT(Greeter::class), 'en');
-            $dic->object(RuGreeter::class)->bind(objectT(Greeter::class), 'ru');
+            $dic->object(RedisCache::class)->bind(objectT(Cache::class), 'redis');
+            $dic->object(ApcuCache::class)->bind(objectT(Cache::class), 'apcu');
 
             return $dic->object(QualifiedConsumer::class);
         });
 
-        Assert::instanceOf($consumer->greeter, RuGreeter::class);
+        Assert::instanceOf($consumer->cache, ApcuCache::class);
     }
 
     #[Test]
@@ -678,20 +678,20 @@ final readonly class DicTest
             static fn(Dic $dic) => $dic->object(OptionalConsumer::class),
         );
 
-        Assert::null($consumer->greeter);
+        Assert::null($consumer->cache);
     }
 
     #[Test]
     public function bindWithEnumQualifier(): void
     {
         $consumer = Dic::assemble(static function (Dic $dic) {
-            $dic->object(EnGreeter::class)->bind(objectT(Greeter::class), Lang::En);
-            $dic->object(RuGreeter::class)->bind(objectT(Greeter::class), Lang::Ru);
+            $dic->object(RedisCache::class)->bind(objectT(Cache::class), CacheStore::Redis);
+            $dic->object(ApcuCache::class)->bind(objectT(Cache::class), CacheStore::Apcu);
 
-            return $dic->object(Consumer::class)->arg('greeter', autowire(Lang::Ru));
+            return $dic->object(Consumer::class)->arg('cache', autowire(CacheStore::Apcu));
         });
 
-        Assert::instanceOf($consumer->greeter, RuGreeter::class);
+        Assert::instanceOf($consumer->cache, ApcuCache::class);
     }
 
     #[Test]
@@ -799,26 +799,26 @@ final readonly class DicTest
     #[Test]
     public function taggedListFindsByTagInstance(): void
     {
-        $tag = new GreeterTag();
+        $tag = new CacheTag();
 
-        $greeters = Dic::assemble(static function (Dic $dic) use ($tag) {
-            $dic->object(EnGreeter::class)->tag($tag);
-            $dic->object(RuGreeter::class)->tag(new GreeterTag());
+        $caches = Dic::assemble(static function (Dic $dic) use ($tag) {
+            $dic->object(RedisCache::class)->tag($tag);
+            $dic->object(ApcuCache::class)->tag(new CacheTag());
 
             return $dic->taggedList($tag);
         });
 
-        Assert::count($greeters, 1);
+        Assert::count($caches, 1);
     }
 
     #[Test]
     public function emptyTaggedListIsEmptyArray(): void
     {
-        $greeters = Dic::assemble(
-            static fn(Dic $dic) => $dic->taggedList(GreeterTag::class),
+        $caches = Dic::assemble(
+            static fn(Dic $dic) => $dic->taggedList(CacheTag::class),
         );
 
-        Assert::same($greeters, []);
+        Assert::same($caches, []);
     }
 
     #[Test]
@@ -834,7 +834,7 @@ final readonly class DicTest
     {
         Expect::exception(BuildError::class)->withMessageContaining('is not instantiable');
 
-        Dic::assemble(static fn(Dic $dic) => $dic->object(Greeter::class));
+        Dic::assemble(static fn(Dic $dic) => $dic->object(Cache::class));
     }
 
     #[Test]
@@ -854,8 +854,8 @@ final readonly class DicTest
         Expect::exception(BuildError::class)->withMessageContaining('already bound');
 
         Dic::assemble(static function (Dic $dic) {
-            $dic->object(EnGreeter::class)->bind(objectT(Greeter::class));
-            $dic->object(RuGreeter::class)->bind(objectT(Greeter::class));
+            $dic->object(RedisCache::class)->bind(objectT(Cache::class));
+            $dic->object(ApcuCache::class)->bind(objectT(Cache::class));
 
             return $dic->value(null);
         });

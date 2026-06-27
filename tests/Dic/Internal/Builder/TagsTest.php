@@ -10,8 +10,8 @@ use Testo\Expect;
 use Testo\Test;
 use Thesis\Dic\BuildError;
 use Thesis\Dic\TaggedRefs;
-use Thesis\Fixture\GreeterTag;
-use Thesis\Fixture\RuGreeter;
+use Thesis\Fixture\ApcuCache;
+use Thesis\Fixture\CacheTag;
 use function Thesis\Fixture\ref;
 
 #[Covers(Tags::class)]
@@ -21,11 +21,11 @@ final class TagsTest
     public function onResolveListenerReceivesCollectedTags(): void
     {
         $tags = new Tags();
-        $tags->add(ref(new RuGreeter()), new GreeterTag());
+        $tags->add(ref(new ApcuCache()), new CacheTag());
 
         $found = null;
         $tags->onResolution(static function (TaggedRefs $taggedRefs) use (&$found): void {
-            $found = $taggedRefs->find(GreeterTag::class);
+            $found = $taggedRefs->find(CacheTag::class);
         });
 
         $tags->resolve();
@@ -42,6 +42,6 @@ final class TagsTest
 
         Expect::exception(BuildError::class);
 
-        $tags->add(ref(new RuGreeter()), new GreeterTag());
+        $tags->add(ref(new ApcuCache()), new CacheTag());
     }
 }

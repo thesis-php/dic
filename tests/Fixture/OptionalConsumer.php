@@ -10,6 +10,6 @@ final readonly class OptionalConsumer
 {
     public function __construct(
         #[DoNotAutowire]
-        public ?Greeter $greeter = null,
+        public ?Cache $cache = null,
     ) {}
 }

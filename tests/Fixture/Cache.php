@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Thesis\Fixture;
 
-enum Lang
+interface Cache
 {
-    case Ru;
-    case En;
+    public function get(string $key): ?string;
 }

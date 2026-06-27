@@ -8,8 +8,8 @@ use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Test;
 use Thesis\Dic\Internal\Signature;
+use Thesis\Fixture\Cache;
 use Thesis\Fixture\Consumer;
-use Thesis\Fixture\Greeter;
 use Thesis\Fixture\Holder;
 use Thesis\Fixture\Numbers;
 use Thesis\Fixture\WithDefault;
@@ -36,10 +36,10 @@ final class SignatureTest
 
         $parameter = $parameters[0];
 
-        Assert::same($parameter->name, 'greeter');
+        Assert::same($parameter->name, 'cache');
         Assert::false($parameter->isVariadic);
 
-        Assert::same($parameter->bindingType->string, strtolower(Greeter::class));
+        Assert::same($parameter->bindingType->string, strtolower(Cache::class));
     }
 
     #[Test]
@@ -85,8 +85,8 @@ final class SignatureTest
     {
         $info = Signature::ofConstructor(new \ReflectionClass(Consumer::class));
 
-        Assert::notNull($info->findParameter('greeter'));
-        Assert::same($info->findParameter(0), $info->findParameter('greeter'));
+        Assert::notNull($info->findParameter('cache'));
+        Assert::same($info->findParameter(0), $info->findParameter('cache'));
         Assert::null($info->findParameter('missing'));
         Assert::null($info->findParameter(5));
     }

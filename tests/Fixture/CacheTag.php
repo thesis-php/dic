@@ -7,6 +7,6 @@ namespace Thesis\Fixture;
 use Thesis\Dic\Tag;
 
 /**
- * @implements Tag<Greeter>
+ * @implements Tag<Cache>
  */
-final class GreeterTag implements Tag {}
+final class CacheTag implements Tag {}

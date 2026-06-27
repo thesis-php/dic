@@ -9,7 +9,7 @@ use Thesis\Dic\Autowire;
 final readonly class QualifiedConsumer
 {
     public function __construct(
-        #[Autowire('ru')]
-        public Greeter $greeter,
+        #[Autowire('apcu')]
+        public Cache $cache,
     ) {}
 }

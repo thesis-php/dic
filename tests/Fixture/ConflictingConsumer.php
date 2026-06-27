@@ -12,6 +12,6 @@ final readonly class ConflictingConsumer
     public function __construct(
         #[Autowire]
         #[DoNotAutowire]
-        public Greeter $greeter,
+        public Cache $cache,
     ) {}
 }

@@ -7,7 +7,7 @@ namespace Thesis\Fixture;
 use Thesis\Dic\Tag;
 
 /**
- * @implements Tag<Greeter>
+ * @implements Tag<Cache>
  */
 final readonly class PriorityTag implements Tag
 {

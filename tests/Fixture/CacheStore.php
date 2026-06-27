@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Thesis\Fixture;
 
-interface Greeter
+enum CacheStore
 {
-    public function greet(): string;
+    case Redis;
+    case Apcu;
 }
