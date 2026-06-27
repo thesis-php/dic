@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Internal;
 
-use Thesis\Dic\Error;
+use Thesis\Dic\BuildError;
 use Thesis\Dic\Internal\Autowiring\BindingType;
 use Thesis\Dic\Ref;
 
@@ -30,7 +30,7 @@ final class Autowiring
         $boundRef = $this->bindings[$type->string][$qualifierAsString] ?? null;
 
         if ($boundRef !== null) {
-            throw Error::duplicateBinding($ref, $type->string, $boundRef);
+            throw BuildError::duplicateBinding($ref, $type->string, $boundRef);
         }
 
         $this->bindings[$type->string][$qualifierAsString] = $ref;

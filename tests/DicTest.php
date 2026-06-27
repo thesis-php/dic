@@ -8,8 +8,8 @@ use Testo\Assert;
 use Testo\Assert\ExpectException;
 use Testo\Expect;
 use Testo\Test;
+use Thesis\Dic\BuildError;
 use Thesis\Dic\DisposalFailed;
-use Thesis\Dic\Error;
 use Thesis\Dic\TaggedRef;
 use Thesis\Dic\TaggedRefs;
 use Thesis\Fixture\ConflictingConsumer;
@@ -180,7 +180,7 @@ final readonly class DicTest
     {
         $line = __LINE__;
 
-        Expect::exception(Error::class)
+        Expect::exception(BuildError::class)
             ->withMessage(\sprintf(
                 <<<'MSG'
                     Circular dependency detected:
@@ -267,7 +267,7 @@ final readonly class DicTest
     {
         $line = __LINE__;
 
-        Expect::exception(Error::class)
+        Expect::exception(BuildError::class)
             ->withMessage(\sprintf(
                 <<<'MSG'
                     Singleton "Thesis\TestService" (tests/DicTest.php:%1$s) cannot depend on non-singleton services:
@@ -397,7 +397,7 @@ final readonly class DicTest
     #[Test]
     public function lazyOnNonInstantiableClassRejected(): void
     {
-        Expect::exception(Error::class)->withMessageContaining('cannot be made lazy');
+        Expect::exception(BuildError::class)->withMessageContaining('cannot be made lazy');
 
         Dic::assemble(
             static fn(Dic $dic) => $dic
@@ -824,7 +824,7 @@ final readonly class DicTest
     #[Test]
     public function unboundDependencyWrapsCannotAutowire(): void
     {
-        Expect::exception(Error::class)->withMessageContaining('cannot autowire');
+        Expect::exception(BuildError::class)->withMessageContaining('cannot autowire');
 
         Dic::assemble(static fn(Dic $dic) => $dic->object(Consumer::class));
     }
@@ -832,7 +832,7 @@ final readonly class DicTest
     #[Test]
     public function nonInstantiableClassRejected(): void
     {
-        Expect::exception(Error::class)->withMessageContaining('is not instantiable');
+        Expect::exception(BuildError::class)->withMessageContaining('is not instantiable');
 
         Dic::assemble(static fn(Dic $dic) => $dic->object(Greeter::class));
     }
@@ -840,7 +840,7 @@ final readonly class DicTest
     #[Test]
     public function factoryRefThatIsNotCallableRejected(): void
     {
-        Expect::exception(Error::class)->withMessageContaining('is not callable');
+        Expect::exception(BuildError::class)->withMessageContaining('is not callable');
 
         Dic::assemble(
             /** @phpstan-ignore argument.type */
@@ -851,7 +851,7 @@ final readonly class DicTest
     #[Test]
     public function duplicateBindRejected(): void
     {
-        Expect::exception(Error::class)->withMessageContaining('already bound');
+        Expect::exception(BuildError::class)->withMessageContaining('already bound');
 
         Dic::assemble(static function (Dic $dic) {
             $dic->object(EnGreeter::class)->bind(objectT(Greeter::class));
@@ -864,7 +864,7 @@ final readonly class DicTest
     #[Test]
     public function bindUnsupportedTypeRejected(): void
     {
-        Expect::exception(Error::class)->withMessageContaining('is not supported for binding');
+        Expect::exception(BuildError::class)->withMessageContaining('is not supported for binding');
 
         Dic::assemble(static function (Dic $dic) {
             $dic->value(new \ArrayObject())->bind(objectT(\ArrayObject::class, [intT]));
@@ -876,7 +876,7 @@ final readonly class DicTest
     #[Test]
     public function combinedAutowireAndDoNotAutowireRejected(): void
     {
-        Expect::exception(Error::class)->withMessageContaining('combine #[Autowire] and #[DoNotAutowire]');
+        Expect::exception(BuildError::class)->withMessageContaining('combine #[Autowire] and #[DoNotAutowire]');
 
         Dic::assemble(static fn(Dic $dic) => $dic->object(ConflictingConsumer::class));
     }

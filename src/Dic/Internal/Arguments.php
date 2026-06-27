@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Thesis\Dic\Internal;
 
 use Thesis\Dic\Autowire;
+use Thesis\Dic\BuildError;
 use Thesis\Dic\DoNotAutowire;
-use Thesis\Dic\Error;
 use Thesis\Dic\Internal\Arguments\ClosureArguments;
 use Thesis\Dic\Internal\Autowiring\UnsupportedBindingType;
 use Thesis\Dic\Internal\Factory\ValueFactory;
@@ -53,7 +53,7 @@ final class Arguments
     {
         $parameter = $this->signature->findParameter($positionOrName)
             ?? $this->signature->variadicParameter
-            ?? throw Error::unknownSignatureParameter($this->signature, $positionOrName);
+            ?? throw BuildError::unknownSignatureParameter($this->signature, $positionOrName);
 
         if ($parameter->isVariadic) {
             $this->appendVariadic($parameter, $positionOrName, $value);
@@ -78,7 +78,7 @@ final class Arguments
         }
 
         $parameter = $this->signature->variadicParameter
-            ?? throw Error::unknownSignatureParameter($this->signature, true);
+            ?? throw BuildError::unknownSignatureParameter($this->signature, true);
 
         $this->validate($parameter, $value);
 
@@ -100,14 +100,14 @@ final class Arguments
         $this->validateNestedElement($value);
 
         if (!\is_array($this->variadic)) {
-            throw Error::cannotAppendToNonArrayVariadic($parameter);
+            throw BuildError::cannotAppendToNonArrayVariadic($parameter);
         }
 
         if (\is_int($positionOrName)
             && !\array_key_exists($positionOrName, $this->variadic)
             && \is_string(array_key_last($this->variadic))
         ) {
-            throw Error::positionalVariadicAfterNamed($parameter);
+            throw BuildError::positionalVariadicAfterNamed($parameter);
         }
 
         $this->variadic[$positionOrName] = $value;
@@ -124,7 +124,7 @@ final class Arguments
         }
 
         if ($parameter->isVariadic && $value instanceof Autowire) {
-            throw Error::variadicNotAutowirable($parameter);
+            throw BuildError::variadicNotAutowirable($parameter);
         }
 
         if ($value instanceof ClosureParameter) {
@@ -143,7 +143,7 @@ final class Arguments
         }
 
         if ($value instanceof ClosureParameter || $value instanceof Autowire || $value instanceof DoNotAutowire) {
-            throw Error::markersNotAllowedAsArrayElements();
+            throw BuildError::markersNotAllowedAsArrayElements();
         }
     }
 
@@ -212,7 +212,7 @@ final class Arguments
         }
 
         if ($argument instanceof DoNotAutowire) {
-            return $parameter->defaultValue ?? throw Error::cannotAutowireMarkedNotAutowired($parameter);
+            return $parameter->defaultValue ?? throw BuildError::cannotAutowireMarkedNotAutowired($parameter);
         }
 
         return ValueFactory::from($argument);
@@ -242,7 +242,7 @@ final class Arguments
         try {
             $bindingType = $parameter->bindingType;
         } catch (UnsupportedBindingType $error) {
-            return $parameter->defaultValue ?? throw Error::cannotAutowireUnsupportedBindingType($parameter, $error);
+            return $parameter->defaultValue ?? throw BuildError::cannotAutowireUnsupportedBindingType($parameter, $error);
         }
 
         $candidates = [];
@@ -258,11 +258,11 @@ final class Arguments
         }
 
         if ($candidates === []) {
-            return $parameter->defaultValue ?? throw Error::cannotAutowireNoCandidate($parameter);
+            return $parameter->defaultValue ?? throw BuildError::cannotAutowireNoCandidate($parameter);
         }
 
         if (\count($candidates) > 1) {
-            throw Error::cannotAutowireAmbiguous($parameter, $candidates);
+            throw BuildError::cannotAutowireAmbiguous($parameter, $candidates);
         }
 
         if ($candidates[0] instanceof Ref) {

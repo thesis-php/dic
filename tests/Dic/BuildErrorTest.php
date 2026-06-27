@@ -10,8 +10,8 @@ use Testo\Test;
 use Thesis\Dic\Internal\Signature;
 use function Thesis\Fixture\ref;
 
-#[Covers(Error::class)]
-final class ErrorTest
+#[Covers(BuildError::class)]
+final class BuildErrorTest
 {
     #[Test]
     public function cannotAutowireMessage(): void
@@ -19,7 +19,7 @@ final class ErrorTest
         $parameter = Signature::ofCallable(static fn(int $value) => null)->findParameter(0);
         Assert::notNull($parameter);
 
-        $error = Error::cannotAutowireNoCandidate($parameter);
+        $error = BuildError::cannotAutowireNoCandidate($parameter);
 
         Assert::same($error->getMessage(), \sprintf('Cannot autowire "%s": no autowiring candidate found', $parameter));
     }
@@ -27,7 +27,7 @@ final class ErrorTest
     #[Test]
     public function configurationFrozenMessage(): void
     {
-        $error = Error::configurationFrozen();
+        $error = BuildError::configurationFrozen();
 
         Assert::same(
             $error->getMessage(),
@@ -39,8 +39,8 @@ final class ErrorTest
     public function invalidServiceFactoryWrapsPreviousWithRefAndDetail(): void
     {
         $ref = ref();
-        $previous = Error::configurationFrozen();
-        $error = Error::invalidServiceFactory($ref, $previous);
+        $previous = BuildError::configurationFrozen();
+        $error = BuildError::invalidServiceFactory($ref, $previous);
 
         Assert::same($error->getPrevious(), $previous);
         Assert::same($error->getMessage(), \sprintf('Invalid factory for %s: %s', $ref, lcfirst($previous->getMessage())));
@@ -50,7 +50,7 @@ final class ErrorTest
     public function fileAndLinePointAtFactoryCallSite(): void
     {
         $line = __LINE__ + 1;
-        $error = Error::configurationFrozen();
+        $error = BuildError::configurationFrozen();
 
         Assert::same($error->getFile(), __FILE__);
         Assert::same($error->getLine(), $line);
@@ -65,7 +65,7 @@ final class ErrorTest
         // cannotAutowireNoCandidate() delegates through the private cannotAutowire()
         // helper, so there is an extra in-file frame between the call and `new self`.
         $line = __LINE__ + 1;
-        $error = Error::cannotAutowireNoCandidate($parameter);
+        $error = BuildError::cannotAutowireNoCandidate($parameter);
 
         Assert::same($error->getFile(), __FILE__);
         Assert::same($error->getLine(), $line);

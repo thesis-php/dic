@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Thesis\Dic\Internal\Signature;
 
 use Thesis\Dic\Autowire;
+use Thesis\Dic\BuildError;
 use Thesis\Dic\DoNotAutowire;
-use Thesis\Dic\Error;
 use Thesis\Dic\Internal\Autowiring\BindingType;
 use function Thesis\Formatter\formatReflectedParameter;
 
@@ -83,7 +83,7 @@ final class ReflectionParameter extends Parameter
         return match (\count($attributes)) {
             0 => null,
             1 => $attributes[0]->newInstance(),
-            default => throw Error::conflictingAutowireMarkers(),
+            default => throw BuildError::conflictingAutowireMarkers(),
         };
     }
 }

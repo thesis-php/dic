@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Internal\Arguments;
 
-use Thesis\Dic\Error;
+use Thesis\Dic\BuildError;
 use Thesis\Dic\Internal\Autowiring\BindingType;
 use Thesis\Dic\Internal\Autowiring\UnsupportedBindingType;
 use Thesis\Dic\Internal\Signature\Parameter;
@@ -44,15 +44,15 @@ final readonly class ClosureArguments
     public function validate(Parameter $parameter, ClosureParameter $argument): void
     {
         if (!\in_array($argument, $this->arguments, strict: true)) {
-            throw Error::unknownClosureParameterMapping($parameter);
+            throw BuildError::unknownClosureParameterMapping($parameter);
         }
 
         if (($argument->isVariadic || $argument->hasDefault) && !$parameter->isOptional) {
-            throw Error::optionalClosureParameterMapping($parameter);
+            throw BuildError::optionalClosureParameterMapping($parameter);
         }
 
         if ($argument->isPassedByReference && !$parameter->isPassedByReference) {
-            throw Error::byReferenceClosureParameterMapping($parameter);
+            throw BuildError::byReferenceClosureParameterMapping($parameter);
         }
     }
 

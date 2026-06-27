@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Configuration;
 
-use Thesis\Dic\Error;
+use Thesis\Dic\BuildError;
 use Thesis\Dic\Internal\Arguments;
 use Thesis\Dic\Internal\Arguments\ClosureArguments;
 use Thesis\Dic\Internal\Autowiring;
@@ -62,7 +62,7 @@ final class ObjectConfig extends Config
     {
         if ($factory === null) {
             if (!$this->class->isInstantiable()) {
-                throw Error::classNotInstantiable($this->class);
+                throw BuildError::classNotInstantiable($this->class);
             }
 
             return Signature::ofConstructor($this->class);
@@ -72,7 +72,7 @@ final class ObjectConfig extends Config
             return Signature::ofCallable($factory);
         }
 
-        return $factory->signature ?? throw Error::factoryNotCallable($factory);
+        return $factory->signature ?? throw BuildError::factoryNotCallable($factory);
     }
 
     protected function defaultLabel(): string
@@ -133,7 +133,7 @@ final class ObjectConfig extends Config
     public function lazy(): static
     {
         if (!$this->class->isInstantiable()) {
-            throw Error::lazyClassNotInstantiable($this->class);
+            throw BuildError::lazyClassNotInstantiable($this->class);
         }
 
         $this->lazy = true;
@@ -198,7 +198,7 @@ final class ObjectConfig extends Config
         $reflection = $this->class->getMethod($name);
 
         if (!$reflection->isPublic()) {
-            throw Error::calledMethodNotPublic($reflection);
+            throw BuildError::calledMethodNotPublic($reflection);
         }
 
         $arguments = new Arguments(

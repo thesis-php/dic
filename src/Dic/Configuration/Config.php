@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Configuration;
 
-use Thesis\Dic\Error;
+use Thesis\Dic\BuildError;
 use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\Autowiring\BindingType;
 use Thesis\Dic\Internal\Autowiring\UnsupportedBindingType;
@@ -63,7 +63,7 @@ abstract class Config extends Autoconfig
         try {
             $bindingType = BindingType::ofTyphoonType($type);
         } catch (UnsupportedBindingType $error) {
-            throw Error::unsupportedBindingType($type, $error);
+            throw BuildError::unsupportedBindingType($type, $error);
         }
 
         $this->autowiring->bind($this, $bindingType, $qualifier);

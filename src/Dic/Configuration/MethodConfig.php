@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Configuration;
 
-use Thesis\Dic\Error;
+use Thesis\Dic\BuildError;
 use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\Builder;
 use Thesis\Dic\Internal\Factory;
@@ -36,7 +36,7 @@ final class MethodConfig extends Config
         Location $declaredAt,
     ) {
         if (!$function->isPublic()) {
-            throw Error::factoryMethodNotPublic($function);
+            throw BuildError::factoryMethodNotPublic($function);
         }
 
         parent::__construct(

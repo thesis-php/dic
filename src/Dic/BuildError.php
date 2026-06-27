@@ -17,11 +17,13 @@ use function Thesis\Formatter\formatReflectedFunction;
 /**
  * @api
  *
- * Every build-time error raised by the container. Construct it through the
- * named static factories; each one carries structured context and builds its
- * own message, so throwing code never assembles message strings itself.
+ * Every error raised by the container. The whole dependency graph is validated
+ * eagerly at build, so this is always thrown before resolution — never while a
+ * built container hands out services. Construct it through the named static
+ * factories; each one carries structured context and builds its own message,
+ * so throwing code never assembles message strings itself.
  */
-final class Error extends \LogicException
+final class BuildError extends \LogicException
 {
     /**
      * @internal

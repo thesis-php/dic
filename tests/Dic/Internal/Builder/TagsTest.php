@@ -8,7 +8,7 @@ use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Expect;
 use Testo\Test;
-use Thesis\Dic\Error;
+use Thesis\Dic\BuildError;
 use Thesis\Dic\TaggedRefs;
 use Thesis\Fixture\GreeterTag;
 use Thesis\Fixture\RuGreeter;
@@ -40,7 +40,7 @@ final class TagsTest
         $tags = new Tags();
         $tags->resolve();
 
-        Expect::exception(Error::class);
+        Expect::exception(BuildError::class);
 
         $tags->add(ref(new RuGreeter()), new GreeterTag());
     }
