@@ -152,6 +152,18 @@ final readonly class DicTest
     }
 
     #[Test]
+    public function objectCallWithVariadic(): void
+    {
+        $object = Dic::assemble(
+            static fn(Dic $dic) => $dic
+                ->object(TestService::class)
+                ->call('setAll', variadic: [1, 2, 3]),
+        );
+
+        Assert::same($object->value, [1, 2, 3]);
+    }
+
+    #[Test]
     public function dependencyDeclaredAfterDependent(): void
     {
         $object = Dic::assemble(
@@ -236,6 +248,18 @@ final readonly class DicTest
         );
 
         Assert::same($object->value, $value);
+    }
+
+    #[Test]
+    public function objectChainWithVariadic(): void
+    {
+        $object = Dic::assemble(
+            static fn(Dic $dic) => $dic
+                ->object(TestService::class)
+                ->chain('withAll', variadic: [1, 2, 3]),
+        );
+
+        Assert::same($object->value, [1, 2, 3]);
     }
 
     #[Test]

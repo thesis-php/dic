@@ -28,4 +28,17 @@ final class TestService
             value: $value,
         );
     }
+
+    public function setAll(int ...$values): void
+    {
+        $this->value = array_values($values);
+    }
+
+    public function withAll(int ...$values): self
+    {
+        return new self(
+            factory: $this->factory,
+            value: array_values($values),
+        );
+    }
 }

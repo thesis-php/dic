@@ -71,6 +71,12 @@ final class Arguments
      */
     public function variadic(iterable|Ref|ClosureParameter $value): void
     {
+        if ($value === []) {
+            $this->variadic = [];
+
+            return;
+        }
+
         $parameter = $this->signature->variadicParameter
             ?? throw Error::unknownSignatureParameter($this->signature, true);
 

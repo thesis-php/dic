@@ -154,10 +154,11 @@ final class ObjectConfig extends Config
 
     /**
      * @param array<mixed> $args
+     * @param iterable<array-key, mixed>|Ref<iterable<array-key, mixed>> $variadic
      */
-    public function call(string $method, array $args = []): static
+    public function call(string $method, array $args = [], iterable|Ref $variadic = []): static
     {
-        $arguments = $this->createMethodArguments($method, $args);
+        $arguments = $this->createMethodArguments($method, $args, $variadic);
 
         /** @phpstan-ignore assign.propertyType */
         $this->factoryDecorators[] = static fn(Factory $factory) => new Factory\PostCallFactory(
@@ -171,10 +172,11 @@ final class ObjectConfig extends Config
 
     /**
      * @param array<mixed> $args
+     * @param iterable<array-key, mixed>|Ref<iterable<array-key, mixed>> $variadic
      */
-    public function chain(string $method, array $args = []): static
+    public function chain(string $method, array $args = [], iterable|Ref $variadic = []): static
     {
-        $arguments = $this->createMethodArguments($method, $args);
+        $arguments = $this->createMethodArguments($method, $args, $variadic);
 
         /** @phpstan-ignore assign.propertyType */
         $this->factoryDecorators[] = static fn(Factory $factory) => new Factory\PostChainFactory(
@@ -187,9 +189,10 @@ final class ObjectConfig extends Config
     }
 
     /**
-     * @param array<mixed> $values
+     * @param array<mixed> $args
+     * @param iterable<array-key, mixed>|Ref<iterable<array-key, mixed>> $variadic
      */
-    private function createMethodArguments(string $name, array $values): Arguments
+    private function createMethodArguments(string $name, array $args, iterable|Ref $variadic): Arguments
     {
         $reflection = $this->class->getMethod($name);
 
@@ -202,7 +205,8 @@ final class ObjectConfig extends Config
             autowiring: $this->autowiring,
             closureArguments: ClosureArguments::empty(),
         );
-        $arguments->args($values);
+        $arguments->args($args);
+        $arguments->variadic($variadic);
 
         return $arguments;
     }
