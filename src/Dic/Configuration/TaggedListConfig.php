@@ -81,6 +81,7 @@ final class TaggedListConfig extends Config
 
     protected null $signature { get => null; }
 
+    /** @phpstan-ignore property.phpDocType */
     public null $function { get => null; }
 
     public null $class { get => null; }

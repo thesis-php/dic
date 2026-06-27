@@ -65,6 +65,7 @@ final class ValueConfig extends Config
     public private(set) ?\ReflectionClass $class = null {
         get {
             if (!$this->isClassSet) {
+                /** @phpstan-ignore assign.propertyType */
                 $this->class = match (true) {
                     $this->value instanceof Ref => $this->value->class,
                     \is_object($this->value) => new \ReflectionObject($this->value),

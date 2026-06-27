@@ -28,10 +28,14 @@ abstract class Ref
 
     abstract protected ?Signature $signature { get; }
 
+    /**
+     * @var (T is callable ? \ReflectionFunction|\ReflectionMethod : null)
+     */
     abstract public null|\ReflectionFunction|\ReflectionMethod $function { get; }
 
     /**
-     * @var ?\ReflectionClass<*>
+     * @var (T is object ? \ReflectionClass<T> : null)
+     * @phpstan-ignore generics.variance
      */
     abstract public ?\ReflectionClass $class { get; }
 

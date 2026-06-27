@@ -87,6 +87,7 @@ final class ObjectConfig extends Config
         get => Signature::ofClass($this->class);
     }
 
+    /** @phpstan-ignore property.phpDocType */
     public ?\ReflectionMethod $function {
         get => $this->signature?->reflection;
     }
@@ -212,11 +213,11 @@ final class ObjectConfig extends Config
     }
 
     /**
-     * @return MethodConfig<callable>
+     * @return MethodConfig<callable-array>
      */
     public function method(string $name): MethodConfig
     {
-        /** @var MethodConfig<callable> */
+        /** @var MethodConfig<callable-array> */
         return new MethodConfig(
             builder: $this->builder,
             autowiring: $this->autowiring,

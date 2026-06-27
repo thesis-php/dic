@@ -18,7 +18,7 @@ use function Thesis\Formatter\formatReflectedFunction;
 /**
  * @api
  *
- * @template T of mixed
+ * @template T of callable-array
  * @extends Config<T>
  */
 final class MethodConfig extends Config
