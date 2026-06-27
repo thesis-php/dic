@@ -51,6 +51,9 @@ This keeps autowiring reasoning local: to know what a `Cache` parameter resolves
 you only read the module that declares the service — never the whole application.
 A module that wants a service from elsewhere imports its `Ref<T>` explicitly rather than relying on a shared binding.
 
+This isolation is what `require()` buys you; modules can also be wired to share one autowiring table.
+See [Modularity](modularity.md) for when to use each.
+
 ## Qualifiers
 
 When one type has several implementations, tell them apart with a **qualifier** on each binding:
