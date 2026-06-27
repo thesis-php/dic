@@ -5,27 +5,19 @@ declare(strict_types=1);
 namespace Thesis\Dic\Internal\Container;
 
 use Thesis\Dic\Internal\Container;
-use Thesis\Dic\Internal\NonCopyable;
 use Thesis\Dic\Ref;
 
 /**
  * @internal
  */
-final readonly class Singletons implements Container
+final readonly class Singletons extends Container
 {
-    use NonCopyable;
-
-    /**
-     * @var \SplObjectStorage<Ref<mixed>, mixed>
-     */
-    private \SplObjectStorage $values;
-
     public function __construct(
         private Factories $singletonFactories,
         private Factories $scopedFactories,
-        private Disposers $disposers,
+        Disposers $disposers,
     ) {
-        $this->values = new \SplObjectStorage();
+        parent::__construct($disposers);
     }
 
     public function get(Ref $ref): mixed
@@ -47,13 +39,5 @@ final readonly class Singletons implements Container
             factories: $this->scopedFactories,
             disposers: $this->disposers,
         );
-    }
-
-    public function dispose(?\Throwable $error): void
-    {
-        foreach (clone $this->values as $ref) {
-            $this->disposers->dispose($ref, $this->values[$ref], $error);
-            $this->values->offsetUnset($ref);
-        }
     }
 }

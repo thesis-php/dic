@@ -36,17 +36,18 @@ final readonly class Scoped
         $scope = $this->container->startScope();
 
         $value = $scope->get($this->ref);
+        $error = null;
 
         try {
-            $result = $function($value);
+            return $function($value);
         } catch (\Throwable $error) {
-            $scope->dispose($error);
-
             throw $error;
+        } finally {
+            $disposalErrors = $scope->dispose($error);
+
+            if ($disposalErrors !== []) {
+                throw new DisposalFailed($disposalErrors, $error);
+            }
         }
-
-        $scope->dispose(null);
-
-        return $result;
     }
 }

@@ -8,6 +8,7 @@ use Testo\Assert;
 use Testo\Assert\ExpectException;
 use Testo\Expect;
 use Testo\Test;
+use Thesis\Dic\DisposalFailed;
 use Thesis\Dic\Error;
 use Thesis\Dic\TaggedRef;
 use Thesis\Dic\TaggedRefs;
@@ -95,7 +96,6 @@ final readonly class DicTest
         $object = Dic::assemble(
             static fn(Dic $dic) => $dic->object(
                 class: TestService::class,
-                /** @phpstan-ignore argument.type */
                 factory: $dic->object(TestService::class)->method('new'),
             ),
         );
@@ -467,6 +467,108 @@ final readonly class DicTest
 
         Assert::same($rethrown, $thrown);
         Assert::same($captured, $thrown);
+    }
+
+    #[Test]
+    public function disposerExceptionsDoNotStopOtherDisposers(): void
+    {
+        $boom = new \RuntimeException('boom');
+        $secondRan = false;
+        $caught = null;
+
+        try {
+            Dic::run(
+                static function (Dic $dic) use ($boom, &$secondRan) {
+                    return $dic
+                        ->object(Counter::class)
+                        ->disposer(static function () use ($boom): never {
+                            throw $boom;
+                        })
+                        ->disposer(static function () use (&$secondRan): void {
+                            $secondRan = true;
+                        });
+                },
+                static fn(Counter $counter) => null,
+            );
+        } catch (DisposalFailed $error) {
+            $caught = $error;
+        }
+
+        Assert::true($secondRan);
+        Assert::notNull($caught);
+        Assert::same($caught->errors, [$boom]);
+    }
+
+    #[Test]
+    public function disposerExceptionDoesNotMaskMainError(): void
+    {
+        $mainError = new \RuntimeException('main');
+        $disposerError = new \RuntimeException('disposer');
+        $caught = null;
+
+        try {
+            Dic::run(
+                static fn(Dic $dic) => $dic
+                    ->object(Counter::class)
+                    ->disposer(static function () use ($disposerError): never {
+                        throw $disposerError;
+                    }),
+                static function (Counter $counter) use ($mainError): never {
+                    throw $mainError;
+                },
+            );
+        } catch (DisposalFailed $error) {
+            $caught = $error;
+        }
+
+        Assert::same($caught->getPrevious(), $mainError);
+        Assert::same($caught->errors, [$disposerError]);
+    }
+
+    #[Test]
+    public function unusedLazyServiceIsNotDisposed(): void
+    {
+        $disposed = false;
+
+        Dic::run(
+            static function (Dic $dic) use (&$disposed) {
+                $counter = $dic
+                    ->object(Counter::class)
+                    ->lazy()
+                    ->disposer(static function () use (&$disposed): void {
+                        $disposed = true;
+                    });
+
+                return $dic->object(CounterHolder::class)->arg('counter', $counter);
+            },
+            static fn(CounterHolder $holder) => null,
+        );
+
+        Assert::false($disposed);
+    }
+
+    #[Test]
+    public function usedLazyServiceIsDisposed(): void
+    {
+        $disposed = false;
+
+        Dic::run(
+            static function (Dic $dic) use (&$disposed) {
+                $counter = $dic
+                    ->object(Counter::class)
+                    ->lazy()
+                    ->disposer(static function () use (&$disposed): void {
+                        $disposed = true;
+                    });
+
+                return $dic->object(CounterHolder::class)->arg('counter', $counter);
+            },
+            static function (CounterHolder $holder): void {
+                $holder->counter->value = 1; // touch the lazy proxy to initialize it
+            },
+        );
+
+        Assert::true($disposed);
     }
 
     #[Test]

@@ -10,6 +10,7 @@ use Thesis\Dic\Configuration\ObjectConfig;
 use Thesis\Dic\Configuration\ScopedConfig;
 use Thesis\Dic\Configuration\TaggedListConfig;
 use Thesis\Dic\Configuration\ValueConfig;
+use Thesis\Dic\DisposalFailed;
 use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\Builder;
 use Thesis\Dic\Internal\Factory\ValueFactory;
@@ -58,8 +59,16 @@ final readonly class Dic
         } catch (\Throwable $error) {
             throw $error;
         } finally {
-            $scope->dispose($error);
-            $container->dispose($error);
+            // Always dispose both the scope and the container, even if a
+            // disposer fails; surface any disposer errors without masking $error.
+            $disposalErrors = [
+                ...$scope->dispose($error),
+                ...$container->dispose($error),
+            ];
+
+            if ($disposalErrors !== []) {
+                throw new DisposalFailed($disposalErrors, $error);
+            }
         }
     }
 

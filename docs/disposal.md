@@ -37,3 +37,23 @@ A service never built — for example a [lazy](object.md) one that was never use
 ## Multiple disposers
 
 A service may register several disposers; they run in registration order.
+
+## When a disposer throws
+
+Disposal is best-effort: every disposer still runs even if another throws, and both the scope and the container are always disposed.
+
+Failures are collected and surfaced after teardown as a `Thesis\Dic\DisposalFailed`, whose `errors` property holds every throwable raised by a disposer:
+
+```php
+try {
+    Dic::run($module, $main);
+} catch (DisposalFailed $failed) {
+    foreach ($failed->errors as $error) {
+        $logger->error('Disposer failed', ['exception' => $error]);
+    }
+}
+```
+
+If teardown was triggered by an error — `$main` threw, or a disposer ran with a non-`null` `$error` — that original error is not masked: it becomes the `DisposalFailed`'s `getPrevious()`, while the disposer failures stay in `errors`.
+
+You still want disposers to be reliable, but a throwing one no longer aborts the cleanup of everything else.

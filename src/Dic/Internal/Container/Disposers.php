@@ -38,14 +38,37 @@ final readonly class Disposers
     }
 
     /**
+     * Runs every disposer registered for $ref, never stopping on failure, and
+     * returns the throwables they raised.
+     *
      * @template T
      * @param Ref<T> $ref
      * @param T $value
+     * @return list<\Throwable>
      */
-    public function dispose(Ref $ref, mixed $value, ?\Throwable $error): void
+    public function dispose(Ref $ref, mixed $value, ?\Throwable $error): array
     {
-        foreach ($this->disposers[$ref] ?? [] as $disposer) {
-            $disposer($value, $error);
+        $disposers = $this->disposers[$ref] ?? [];
+
+        if ($disposers === []) {
+            return [];
         }
+
+        /** @phpstan-ignore argument.type */
+        if ($ref->class?->isUninitializedLazyObject($value) ?? false) {
+            return [];
+        }
+
+        $errors = [];
+
+        foreach ($disposers as $disposer) {
+            try {
+                $disposer($value, $error);
+            } catch (\Throwable $disposerError) {
+                $errors[] = $disposerError;
+            }
+        }
+
+        return $errors;
     }
 }
