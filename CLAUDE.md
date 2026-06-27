@@ -37,3 +37,5 @@ After any source change run `make phpstan` and `make test`; before finishing, `m
 - Put each format/convention in one place (the atom) rather than scattering string-building.
 - Keep transient single-use accumulators mutable; reserve immutability for shared/aliased data.
 - Method names must match behavior.
+- A multiline `args([...])` array: one entry per line with a trailing comma; never pack a multiline args array onto one line.
+- Method chains are always multiline: the receiver and each `->` call on its own line, even for a single chained call.

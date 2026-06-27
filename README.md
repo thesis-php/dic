@@ -11,6 +11,12 @@ A fresh take on the PHP dependency injection container, with all the features yo
 - **Callable** services (closures, methods, …)
 - **Variadic parameters** supported
 
+## Contents
+
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [Documentation](#documentation)
+
 ## Installation
 
 ```shell
@@ -63,6 +69,7 @@ function consoleModule(Dic $dic): void
 ```
 
 The `$logger` ref is passed as a constructor argument — that's how services get wired together.
+See [Arguments](docs/arguments.md) for named, positional and variadic arguments.
 
 ### Putting it all together
 
@@ -138,3 +145,10 @@ $cli = Dic::assemble(myApp(...));
 
 Assert::instanceOf($cli, ConsoleApplication::class);
 ```
+
+## Documentation
+
+- [Objects](docs/object.md) — declaring object services, factories, post-construction calls, lazy instantiation
+- [Arguments](docs/arguments.md) — named, positional and variadic arguments
+- [Autowiring](docs/autowiring.md) — binding services to types and qualifiers
+- [Scopes](docs/scopes.md) — singleton and scoped service lifetimes
