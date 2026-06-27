@@ -1,6 +1,7 @@
 # Disposal
 
-`disposer()` registers a callback that runs when the service's owning container or scope is torn down — to close connections, flush buffers, release handles.
+`disposer()` registers a callback that runs when the service's owning container or scope is torn down —
+to close connections, flush buffers, release handles.
 
 ```php
 $dic
@@ -8,7 +9,7 @@ $dic
     ->disposer(static fn(Connection $connection) => $connection->close());
 ```
 
-The callback receives the instance and the error in flight, if any:
+The callback receives the resolved value — only if it was actually initialized — and the error in flight, if any:
 
 ```php
 $dic
@@ -22,7 +23,8 @@ $dic
     });
 ```
 
-A `null` error means a clean teardown; a non-`null` error is the throwable that caused it, so a disposer can distinguish success from failure.
+A `null` error means a clean teardown; a non-`null` error is the throwable that caused it,
+so a disposer can distinguish success from failure.
 
 ## When disposers run
 
@@ -40,9 +42,11 @@ A service may register several disposers; they run in registration order.
 
 ## When a disposer throws
 
-Disposal is best-effort: every disposer still runs even if another throws, and both the scope and the container are always disposed.
+Disposal is best-effort: every disposer still runs even if another throws,
+and both the scope and the container are always disposed.
 
-Failures are collected and surfaced after teardown as a `Thesis\Dic\DisposalFailed`, whose `errors` property holds every throwable raised by a disposer:
+Failures are collected and surfaced after teardown as a `Thesis\Dic\DisposalFailed`,
+whose `errors` property holds every throwable raised by a disposer:
 
 ```php
 try {
@@ -54,6 +58,8 @@ try {
 }
 ```
 
-If teardown was triggered by an error — `$main` threw, or a disposer ran with a non-`null` `$error` — that original error is not masked: it becomes the `DisposalFailed`'s `getPrevious()`, while the disposer failures stay in `errors`.
+If teardown was triggered by an error — `$main` threw, or a disposer ran with a non-`null` `$error` —
+that original error is not masked: it becomes the `DisposalFailed`'s `getPrevious()`,
+while the disposer failures stay in `errors`.
 
 You still want disposers to be reliable, but a throwing one no longer aborts the cleanup of everything else.

@@ -60,7 +60,8 @@ $dic
 
 ## Lazy instantiation
 
-`lazy()` defers construction until the service is first used, returning a lazy proxy in the meantime; `eager()` undoes it:
+`lazy()` defers construction until the service is first used, returning a lazy proxy in the meantime;
+`eager()` undoes it:
 
 ```php
 $dic
@@ -68,4 +69,5 @@ $dic
     ->lazy();
 ```
 
-This relies on PHP 8.4 [lazy objects](https://www.php.net/manual/en/language.oop5.lazy-objects.php), so the class passed to `object()` must be instantiable and support them.
+This relies on PHP 8.4 [lazy objects](https://www.php.net/manual/en/language.oop5.lazy-objects.php),
+so the class passed to `object()` must be instantiable and support them.

@@ -34,14 +34,16 @@ It lets you declare services, require modules, subscribe to events and more.
 
 ### Module
 
-A module is the unit of composition: you assemble your application from modules, and the application itself is just the root module.
+A module is the unit of composition: you assemble your application from modules,
+and the application itself is just the root module.
 
 A module is a `callable` that accepts `Dic` and returns whatever it exports.
 
 ### Ref
 
 No string identifiers to invent — they aren't type-safe.
-Instead, declaring a service returns a [`Thesis\Dic\Ref<T>`](src/Dic/Ref.php), its handle and identifier, with `T` inferred from configuration:
+Instead, declaring a service returns a [`Thesis\Dic\Ref<T>`](src/Dic/Ref.php), its handle and identifier,
+with `T` inferred from configuration:
 
 ```php
 $logger = $dic->object(NullLogger::class); // Ref<NullLogger>
@@ -121,7 +123,8 @@ function myApp(Dic $dic): Ref
 }
 ```
 
-To run an application, pass the root module to `Dic::run()` together with `$main` — a function that receives the resolved service.
+To run an application, pass the root module to `Dic::run()` together with `$main` —
+a function that receives the resolved service.
 The container builds, calls `$main`, and disposes everything afterwards — even on failure:
 
 ```php

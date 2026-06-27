@@ -66,7 +66,8 @@ final readonly class Logger
 ```
 
 `arg()` / `args()` feed the variadic one element at a time.
-As in PHP itself, a variadic function accepts extra positions and names, so they never error on an unknown key here — the value is appended instead:
+As in PHP itself, a variadic function accepts extra positions and names,
+so they never error on an unknown key here — the value is appended instead:
 
 ```php
 $dic
@@ -78,7 +79,8 @@ $dic
 // $handlers === [$stderrHandler, $fileHandler, 'syslog' => $syslogHandler]
 ```
 
-Also as in PHP, passing the variadic parameter's own name adds a *keyed* element rather than replacing the whole variadic:
+Also as in PHP, passing the variadic parameter's own name adds a *keyed* element
+rather than replacing the whole variadic:
 
 ```php
 $dic
@@ -107,7 +109,8 @@ $dic
 
 ## Deferred configuration
 
-A config stays mutable until the container is built, so arguments can be set later — for example inside an `onTagResolution()` listener or during `autoconfigure()`:
+A config stays mutable until the container is built, so arguments can be set later —
+for example inside an `onTagResolution()` listener or during `autoconfigure()`:
 
 ```php
 $logger = $dic->object(Logger::class);
