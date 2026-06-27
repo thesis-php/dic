@@ -151,4 +151,5 @@ Assert::instanceOf($cli, ConsoleApplication::class);
 - [Objects](docs/object.md) — declaring object services, factories, post-construction calls, lazy instantiation
 - [Arguments](docs/arguments.md) — named, positional and variadic arguments
 - [Autowiring](docs/autowiring.md) — binding services to types and qualifiers
-- [Scopes](docs/scopes.md) — singleton and scoped service lifetimes
+- [Lifetimes](docs/lifetime.md) — singleton, scoped and canBeScoped lifetimes, and the `Scoped<T>` handle
+- [Disposal](docs/disposal.md) — releasing resources when a scope or the container is disposed

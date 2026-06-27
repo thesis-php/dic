@@ -10,8 +10,9 @@ $mailer = $dic->object(Mailer::class); // Ref<Mailer>
 See:
 
 - `arg()` / `args()` / `variadic()` — [Arguments](arguments.md)
-- `singleton()` / `scoped()` / `canBeScoped()` — [Scopes](scopes.md)
+- `singleton()` / `scoped()` / `canBeScoped()` — [Lifetimes](lifetime.md)
 - `bind()` — [Autowiring](autowiring.md)
+- `disposer()` — [Disposal](disposal.md)
 
 ## Custom factory
 
