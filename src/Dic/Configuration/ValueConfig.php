@@ -12,6 +12,7 @@ use Thesis\Dic\Internal\Signature;
 use Thesis\Dic\Location;
 use Thesis\Dic\Ref;
 use function Thesis\Formatter\format;
+use function Thesis\Formatter\formatReflectedFunction;
 
 /**
  * @api
@@ -37,7 +38,13 @@ final class ValueConfig extends Config
 
     protected function defaultLabel(): string
     {
-        return format($this->value);
+        $function = $this->function;
+
+        if ($function === null) {
+            return format($this->value);
+        }
+
+        return formatReflectedFunction($function);
     }
 
     private bool $isSignatureSet = false;
