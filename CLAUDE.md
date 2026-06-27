@@ -39,3 +39,4 @@ After any source change run `make phpstan` and `make test`; before finishing, `m
 - Method names must match behavior.
 - A multiline `args([...])` array: one entry per line with a trailing comma; never pack a multiline args array onto one line.
 - Method chains are always multiline: the receiver and each `->` call on its own line, even for a single chained call.
+- Add an inverse method (e.g. `eager()` for `lazy()`) only when a global default exists that a per-service call must override; a plain per-service opt-out (like `doNotAutowire()`) needs no paired re-enabler.

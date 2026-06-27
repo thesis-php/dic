@@ -131,6 +131,10 @@ final class ObjectConfig extends Config
 
     public function lazy(): static
     {
+        if (!$this->class->isInstantiable()) {
+            throw Error::lazyClassNotInstantiable($this->class);
+        }
+
         $this->lazy = true;
 
         return $this;

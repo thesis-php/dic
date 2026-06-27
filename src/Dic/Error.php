@@ -151,6 +151,16 @@ final class Error extends \LogicException
     /**
      * @internal
      *
+     * @param \ReflectionClass<object> $class
+     */
+    public static function lazyClassNotInstantiable(\ReflectionClass $class): self
+    {
+        return new self(\sprintf('Class "%s" cannot be made lazy because it is not instantiable', formatReflectedClass($class)));
+    }
+
+    /**
+     * @internal
+     *
      * @param Ref<mixed> $factory
      */
     public static function factoryNotCallable(Ref $factory): self

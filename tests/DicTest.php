@@ -371,6 +371,18 @@ final readonly class DicTest
     }
 
     #[Test]
+    public function lazyOnNonInstantiableClassRejected(): void
+    {
+        Expect::exception(Error::class)->withMessageContaining('cannot be made lazy');
+
+        Dic::assemble(
+            static fn(Dic $dic) => $dic
+                ->object(Greeter::class, static fn(): Greeter => new EnGreeter())
+                ->lazy(),
+        );
+    }
+
+    #[Test]
     public function scopedWrapperProducesFreshInstancePerRun(): void
     {
         $scoped = Dic::assemble(
