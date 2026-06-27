@@ -2,6 +2,20 @@
 
 A small, opinionated dependency-injection container (`Thesis\Dic`). PHP 8.4.
 
+## Docs
+
+Public behavior is documented in `docs/` — consult it (and `README.md`) before changing the public API, and keep it in sync:
+
+- [Objects](docs/object.md) — `object()`, factories, post-construction calls, lazy instantiation
+- [Values](docs/value.md) — `value()` and refs as services
+- [Closures](docs/closure.md) — `closure()`, runtime parameters vs. dependencies
+- [Arguments](docs/arguments.md) — `arg()` / `args()` / `variadic()`
+- [Autowiring](docs/autowiring.md) — `bind()`, qualifiers, per-parameter markers/attributes
+- [Tags](docs/tags.md) — `tag()`, `taggedList()`, `onTagResolution()`, `autoconfigure()`
+- [Modularity](docs/modularity.md) — `require()` vs. shared autowiring
+- [Lifetimes](docs/lifetime.md) — singleton, scoped, `canBeScoped`
+- [Disposal](docs/disposal.md) — `disposer()`
+
 ## Commands (everything runs in Docker via `make`)
 
 - `make phpstan` — PHPStan, max level. Must stay clean.

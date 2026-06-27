@@ -1,6 +1,6 @@
 # Arguments
 
-`object()`, `closure()`, `call()` and `chain()` all take arguments the same way.
+`object()`, [`closure()`](closure.md), `call()` and `chain()` all take arguments the same way.
 
 By default Dic [autowires](autowiring.md) non-variadic parameters.
 When autowiring can't or shouldn't decide, override individual arguments by name or position.

@@ -19,8 +19,11 @@ function cacheModule(Dic $dic): Ref
 }
 ```
 
-The root module is the one you hand to `Dic::run()` or `Dic::assemble()`;
-every other module is pulled in from inside another one.
+The root module is the one you hand to `Dic::run()` or `Dic::assemble()`.
+A small application can live entirely in that one module — splitting into more is never required,
+only worth it once a single function grows unwieldy or you want to reuse a piece.
+
+When you do split, every other module is pulled in from inside another one.
 There are two ways to do that, and they differ in one thing: whether [autowiring](autowiring.md) is shared.
 
 ## `require()`: isolated bindings (recommended)
