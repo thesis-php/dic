@@ -17,13 +17,22 @@ See:
 ## Custom factory
 
 Pass a factory as the second argument to build the instance yourself instead of calling the constructor.
-The factory's own parameters are autowired:
+The factory's own parameters are autowired, exactly like constructor arguments.
+
+It can be any of:
+
+- a plain `callable` — a closure, a static factory method, an invokable;
+- a `[Ref<object>, 'method']` pair, to build the instance with a method of another service;
+- a `Ref<callable>` — another callable service.
 
 ```php
 $dic->object(Mailer::class, Mailer::fromConfig(...));
+
+$factory = $dic->object(MailerFactory::class);
+$dic->object(Mailer::class, [$factory, 'create']);
 ```
 
-The factory may also be a method of another service, declared with `method()`:
+A method can also be wired the other way around, from the factory object's own config, with `method()`:
 
 ```php
 $dic->object(

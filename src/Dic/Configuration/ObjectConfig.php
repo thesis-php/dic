@@ -11,10 +11,9 @@ use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\Builder;
 use Thesis\Dic\Internal\Factory;
 use Thesis\Dic\Internal\Factory\ArgumentsFactory;
-use Thesis\Dic\Internal\Factory\CallableFactory;
 use Thesis\Dic\Internal\Factory\LazyObjectFactory;
 use Thesis\Dic\Internal\Factory\NewFactory;
-use Thesis\Dic\Internal\Factory\RefCallableFactory;
+use Thesis\Dic\Internal\Factory\RefFactory;
 use Thesis\Dic\Internal\Signature;
 use Thesis\Dic\Internal\Signature\ReflectionFunctionSignature;
 use Thesis\Dic\Location;
@@ -33,17 +32,23 @@ final class ObjectConfig extends Config
      * @internal
      *
      * @param \ReflectionClass<T> $class
-     * @param null|Ref<callable(): T>|callable(): T $factory
+     * @param ?Ref<callable(): T> $factory
      */
     public function __construct(
         Builder $builder,
         Autowiring $autowiring,
         public readonly \ReflectionClass $class,
-        private readonly mixed $factory,
+        private readonly ?Ref $factory,
         Location $declaredAt,
     ) {
         $this->arguments = new Arguments(
-            signature: $this->resolveFactorySignature($this->factory),
+            signature: match ($factory) {
+                null => match ($class->isInstantiable()) {
+                    true => Signature::ofConstructor($class),
+                    false => throw BuildError::classNotInstantiable($class),
+                },
+                default => $factory->signature ?? throw BuildError::factoryNotCallable($factory),
+            },
             autowiring: $autowiring,
             closureArguments: ClosureArguments::empty(),
         );
@@ -53,26 +58,6 @@ final class ObjectConfig extends Config
             autowiring: $autowiring,
             declaredAt: $declaredAt,
         );
-    }
-
-    /**
-     * @param null|Ref<callable(): T>|callable(): T $factory
-     */
-    private function resolveFactorySignature(null|Ref|callable $factory): Signature
-    {
-        if ($factory === null) {
-            if (!$this->class->isInstantiable()) {
-                throw BuildError::classNotInstantiable($this->class);
-            }
-
-            return Signature::ofConstructor($this->class);
-        }
-
-        if (!$factory instanceof Ref) {
-            return Signature::ofCallable($factory);
-        }
-
-        return $factory->signature ?? throw BuildError::factoryNotCallable($factory);
     }
 
     protected function defaultLabel(): string
@@ -229,7 +214,18 @@ final class ObjectConfig extends Config
 
     protected function createFactory(): Factory
     {
-        $factory = $this->createBaseFactory();
+        $arguments = ArgumentsFactory::from($this->arguments);
+
+        $factory = match ($this->factory) {
+            null => new NewFactory(
+                class: $this->class->name,
+                arguments: $arguments,
+            ),
+            default => new RefFactory(
+                ref: $this->factory,
+                arguments: $arguments,
+            ),
+        };
 
         foreach ($this->factoryDecorators as $factoryDecorator) {
             $factory = $factoryDecorator($factory);
@@ -243,32 +239,5 @@ final class ObjectConfig extends Config
         }
 
         return $factory;
-    }
-
-    /**
-     * @return Factory<T>
-     */
-    private function createBaseFactory(): Factory
-    {
-        $arguments = ArgumentsFactory::from($this->arguments);
-
-        if ($this->factory === null) {
-            return new NewFactory(
-                class: $this->class->name,
-                arguments: $arguments,
-            );
-        }
-
-        if ($this->factory instanceof Ref) {
-            return new RefCallableFactory(
-                ref: $this->factory,
-                arguments: $arguments,
-            );
-        }
-
-        return new CallableFactory(
-            callable: $this->factory,
-            arguments: $arguments,
-        );
     }
 }

@@ -15,7 +15,7 @@ use Thesis\Dic\Ref;
  * @template-covariant T
  * @implements Factory<T>
  */
-final readonly class RefCallableFactory implements Factory
+final readonly class RefFactory implements Factory
 {
     /**
      * @param Ref<callable(): T> $ref

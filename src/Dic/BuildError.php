@@ -147,6 +147,7 @@ final class BuildError extends \LogicException
      */
     public static function classNotInstantiable(\ReflectionClass $class): self
     {
+        // todo more details + add ref
         return new self(\sprintf('Class "%s" is not instantiable', formatReflectedClass($class)));
     }
 

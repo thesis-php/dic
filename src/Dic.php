@@ -129,11 +129,21 @@ final readonly class Dic
     /**
      * @template T of object
      * @param class-string<T> $class
-     * @param null|Ref<callable(): T>|callable(): T $factory
+     * @param null|callable(): T|array{Ref<class-string|object>, string}|Ref<callable(): T> $factory
      * @return ObjectConfig<T>
      */
-    public function object(string $class, null|Ref|callable $factory = null): ObjectConfig
+    public function object(string $class, null|callable|array|Ref $factory = null): ObjectConfig
     {
+        if ($factory !== null && !$factory instanceof Ref) {
+            /** @var ValueConfig<callable(): T> */
+            $factory = new ValueConfig(
+                builder: $this->builder,
+                autowiring: $this->autowiring,
+                value: $factory,
+                declaredAt: Location::caller(),
+            );
+        }
+
         return new ObjectConfig(
             builder: $this->builder,
             autowiring: $this->autowiring,
@@ -152,6 +162,7 @@ final readonly class Dic
     public function closure(ClosureT $type, callable|array|Ref $function): ClosureConfig
     {
         if (!$function instanceof Ref) {
+            /** @var ValueConfig<callable> */
             $function = new ValueConfig(
                 builder: $this->builder,
                 autowiring: $this->autowiring,
@@ -160,7 +171,6 @@ final readonly class Dic
             );
         }
 
-        /** @var Ref<callable> $function */
         return new ClosureConfig(
             builder: $this->builder,
             autowiring: $this->autowiring,

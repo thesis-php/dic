@@ -138,6 +138,19 @@ final readonly class DicTest
     }
 
     #[Test]
+    public function objectRefMethodArrayFactory(): void
+    {
+        $object = Dic::assemble(
+            static fn(Dic $dic) => $dic->object(
+                class: TestService::class,
+                factory: [$dic->object(TestService::class), 'new'],
+            ),
+        );
+
+        Assert::equals($object, TestService::new());
+    }
+
+    #[Test]
     public function objectCall(): void
     {
         $value = 123;
