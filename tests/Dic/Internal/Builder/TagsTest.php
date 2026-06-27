@@ -10,10 +10,9 @@ use Testo\Expect;
 use Testo\Test;
 use Thesis\Dic\Error;
 use Thesis\Dic\TaggedRefs;
-use Thesis\Fixture\Greeter;
 use Thesis\Fixture\GreeterTag;
+use Thesis\Fixture\RuGreeter;
 use function Thesis\Fixture\ref;
-use function Typhoon\Type\objectT;
 
 #[Covers(Tags::class)]
 final class TagsTest
@@ -22,7 +21,7 @@ final class TagsTest
     public function onResolveListenerReceivesCollectedTags(): void
     {
         $tags = new Tags();
-        $tags->add(ref(objectT(Greeter::class)), new GreeterTag());
+        $tags->add(ref(new RuGreeter()), new GreeterTag());
 
         $found = null;
         $tags->onResolution(static function (TaggedRefs $taggedRefs) use (&$found): void {
@@ -43,6 +42,6 @@ final class TagsTest
 
         Expect::exception(Error::class);
 
-        $tags->add(ref(objectT(Greeter::class)), new GreeterTag());
+        $tags->add(ref(new RuGreeter()), new GreeterTag());
     }
 }

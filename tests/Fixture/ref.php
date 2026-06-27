@@ -9,20 +9,18 @@ use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\Builder;
 use Thesis\Dic\Location;
 use Thesis\Dic\Ref;
-use Typhoon\Type;
 
 /**
  * @template T
- * @param Type<covariant T> $type
+ * @param T $value
  * @return Ref<T>
  */
-function ref(Type $type = Type\nullT): Ref
+function ref(mixed $value = null): Ref
 {
-    /** @phpstan-ignore return.type */
     return new ValueConfig(
         builder: new Builder(),
         autowiring: new Autowiring(),
-        value: null,
+        value: $value,
         declaredAt: Location::caller(),
     );
 }
