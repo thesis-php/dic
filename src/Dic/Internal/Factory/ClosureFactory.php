@@ -135,7 +135,7 @@ final readonly class ClosureFactory implements Factory
 
     public function dependencies(): iterable
     {
-        yield Dependency::factory($this->function);
+        yield Dependency::of($this->function);
 
         foreach ($this->factories as $name => $factory) {
             if ($factory instanceof Factory) {
