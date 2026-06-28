@@ -22,10 +22,10 @@ use function Typhoon\Type\stringify;
 /**
  * @api
  *
- * @template T of \Closure
- * @extends Config<T>
+ * @template-covariant T of \Closure
+ * @extends FactoryConfig<T, Parameter>
  */
-final class ClosureConfig extends Config
+final class ClosureConfig extends FactoryConfig
 {
     /**
      * @var Ref<callable>
@@ -36,26 +36,26 @@ final class ClosureConfig extends Config
      * @internal
      *
      * @param ClosureT<T> $type
-     * @param Ref<callable> $function
+     * @param Config<callable> $function
      */
     public function __construct(
         Builder $builder,
         Autowiring $autowiring,
         private readonly ClosureT $type,
-        Ref $function,
+        Config $function,
         Location $declaredAt,
     ) {
         $this->functionRef = $function;
-        $this->arguments = new Arguments(
-            signature: $function->signature ?? throw new ShouldNotHappen('Ref does not reference a function'),
-            autowiring: $autowiring,
-            closureArguments: ClosureArguments::fromType($type),
-        );
 
         parent::__construct(
             builder: $builder,
             autowiring: $autowiring,
             declaredAt: $declaredAt,
+            arguments: new Arguments(
+                signature: $function->signature ?? throw new ShouldNotHappen('Ref does not reference a function'),
+                autowiring: $autowiring,
+                closureArguments: ClosureArguments::fromType($type),
+            ),
         );
     }
 
@@ -76,51 +76,9 @@ final class ClosureConfig extends Config
         get => new \ReflectionClass(\Closure::class);
     }
 
-    /**
-     * @var Arguments<Parameter>
-     */
-    private readonly Arguments $arguments;
-
-    public function doNotAutowire(): static
-    {
-        $this->arguments->doNotAutowire();
-
-        return $this;
-    }
-
-    public function arg(int|string $positionOrName, mixed $value): static
-    {
-        $this->arguments->arg($positionOrName, $value);
-
-        return $this;
-    }
-
-    /**
-     * @param iterable<array-key, mixed>|Ref<iterable<array-key, mixed>>|Parameter $variadic
-     */
-    public function variadic(iterable|Ref|Parameter $variadic): static
-    {
-        $this->arguments->variadic($variadic);
-
-        return $this;
-    }
-
-    /**
-     * @param array<mixed> $values
-     */
-    public function args(array $values): static
-    {
-        $this->arguments->args($values);
-
-        return $this;
-    }
-
     protected function createFactory(): Factory
     {
-        /**
-         * @var ClosureFactory<T>
-         * @phpstan-ignore varTag.type
-         */
+        /** @var ClosureFactory<T> */
         return ClosureFactory::from(
             type: $this->type,
             function: $this->functionRef,

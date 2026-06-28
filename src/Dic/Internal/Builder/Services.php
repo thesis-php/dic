@@ -5,39 +5,30 @@ declare(strict_types=1);
 namespace Thesis\Dic\Internal\Builder;
 
 use Thesis\Dic\BuildError;
-use Thesis\Dic\Configuration\ScopedConfig;
+use Thesis\Dic\Configuration\Config;
 use Thesis\Dic\Internal\Container\Factories;
 use Thesis\Dic\Internal\Dependency;
 use Thesis\Dic\Internal\Factory;
-use Thesis\Dic\Internal\Lifetime;
 use Thesis\Dic\Internal\ShouldNotHappen;
 use Thesis\Dic\Ref;
 
 /**
  * @internal
- *
- * @phpstan-type ResolvedLifetime = Lifetime::Singleton|Lifetime::Scoped
  */
 final class Services
 {
     private bool $resolving = false;
 
     /**
-     * @var \SplObjectStorage<Ref<mixed>, \Closure(): Factory<mixed>|true|ResolvedLifetime>
+     * @var \SplObjectStorage<Ref<mixed>, (\Closure(): Factory<mixed>)|true|Resolution>
      */
     private \SplObjectStorage $resolution;
-
-    /**
-     * @var \WeakMap<Ref<mixed>, Lifetime>
-     */
-    private \WeakMap $lifetimes;
 
     public function __construct(
         private readonly Factories $singletonFactories,
         private readonly Factories $scopedFactories,
     ) {
         $this->resolution = new \SplObjectStorage();
-        $this->lifetimes = new \WeakMap();
     }
 
     /**
@@ -58,51 +49,26 @@ final class Services
         $this->resolution[$ref] = $createFactory;
     }
 
-    /**
-     * @param Ref<mixed> $ref
-     */
-    public function setDefaultLifetime(Ref $ref, Lifetime $lifetime): void
-    {
-        if ($this->resolving) {
-            throw new ShouldNotHappen("Cannot change the lifetime of {$ref}: service resolution has already started");
-        }
-
-        $this->lifetimes[$ref] ??= $lifetime;
-    }
-
-    /**
-     * @param Ref<mixed> $ref
-     */
-    public function setLifetime(Ref $ref, Lifetime $lifetime): void
-    {
-        if ($this->resolving) {
-            throw new ShouldNotHappen("Cannot change the lifetime of {$ref}: service resolution has already started");
-        }
-
-        $this->lifetimes[$ref] = $lifetime;
-    }
-
     public function resolve(): void
     {
         $this->resolving = true;
 
         foreach ($this->resolution as $ref) {
             if ($this->resolution[$ref] instanceof \Closure) {
-                $this->resolveRef($ref);
+                $this->resolveService($ref);
             }
         }
     }
 
     /**
      * @param Ref<mixed> $ref
-     * @return ResolvedLifetime
      */
-    private function resolveRef(Ref $ref): Lifetime
+    private function resolveService(Ref $ref): Resolution
     {
         $resolution = $this->resolution[$ref]
             ?? throw new ShouldNotHappen("Cannot resolve {$ref}: it is not registered");
 
-        if ($resolution instanceof Lifetime) {
+        if ($resolution instanceof Resolution) {
             return $resolution;
         }
 
@@ -118,85 +84,67 @@ final class Services
             throw BuildError::invalidServiceFactory($ref, $error);
         }
 
-        $resolvedLifetime = $this->resolveRefLifetime($ref, $factory->dependencies());
+        $dependencies = $this->resolveDependencies($ref, $factory->dependencies());
 
-        match ($resolvedLifetime) {
-            Lifetime::Singleton => $this->singletonFactories->register($ref, $factory),
-            Lifetime::Scoped => $this->scopedFactories->register($ref, $factory),
-        };
+        $resolution = $this->strategyOf($ref)->resolve($ref, $dependencies);
 
-        $this->resolution->offsetSet($ref, $resolvedLifetime);
+        // The strategy may decide before consuming every dependency; resolve the rest so the whole graph is built.
+        while ($dependencies->valid()) {
+            $dependencies->next();
+        }
 
-        return $resolvedLifetime;
+        if ($resolution->isSingleton) {
+            $this->singletonFactories->register($ref, $factory);
+        } else {
+            $this->scopedFactories->register($ref, $factory);
+        }
+
+        $this->resolution->offsetSet($ref, $resolution);
+
+        return $resolution;
     }
 
     /**
      * @param Ref<mixed> $ref
      * @param iterable<Dependency> $dependencies
-     * @return ResolvedLifetime
+     * @return \Generator<Dependency, Resolution>
      */
-    public function resolveRefLifetime(Ref $ref, iterable $dependencies): Lifetime
+    private function resolveDependencies(Ref $ref, iterable $dependencies): \Generator
     {
-        $lifetime = $this->getLifetime($ref);
-
-        $shouldBeScoped = false;
-        $invalidSingletonDependencies = [];
-
         foreach ($dependencies as $dependency) {
-            $dependencyResolvedLifetime = $this->resolveDependencyLifetime($ref, $dependency);
+            try {
+                yield $dependency => $this->resolveService($dependency->ref);
+            } catch (Cycle $cycle) {
+                $cycle->prependDependency($dependency);
 
-            if ($lifetime === Lifetime::CanBeScoped) {
-                if ($dependencyResolvedLifetime === Lifetime::Scoped) {
-                    $shouldBeScoped = true;
+                if ($cycle->anchor === $ref) {
+                    throw BuildError::circularDependency($ref, $cycle->dependencies);
                 }
 
-                continue;
-            }
-
-            if ($lifetime === Lifetime::Singleton && !$ref instanceof ScopedConfig) {
-                $dependencyLifetime = $this->getLifetime($dependency->ref);
-
-                if ($dependencyLifetime !== Lifetime::Singleton) {
-                    $invalidSingletonDependencies[] = [$dependency, $dependencyLifetime];
-                }
+                throw $cycle;
             }
         }
-
-        if ($invalidSingletonDependencies !== []) {
-            throw BuildError::singletonDependsOnScoped($ref, $invalidSingletonDependencies);
-        }
-
-        return match ($lifetime) {
-            Lifetime::Singleton => Lifetime::Singleton,
-            Lifetime::CanBeScoped => $shouldBeScoped ? Lifetime::Scoped : Lifetime::Singleton,
-            Lifetime::Scoped => Lifetime::Scoped,
-        };
     }
 
     /**
      * @param Ref<mixed> $ref
      */
-    private function getLifetime(Ref $ref): Lifetime
+    private function strategyOf(Ref $ref): LifetimeStrategy
     {
-        return $this->lifetimes[$ref] ?? Lifetime::Singleton;
-    }
-
-    /**
-     * @param Ref<mixed> $ref
-     * @return ResolvedLifetime
-     */
-    private function resolveDependencyLifetime(Ref $ref, Dependency $dependency): Lifetime
-    {
-        try {
-            return $this->resolveRef($dependency->ref);
-        } catch (Cycle $cycle) {
-            $cycle->prependDependency($dependency);
-
-            if ($cycle->anchor === $ref) {
-                throw BuildError::circularDependency($ref, $cycle->dependencies);
-            }
-
-            throw $cycle;
+        if (!$ref instanceof Config) {
+            return LifetimeStrategy::Singleton;
         }
+
+        /**
+         * @var \Closure(Config<mixed>): LifetimeStrategy
+         * @phpstan-ignore varTag.type
+         */
+        static $get = \Closure::bind(
+            closure: static fn(Config $config) => $config->lifetimeStrategy,
+            newThis: null,
+            newScope: Config::class,
+        );
+
+        return $get($ref);
     }
 }

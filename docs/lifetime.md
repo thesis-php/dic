@@ -30,11 +30,17 @@ $dic
 At build time Dic resolves every declared lifetime to a concrete one — singleton or scoped —
 by walking the dependency graph.
 
+These lifetimes belong to the services Dic instantiates — `object()` and `closure()`.
+A [`value()`](value.md), a [`taggedList()`](tags.md) or a method ref takes no lifetime of its own:
+it is transparent and inherits the lifetime of whatever it carries.
+
 ## A singleton may only depend on singletons
 
 A singleton outlives every scope, so it must not capture a scoped instance.
 Dic enforces this eagerly: if a `singleton()` service depends on a service declared `scoped()` or `canBeScoped()`,
 the build fails with a clear error pointing at the offending edge.
+This also covers the indirect case — a `value()` or `taggedList()` that carries a scoped service is itself scoped,
+and the error follows the path through it to name the scoped service responsible.
 
 The fix is to relax the dependent, not the dependency — make it `canBeScoped()` so it can follow its dependencies:
 

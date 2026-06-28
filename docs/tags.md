@@ -114,8 +114,8 @@ a `Ref` that also exposes reflection about the service:
 - `$service->class` — the `ReflectionClass` of an object service, or `null`;
 - `$service->function` — the `ReflectionFunction` / `ReflectionMethod` behind the service, or `null`.
 
-From there you can call any config method on the service (`tag()`, a lifetime, `disposer()`),
-or read its attributes and declare further services.
+From there you can `tag()` the service, give it a `disposer()`, read its attributes and declare further services
+(setting a lifetime needs an `instanceof LifetimeConfig` check — see below).
 
 The example below turns a routing convention into tagged closures.
 Methods annotated with an `#[Action]` attribute become [`\Closure(Request): Response`](closure.md) services,
@@ -184,7 +184,9 @@ $dic
 
 Two more details worth knowing:
 
-- A lifetime set from inside an autoconfigurator (`singleton()`, `scoped()`, `canBeScoped()`) is a **default** —
-  an explicit lifetime on the service itself still wins.
+- Only `object()` and `closure()` services carry a lifetime, so guard the call with an `instanceof` check
+  against [`LifetimeConfig`](../src/Dic/Configuration/LifetimeConfig.php):
+  `if ($service instanceof LifetimeConfig) { $service->canBeScoped(); }`.
+  A lifetime set this way is a **default** — an explicit lifetime on the service itself still wins.
 - Services created *by* an autoconfigurator are not themselves autoconfigured,
   so a rule can't recurse into its own output.

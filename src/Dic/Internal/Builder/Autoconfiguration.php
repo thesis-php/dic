@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Thesis\Dic\Internal\Builder;
 
 use Thesis\Dic\BuildError;
-use Thesis\Dic\Configuration\Autoconfig;
+use Thesis\Dic\Configuration\Config;
 
 /**
  * @internal
@@ -15,12 +15,12 @@ final class Autoconfiguration
     private bool $autoconfigured = false;
 
     /**
-     * @var list<callable(Autoconfig<*>): void>
+     * @var list<callable(Config<*>): void>
      */
     private array $autoconfigurators = [];
 
     /**
-     * @param callable(Autoconfig<*>): void $autoconfigurator
+     * @param callable(Config<*>): void $autoconfigurator
      */
     public function addAutoconfigurator(callable $autoconfigurator): void
     {
@@ -32,14 +32,14 @@ final class Autoconfiguration
     }
 
     /**
-     * @var list<Autoconfig<*>>
+     * @var list<Config<*>>
      */
     private array $queue = [];
 
     /**
-     * @param Autoconfig<*> $config
+     * @param Config<*> $config
      */
-    public function schedule(Autoconfig $config): void
+    public function schedule(Config $config): void
     {
         if (!$this->autoconfigured) {
             $this->queue[] = $config;
@@ -61,21 +61,25 @@ final class Autoconfiguration
         }
 
         $autoconfigurators = $this->autoconfigurators;
-        $autoconfigurator = \Closure::bind(static function (Autoconfig $config) use ($autoconfigurators): void {
-            if (!$config->isAutoconfigurable) {
-                return;
-            }
-
-            $config->isAutoconfiguring = true;
-
-            try {
-                foreach ($autoconfigurators as $autoconfigurator) {
-                    $autoconfigurator($config);
+        $autoconfigurator = \Closure::bind(
+            closure: static function (Config $config) use ($autoconfigurators): void {
+                if (!$config->isAutoconfigurable) {
+                    return;
                 }
-            } finally {
-                $config->isAutoconfiguring = false;
-            }
-        }, null, Autoconfig::class);
+
+                $config->isAutoconfiguring = true;
+
+                try {
+                    foreach ($autoconfigurators as $autoconfigurator) {
+                        $autoconfigurator($config);
+                    }
+                } finally {
+                    $config->isAutoconfiguring = false;
+                }
+            },
+            newThis: null,
+            newScope: Config::class,
+        );
 
         foreach ($this->queue as $config) {
             $autoconfigurator($config);

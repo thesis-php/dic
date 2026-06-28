@@ -6,6 +6,7 @@ namespace Thesis\Dic\Configuration;
 
 use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\Builder;
+use Thesis\Dic\Internal\Builder\LifetimeStrategy;
 use Thesis\Dic\Internal\Factory;
 use Thesis\Dic\Internal\Factory\ScopedFactory;
 use Thesis\Dic\Location;
@@ -15,7 +16,7 @@ use Thesis\Dic\Scoped;
 /**
  * @api
  *
- * @template T
+ * @template-covariant T
  * @extends Config<Scoped<T>>
  */
 final class ScopedConfig extends Config
@@ -36,6 +37,10 @@ final class ScopedConfig extends Config
             autowiring: $autowiring,
             declaredAt: $declaredAt,
         );
+    }
+
+    protected LifetimeStrategy $lifetimeStrategy {
+        get => LifetimeStrategy::Detached;
     }
 
     protected function defaultLabel(): string

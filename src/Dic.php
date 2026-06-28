@@ -6,6 +6,7 @@ namespace Thesis;
 
 use Thesis\Dic\Configuration\Autoconfig;
 use Thesis\Dic\Configuration\ClosureConfig;
+use Thesis\Dic\Configuration\Config;
 use Thesis\Dic\Configuration\ObjectConfig;
 use Thesis\Dic\Configuration\ScopedConfig;
 use Thesis\Dic\Configuration\TaggedListConfig;
@@ -134,7 +135,7 @@ final readonly class Dic
      */
     public function object(string $class, null|callable|array|Ref $factory = null): ObjectConfig
     {
-        if ($factory !== null && !$factory instanceof Ref) {
+        if ($factory !== null && !$factory instanceof Config) {
             /** @var ValueConfig<callable(): T> */
             $factory = new ValueConfig(
                 builder: $this->builder,
@@ -161,7 +162,7 @@ final readonly class Dic
      */
     public function closure(ClosureT $type, callable|array|Ref $function): ClosureConfig
     {
-        if (!$function instanceof Ref) {
+        if (!$function instanceof Config) {
             /** @var ValueConfig<callable> */
             $function = new ValueConfig(
                 builder: $this->builder,

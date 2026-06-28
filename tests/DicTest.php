@@ -283,12 +283,12 @@ final readonly class DicTest
         Expect::exception(BuildError::class)
             ->withMessage(\sprintf(
                 <<<'MSG'
-                    Singleton "Thesis\TestService" (tests/DicTest.php:%1$s) cannot depend on non-singleton services:
+                    Singleton "Thesis\TestService" (tests/DicTest.php:%1$s) cannot depend on a non-singleton service:
 
                       "Thesis\TestService" (tests/DicTest.php:%1$s)
                       └─ $factory → "Thesis\TestService" (tests/DicTest.php:%2$s)  ← Scoped
 
-                    Make "Thesis\TestService" (tests/DicTest.php:%1$s) scoped (or canBeScoped()), or make these dependencies singletons.
+                    Make "Thesis\TestService" (tests/DicTest.php:%1$s) scoped (or canBeScoped()), or make the dependency a singleton.
                     MSG,
                 $line + 20,
                 $line + 17,

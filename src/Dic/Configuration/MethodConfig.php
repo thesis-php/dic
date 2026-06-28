@@ -7,6 +7,7 @@ namespace Thesis\Dic\Configuration;
 use Thesis\Dic\BuildError;
 use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\Builder;
+use Thesis\Dic\Internal\Builder\LifetimeStrategy;
 use Thesis\Dic\Internal\Factory;
 use Thesis\Dic\Internal\Factory\ValueFactory;
 use Thesis\Dic\Internal\Signature;
@@ -18,7 +19,7 @@ use function Thesis\Formatter\formatReflectedFunction;
 /**
  * @api
  *
- * @template T of callable-array
+ * @template-covariant T of callable-array
  * @extends Config<T>
  */
 final class MethodConfig extends Config
@@ -44,6 +45,10 @@ final class MethodConfig extends Config
             autowiring: $autowiring,
             declaredAt: $declaredAt,
         );
+    }
+
+    protected LifetimeStrategy $lifetimeStrategy {
+        get => LifetimeStrategy::Inferred;
     }
 
     protected function defaultLabel(): string

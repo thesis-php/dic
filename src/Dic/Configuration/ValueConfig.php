@@ -6,6 +6,7 @@ namespace Thesis\Dic\Configuration;
 
 use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\Builder;
+use Thesis\Dic\Internal\Builder\LifetimeStrategy;
 use Thesis\Dic\Internal\Factory;
 use Thesis\Dic\Internal\Factory\ValueFactory;
 use Thesis\Dic\Internal\Signature;
@@ -34,6 +35,10 @@ final class ValueConfig extends Config
         Location $declaredAt,
     ) {
         parent::__construct($builder, $autowiring, $declaredAt);
+    }
+
+    protected LifetimeStrategy $lifetimeStrategy {
+        get => LifetimeStrategy::Inferred;
     }
 
     protected function defaultLabel(): string

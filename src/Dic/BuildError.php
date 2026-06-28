@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Thesis\Dic;
 
 use Thesis\Dic\Internal\Autowiring\UnsupportedBindingType;
+use Thesis\Dic\Internal\Builder\LifetimeStrategy;
 use Thesis\Dic\Internal\Dependency;
-use Thesis\Dic\Internal\Lifetime;
 use Thesis\Dic\Internal\Signature;
 use Thesis\Dic\Internal\Signature\Parameter;
 use Typhoon\Type;
@@ -96,27 +96,29 @@ final class BuildError extends \LogicException
      * @internal
      *
      * @param Ref<mixed> $singleton
-     * @param non-empty-list<array{Dependency, Lifetime}> $dependencies [dependency, configured lifetime]
+     * @param non-empty-list<Dependency> $chain edges from the singleton down to the offending non-singleton leaf
+     * @param LifetimeStrategy $lifetime the leaf's configured lifetime
      */
-    public static function singletonDependsOnScoped(Ref $singleton, array $dependencies): self
+    public static function singletonDependsOnScoped(Ref $singleton, array $chain, LifetimeStrategy $lifetime): self
     {
-        $lastIndex = array_key_last($dependencies);
+        $lastEdge = array_key_last($chain);
 
         $lines = ["  {$singleton}"];
 
-        foreach ($dependencies as $index => [$dependency, $lifetime]) {
-            $branch = $index === $lastIndex ? '└─' : '├─';
-            $edge = $dependency->path === '' ? '' : "{$dependency->path} → ";
-            $lines[] = "  {$branch} {$edge}{$dependency->ref}  ← {$lifetime->name}";
+        foreach ($chain as $depth => $edge) {
+            $indent = str_repeat(' ', 2 + 3 * $depth);
+            $path = $edge->path === '' ? '' : "{$edge->path} → ";
+            $marker = $depth === $lastEdge ? "  ← {$lifetime->name}" : '';
+            $lines[] = "{$indent}└─ {$path}{$edge->ref}{$marker}";
         }
 
         return new self(\sprintf(
             <<<'TEXT'
-                Singleton %s cannot depend on non-singleton services:
+                Singleton %s cannot depend on a non-singleton service:
 
                 %s
 
-                Make %1$s scoped (or canBeScoped()), or make these dependencies singletons.
+                Make %1$s scoped (or canBeScoped()), or make the dependency a singleton.
                 TEXT,
             $singleton,
             implode("\n", $lines),
@@ -143,7 +145,7 @@ final class BuildError extends \LogicException
     /**
      * @internal
      *
-     * @param \ReflectionClass<object> $class
+     * @param \ReflectionClass<*> $class
      */
     public static function classNotInstantiable(\ReflectionClass $class): self
     {
@@ -154,7 +156,7 @@ final class BuildError extends \LogicException
     /**
      * @internal
      *
-     * @param \ReflectionClass<object> $class
+     * @param \ReflectionClass<*> $class
      */
     public static function lazyClassNotInstantiable(\ReflectionClass $class): self
     {

@@ -23,40 +23,39 @@ use function Thesis\Formatter\formatReflectedClass;
 /**
  * @api
  *
- * @template T of object
- * @extends Config<T>
+ * @template-covariant T of object
+ * @extends FactoryConfig<T, never>
  */
-final class ObjectConfig extends Config
+final class ObjectConfig extends FactoryConfig
 {
     /**
      * @internal
      *
-     * @param \ReflectionClass<T> $class
-     * @param ?Ref<callable(): T> $factory
+     * @param \ReflectionClass<covariant T> $class
+     * @param ?Config<callable(): T> $factory
      */
     public function __construct(
         Builder $builder,
         Autowiring $autowiring,
         public readonly \ReflectionClass $class,
-        private readonly ?Ref $factory,
+        private readonly ?Config $factory,
         Location $declaredAt,
     ) {
-        $this->arguments = new Arguments(
-            signature: match ($factory) {
-                null => match ($class->isInstantiable()) {
-                    true => Signature::ofConstructor($class),
-                    false => throw BuildError::classNotInstantiable($class),
-                },
-                default => $factory->signature ?? throw BuildError::factoryNotCallable($factory),
-            },
-            autowiring: $autowiring,
-            closureArguments: ClosureArguments::empty(),
-        );
-
         parent::__construct(
             builder: $builder,
             autowiring: $autowiring,
             declaredAt: $declaredAt,
+            arguments: new Arguments(
+                signature: match ($factory) {
+                    null => match ($class->isInstantiable()) {
+                        true => Signature::ofConstructor($class),
+                        false => throw BuildError::classNotInstantiable($class),
+                    },
+                    default => $factory->signature ?? throw BuildError::factoryNotCallable($factory),
+                },
+                autowiring: $autowiring,
+                closureArguments: ClosureArguments::empty(),
+            ),
         );
     }
 
@@ -75,42 +74,6 @@ final class ObjectConfig extends Config
     /** @phpstan-ignore property.phpDocType */
     public ?\ReflectionMethod $function {
         get => $this->signature?->reflection;
-    }
-
-    private readonly Arguments $arguments;
-
-    public function doNotAutowire(): static
-    {
-        $this->arguments->doNotAutowire();
-
-        return $this;
-    }
-
-    public function arg(int|string $positionOrName, mixed $value): static
-    {
-        $this->arguments->arg($positionOrName, $value);
-
-        return $this;
-    }
-
-    /**
-     * @param iterable<array-key, mixed>|Ref<iterable<array-key, mixed>> $variadic
-     */
-    public function variadic(iterable|Ref $variadic): static
-    {
-        $this->arguments->variadic($variadic);
-
-        return $this;
-    }
-
-    /**
-     * @param array<mixed> $values
-     */
-    public function args(array $values): static
-    {
-        $this->arguments->args($values);
-
-        return $this;
     }
 
     private bool $lazy = false;
@@ -233,6 +196,10 @@ final class ObjectConfig extends Config
 
         if ($this->lazy) {
             $factory = new LazyObjectFactory(
+                /**
+                 * @todo think about it...
+                 * @phpstan-ignore argument.type
+                 */
                 class: $this->class,
                 factory: $factory,
             );

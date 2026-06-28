@@ -20,7 +20,7 @@ use Typhoon\Type\Parameter as ClosureParameter;
 /**
  * @internal
  *
- * @template T of \Closure
+ * @template-covariant T of \Closure
  * @implements Factory<T>
  */
 final readonly class ClosureFactory implements Factory

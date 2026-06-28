@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Thesis\Dic\Internal;
 
 use Thesis\Dic\Configuration\Autoconfig;
+use Thesis\Dic\Configuration\Config;
 use Thesis\Dic\Internal\Builder\Autoconfiguration;
 use Thesis\Dic\Internal\Builder\Services;
 use Thesis\Dic\Internal\Builder\Tags;
@@ -57,29 +58,13 @@ final readonly class Builder
 
     /**
      * @template T
-     * @param Autoconfig<T> $config
+     * @param Config<T> $config
      * @param \Closure(): Factory<T> $createFactory
      */
-    public function register(Autoconfig $config, \Closure $createFactory): void
+    public function register(Config $config, \Closure $createFactory): void
     {
         $this->autoconfiguration->schedule($config);
         $this->services->register($config, $createFactory);
-    }
-
-    /**
-     * @param Ref<mixed> $ref
-     */
-    public function setDefaultLifetime(Ref $ref, Lifetime $lifetime): void
-    {
-        $this->services->setDefaultLifetime($ref, $lifetime);
-    }
-
-    /**
-     * @param Ref<mixed> $ref
-     */
-    public function setLifetime(Ref $ref, Lifetime $lifetime): void
-    {
-        $this->services->setLifetime($ref, $lifetime);
     }
 
     /**

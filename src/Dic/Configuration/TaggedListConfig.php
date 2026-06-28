@@ -6,6 +6,7 @@ namespace Thesis\Dic\Configuration;
 
 use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\Builder;
+use Thesis\Dic\Internal\Builder\LifetimeStrategy;
 use Thesis\Dic\Internal\Factory;
 use Thesis\Dic\Internal\Factory\ValueFactory;
 use Thesis\Dic\Location;
@@ -17,8 +18,8 @@ use Thesis\Dic\TaggedRefs;
 /**
  * @api
  *
- * @template T
- * @template TTag of Tag<T>
+ * @template-covariant T
+ * @template-covariant TTag of Tag<T>
  * @extends Config<list<T>>
  */
 final class TaggedListConfig extends Config
@@ -41,6 +42,12 @@ final class TaggedListConfig extends Config
         ?callable $sort,
         Location $declaredAt,
     ) {
+        parent::__construct(
+            builder: $builder,
+            autowiring: $autowiring,
+            declaredAt: $declaredAt,
+        );
+
         $builder->onTagResolution(function (TaggedRefs $taggedRefs) use ($tag, $sort): void {
             $trs = $taggedRefs->find($tag);
 
@@ -50,12 +57,10 @@ final class TaggedListConfig extends Config
 
             $this->refs = array_column($trs, 'ref');
         });
+    }
 
-        parent::__construct(
-            builder: $builder,
-            autowiring: $autowiring,
-            declaredAt: $declaredAt,
-        );
+    protected LifetimeStrategy $lifetimeStrategy {
+        get => LifetimeStrategy::Inferred;
     }
 
     protected function defaultLabel(): string
