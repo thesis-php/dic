@@ -46,7 +46,7 @@ final readonly class Dic
     {
         $builder = new Builder();
 
-        $result = self::doRequire($builder, $module);
+        $result = new self($builder)->import($module);
 
         $container = $builder->build();
 
@@ -82,11 +82,11 @@ final readonly class Dic
      * @param callable(self): mixed $module
      * @return ($module is (callable(self): Ref<T>) ? T : mixed)
      */
-    public static function assemble(callable $module): mixed
+    public static function build(callable $module): mixed
     {
         $builder = new Builder();
 
-        $result = self::doRequire($builder, $module);
+        $result = new self($builder)->import($module);
 
         // a scope is used to resolve a service of any lifetime: singleton or scoped
         $scope = $builder->build()->startScope();
@@ -110,23 +110,21 @@ final readonly class Dic
      * @param callable(self): T $module
      * @return T
      */
-    public function require(callable $module): mixed
+    public function import(callable $module): mixed
     {
-        return self::doRequire($this->builder, $module);
-    }
-
-    /**
-     * @template T
-     * @param callable(self): T $module
-     * @return T
-     */
-    private static function doRequire(Builder $builder, callable $module): mixed
-    {
-        $dic = new self($builder);
+        $dic = new self($this->builder);
         $result = $module($dic);
         $dic->autoconfiguration->start();
 
         return $result;
+    }
+
+    /**
+     * @param callable(self): void $config
+     */
+    public function include(callable $config): void
+    {
+        $config($this);
     }
 
     /**

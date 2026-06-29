@@ -126,10 +126,10 @@ $dic->onFunction($this->tagCommandFunctions(...));
   attributes; you can `tag()` it, give it a `disposer()`, or adapt it to a typed `\Closure` with `closure()`.
 
 A convention is scoped to the module it is registered in: the listener visits only the services declared on the same
-`Dic`, and a [`require()`](modularity.md)d submodule autoconfigures in isolation — its listeners never reach your
-services, and yours never reach its.
-Share one autoconfiguration scope across your own modules the same way you [share autowiring](modularity.md): compose
-them on the same `$dic`.
+`Dic`, and a submodule pulled in with [`import()`](modularity.md) autoconfigures in isolation — its listeners never
+reach your services, and yours never reach its.
+Share one autoconfiguration scope across your own modules the same way you [share autowiring](modularity.md):
+[`include()`](modularity.md) them into the same `$dic`.
 
 Only the introspectable kinds are visited — `object()`, `function()` and `method()`.
 `value()`, `closure()`, `scoped()` and `taggedList()` are **not**:
@@ -173,7 +173,7 @@ final readonly class Controller
     public function list(Request $request): Response { /* … */ }
 }
 
-$actions = Dic::assemble(static function (Dic $dic): Dic\Ref {
+$actions = Dic::build(static function (Dic $dic): Dic\Ref {
     // Discover the action methods and schedule each one.
     $dic->onObject(static function (ObjectAutoconfig $object): void {
         foreach ($object->methods as $method) {

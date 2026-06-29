@@ -44,14 +44,14 @@ Each type can be bound once: a second binding to the same type within the same m
 ## Bindings are module-local
 
 Bindings live on the module's `Dic`, not on the container as a whole.
-`require()` hands the submodule a fresh `Dic` with an empty binding table,
+`import()` hands the submodule a fresh `Dic` with an empty binding table,
 so a submodule neither sees the parent's bindings nor leaks its own back up.
 
 This keeps autowiring reasoning local: to know what a `Cache` parameter resolves to,
 you only read the module that declares the service — never the whole application.
 A module that wants a service from elsewhere imports its `Ref<T>` explicitly rather than relying on a shared binding.
 
-This isolation is what `require()` buys you; modules can also be wired to share one autowiring table.
+This isolation is what `import()` buys you; modules can also be wired to share one autowiring table.
 See [Modularity](modularity.md) for when to use each.
 
 ## Qualifiers

@@ -1,6 +1,6 @@
 # Modularity
 
-You assemble an application from **modules**, and the application itself is just the root module.
+You compose an application from **modules**, and the application itself is just the root module.
 A module is a `callable` that accepts a `Dic` and returns whatever it exports — usually a `Ref<T>`:
 
 ```php
@@ -19,21 +19,21 @@ function cacheModule(Dic $dic): Ref
 }
 ```
 
-The root module is the one you hand to `Dic::run()` or `Dic::assemble()`.
+The root module is the one you hand to `Dic::run()` or `Dic::build()`.
 A small application can live entirely in that one module — splitting into more is never required,
 only worth it once a single function grows unwieldy or you want to reuse a piece.
 
 When you do split, every other module is pulled in from inside another one.
 There are two ways to do that, and they differ in one thing: whether [autowiring](autowiring.md) is shared.
 
-## `require()`: isolated bindings (recommended)
+## `import()`: isolated bindings (recommended)
 
-`require()` runs a module in a **fresh** `Dic` of its own, then hands you back whatever it returns:
+`import()` runs a module in a **fresh** `Dic` of its own, then hands you back whatever it returns:
 
 ```php
 function appModule(Dic $dic): Ref
 {
-    $cache = $dic->require(cacheModule(...)); // Ref<Cache>
+    $cache = $dic->import(cacheModule(...)); // Ref<Cache>
 
     return $dic
         ->object(ProductRepository::class)
@@ -42,13 +42,13 @@ function appModule(Dic $dic): Ref
 ```
 
 The submodule's bindings live in that fresh `Dic`, so they neither leak out nor see yours.
-A required module is a black box: you wire it in only through the `Ref`s it exports and the `Ref`s you pass in —
+An imported module is a black box: you wire it in only through the `Ref`s it exports and the `Ref`s you pass in —
 never through a shared type binding.
 That is why `appModule` injects the exported `$cache` explicitly instead of autowiring `Cache`:
 `cacheModule`'s binding is invisible here.
 
 [Autoconfiguration](tags.md) is scoped the same way: an `onObject()` / `onFunction()` listener registered inside a
-module visits only that module's services, and a required module's listeners never touch yours.
+module visits only that module's services, and an imported module's listeners never touch yours.
 
 Isolation is only about configuration — the binding table and the `Dic` surface.
 The underlying container is still shared, so every service across every module is built once, in one container.
@@ -56,26 +56,29 @@ The underlying container is still shared, so every service across every module i
 This is the recommended way to compose modules: each one reasons about its own autowiring,
 and adding a binding in one module can never silently change how another resolves a type.
 
-## Vendor modules: always `require()`
+## Vendor modules: always `import()`
 
-For third-party modules, `require()` is not just a recommendation — it is the only safe option.
+For third-party modules, `import()` is not just a recommendation — it is the only safe option.
 You do not control a vendor's bindings, and isolation guarantees their autowiring choices never collide with yours,
 nor accidentally satisfy one of your parameters.
 Calling a vendor module directly would merge two codebases into one binding table — fragile and surprising.
 
-## Sharing autowiring across your own modules
+## `include()`: shared autowiring across your own modules
 
-A module is an ordinary function, so within your own project you can skip `require()`
-and just call it with the **same** `$dic`:
+Within your own project you can pull a module into the **same** `$dic` with `include()` instead,
+so its bindings stay visible here:
 
 ```php
 function appModule(Dic $dic): Ref
 {
-    cacheModule($dic); // same $dic — the Cache binding is now visible here
+    $dic->include(cacheModule(...)); // same $dic — the Cache binding is now visible here
 
     return $dic->object(ProductRepository::class); // its Cache parameter autowires to RedisCache
 }
 ```
+
+A module is an ordinary function, so a bare `cacheModule($dic)` does the same thing;
+`include()` only names the intent and discards what the module returns.
 
 Now the modules share one autowiring table: a type bound in one is autowirable in any of the others,
 so you can split a project into functions and let bindings flow between them without exporting every `Ref`.
@@ -88,5 +91,5 @@ This is a deliberate trade-off, **not** the default we recommend.
 Sharing makes autowiring effectively global across those modules,
 so the local reasoning that [autowiring](autowiring.md) is built around no longer holds:
 a binding added in one place can change resolution somewhere far away.
-Prefer `require()`; reach for a shared `$dic` only for a few tightly-coupled internal modules
+Prefer `import()`; reach for `include()` only for a few tightly-coupled internal modules
 where you genuinely want them to live in one autowiring scope.

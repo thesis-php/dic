@@ -34,7 +34,7 @@ It lets you declare services, require modules, subscribe to events and more.
 
 ### Module
 
-A module is the unit of composition: you assemble your application from modules,
+A module is the unit of composition: you compose your application from modules,
 and the application itself is just the root module.
 
 A module is a `callable` that accepts `Dic` and returns whatever it exports.
@@ -103,8 +103,8 @@ final readonly class ConsoleModule
 }
 ```
 
-To use a module inside another one, call `require()` and get whatever that module exports.
-See [Modularity](docs/modularity.md) for how `require` isolates modules and when you might share autowiring instead.
+To use a module inside another one, call `import()` and get whatever that module exports.
+See [Modularity](docs/modularity.md) for how `import` isolates modules and when you might share autowiring instead.
 
 ```php
 use Psr\Log\NullLogger;
@@ -118,7 +118,7 @@ function myApp(Dic $dic): Ref
 {
     $logger = $dic->object(NullLogger::class);
 
-    $cli = $dic->require(new ConsoleModule($logger));
+    $cli = $dic->import(new ConsoleModule($logger));
 
     return $cli;
 }
@@ -139,13 +139,13 @@ $status = Dic::run(
 exit($status);
 ```
 
-For tests and debugging, `Dic::assemble()` returns the resolved module's export without disposing anything:
+For tests and debugging, `Dic::build()` returns the resolved module's export without disposing anything:
 
 ```php
 use Testo\Assert;
 use Thesis\Dic;
 
-$cli = Dic::assemble(myApp(...));
+$cli = Dic::build(myApp(...));
 
 Assert::instanceOf($cli, ConsoleApplication::class);
 ```

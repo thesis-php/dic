@@ -40,7 +40,7 @@ final readonly class DicTest
     #[Test]
     public function value(): void
     {
-        $value = Dic::assemble(static fn(Dic $dic) => $dic->value(1));
+        $value = Dic::build(static fn(Dic $dic) => $dic->value(1));
 
         Assert::same($value, 1);
     }
@@ -48,7 +48,7 @@ final readonly class DicTest
     #[Test]
     public function valueRef(): void
     {
-        $value = Dic::assemble(static function (Dic $dic) {
+        $value = Dic::build(static function (Dic $dic) {
             $ref = $dic->value(1);
 
             return $dic->value($ref);
@@ -60,7 +60,7 @@ final readonly class DicTest
     #[Test]
     public function valueArrayRef(): void
     {
-        $value = Dic::assemble(static function (Dic $dic) {
+        $value = Dic::build(static function (Dic $dic) {
             $ref1 = $dic->value(1);
             $ref2 = $dic->value(2);
 
@@ -73,7 +73,7 @@ final readonly class DicTest
     #[Test]
     public function object(): void
     {
-        $object = Dic::assemble(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic->object(TestService::class),
         );
 
@@ -83,7 +83,7 @@ final readonly class DicTest
     #[Test]
     public function objectStaticFactory(): void
     {
-        $object = Dic::assemble(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic->object(TestService::class, TestService::new(...)),
         );
 
@@ -93,7 +93,7 @@ final readonly class DicTest
     #[Test]
     public function objectMethodFactory(): void
     {
-        $object = Dic::assemble(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic->object(
                 class: TestService::class,
                 factory: $dic->object(TestService::class)->method('new'),
@@ -106,7 +106,7 @@ final readonly class DicTest
     #[Test]
     public function objectCallableArrayClassMethodFactory(): void
     {
-        $object = Dic::assemble(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic->object(
                 class: TestService::class,
                 /** @phpstan-ignore argument.type */
@@ -123,7 +123,7 @@ final readonly class DicTest
     #[Test]
     public function objectCallableArrayObjectMethodFactory(): void
     {
-        $object = Dic::assemble(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic->object(
                 class: TestService::class,
                 /** @phpstan-ignore argument.type */
@@ -140,7 +140,7 @@ final readonly class DicTest
     #[Test]
     public function objectRefMethodArrayFactory(): void
     {
-        $object = Dic::assemble(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic->object(
                 class: TestService::class,
                 factory: [$dic->object(TestService::class), 'new'],
@@ -155,7 +155,7 @@ final readonly class DicTest
     {
         $value = 123;
 
-        $object = Dic::assemble(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic
                 ->object(TestService::class)
                 ->call('set', [$value]),
@@ -167,7 +167,7 @@ final readonly class DicTest
     #[Test]
     public function objectCallWithVariadic(): void
     {
-        $object = Dic::assemble(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic
                 ->object(TestService::class)
                 ->call('setAll', variadic: [1, 2, 3]),
@@ -179,7 +179,7 @@ final readonly class DicTest
     #[Test]
     public function dependencyDeclaredAfterDependent(): void
     {
-        $object = Dic::assemble(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic
                 ->object(TestService::class)
                 ->arg('value', $dic->object(TestService::class)),
@@ -210,7 +210,7 @@ final readonly class DicTest
                 $line + 22,
             ));
 
-        Dic::assemble(static function (Dic $dic) {
+        Dic::build(static function (Dic $dic) {
             $a = $dic->object(TestService::class);
             $b = $dic->object(TestService::class);
             $c = $dic->object(TestService::class);
@@ -227,7 +227,7 @@ final readonly class DicTest
     #[ExpectException(\LogicException::class)]
     public function selfDependency(): void
     {
-        Dic::assemble(static function (Dic $dic) {
+        Dic::build(static function (Dic $dic) {
             $service = $dic->object(TestService::class);
 
             return $service->arg('value', $service);
@@ -238,7 +238,7 @@ final readonly class DicTest
     #[ExpectException(\LogicException::class)]
     public function scopedCircularDependency(): void
     {
-        Dic::assemble(static function (Dic $dic) {
+        Dic::build(static function (Dic $dic) {
             $a = $dic->object(TestService::class)->scoped();
             $b = $dic->object(TestService::class)->scoped();
 
@@ -254,7 +254,7 @@ final readonly class DicTest
     {
         $value = 123;
 
-        $object = Dic::assemble(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic
                 ->object(TestService::class)
                 ->chain('with', [$value]),
@@ -266,7 +266,7 @@ final readonly class DicTest
     #[Test]
     public function objectChainWithVariadic(): void
     {
-        $object = Dic::assemble(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic
                 ->object(TestService::class)
                 ->chain('withAll', variadic: [1, 2, 3]),
@@ -294,7 +294,7 @@ final readonly class DicTest
                 $line + 17,
             ));
 
-        Dic::assemble(static function (Dic $dic) {
+        Dic::build(static function (Dic $dic) {
             $scoped = $dic->object(TestService::class)->scoped();
 
             return $dic
@@ -306,7 +306,7 @@ final readonly class DicTest
     #[Test]
     public function autowiresConstructorByBoundType(): void
     {
-        $consumer = Dic::assemble(static function (Dic $dic) {
+        $consumer = Dic::build(static function (Dic $dic) {
             $dic->object(RedisCache::class)->bind(objectT(Cache::class));
 
             return $dic->object(Consumer::class);
@@ -319,7 +319,7 @@ final readonly class DicTest
     #[Test]
     public function bindWithQualifierSelectsImplementation(): void
     {
-        $consumer = Dic::assemble(static function (Dic $dic) {
+        $consumer = Dic::build(static function (Dic $dic) {
             $dic->object(RedisCache::class)->bind(objectT(Cache::class), 'redis');
             $dic->object(ApcuCache::class)->bind(objectT(Cache::class), 'apcu');
 
@@ -332,7 +332,7 @@ final readonly class DicTest
     #[Test]
     public function singletonInstanceIsSharedBetweenDependents(): void
     {
-        $pair = Dic::assemble(static function (Dic $dic) {
+        $pair = Dic::build(static function (Dic $dic) {
             $dic->object(Holder::class)->bind(objectT(Holder::class));
 
             return $dic->object(Pair::class);
@@ -344,7 +344,7 @@ final readonly class DicTest
     #[Test]
     public function defaultValueIsUsedWhenNotAutowirable(): void
     {
-        $object = Dic::assemble(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic->object(WithDefault::class),
         );
 
@@ -354,7 +354,7 @@ final readonly class DicTest
     #[Test]
     public function argOverridesDefaultValue(): void
     {
-        $object = Dic::assemble(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic->object(WithDefault::class)->arg('number', 7),
         );
 
@@ -364,7 +364,7 @@ final readonly class DicTest
     #[Test]
     public function variadicArguments(): void
     {
-        $object = Dic::assemble(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic->object(Numbers::class)->variadic([1, 2, 3]),
         );
 
@@ -374,7 +374,7 @@ final readonly class DicTest
     #[Test]
     public function emptyVariadicDefaultsToEmptyArray(): void
     {
-        $object = Dic::assemble(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic->object(Numbers::class),
         );
 
@@ -384,8 +384,8 @@ final readonly class DicTest
     #[Test]
     public function requireComposesSubmodule(): void
     {
-        $value = Dic::assemble(
-            static fn(Dic $dic) => $dic->require(
+        $value = Dic::build(
+            static fn(Dic $dic) => $dic->import(
                 static fn(Dic $inner) => $inner->value(42),
             ),
         );
@@ -396,7 +396,7 @@ final readonly class DicTest
     #[Test]
     public function lazyObjectIsUsable(): void
     {
-        $counter = Dic::assemble(
+        $counter = Dic::build(
             static fn(Dic $dic) => $dic->object(Counter::class)->lazy(),
         );
 
@@ -412,7 +412,7 @@ final readonly class DicTest
     {
         Expect::exception(BuildError::class)->withMessageContaining('cannot be made lazy');
 
-        Dic::assemble(
+        Dic::build(
             static fn(Dic $dic) => $dic
                 ->object(Cache::class, static fn(): Cache => new RedisCache())
                 ->lazy(),
@@ -422,7 +422,7 @@ final readonly class DicTest
     #[Test]
     public function scopedWrapperProducesFreshInstancePerRun(): void
     {
-        $scoped = Dic::assemble(
+        $scoped = Dic::build(
             static fn(Dic $dic) => $dic->scoped(
                 $dic->object(Counter::class)->scoped(),
             ),
@@ -587,7 +587,7 @@ final readonly class DicTest
     #[Test]
     public function taggedListCollectsTaggedServices(): void
     {
-        $caches = Dic::assemble(static function (Dic $dic) {
+        $caches = Dic::build(static function (Dic $dic) {
             $dic->object(RedisCache::class)->tag(new CacheTag());
             $dic->object(ApcuCache::class)->tag(new CacheTag());
 
@@ -604,7 +604,7 @@ final readonly class DicTest
     #[Test]
     public function taggedListRespectsSort(): void
     {
-        $caches = Dic::assemble(static function (Dic $dic) {
+        $caches = Dic::build(static function (Dic $dic) {
             $dic->object(RedisCache::class)->tag(new PriorityTag(2));
             $dic->object(ApcuCache::class)->tag(new PriorityTag(1));
 
@@ -625,7 +625,7 @@ final readonly class DicTest
     {
         $found = null;
 
-        Dic::assemble(static function (Dic $dic) use (&$found) {
+        Dic::build(static function (Dic $dic) use (&$found) {
             $dic->object(RedisCache::class)->tag(new CacheTag());
 
             $dic->onTagResolution(static function (TaggedRefs $taggedRefs) use (&$found): void {
@@ -644,7 +644,7 @@ final readonly class DicTest
     {
         $signature = closureT([param(intT, name: 'n')], intT);
 
-        $function = Dic::assemble(static function (Dic $dic) use ($signature) {
+        $function = Dic::build(static function (Dic $dic) use ($signature) {
             $dic->object(RedisCache::class)->bind(objectT(Cache::class));
 
             return $dic
@@ -660,7 +660,7 @@ final readonly class DicTest
     {
         $signature = closureT([param(intT, variadic: true, name: 'numbers')], intT);
 
-        $function = Dic::assemble(
+        $function = Dic::build(
             static fn(Dic $dic) => $dic
                 ->function(static fn(int ...$numbers): int => array_sum($numbers))
                 ->closure($signature),
@@ -672,7 +672,7 @@ final readonly class DicTest
     #[Test]
     public function attributeAutowireQualifierSelectsImplementation(): void
     {
-        $consumer = Dic::assemble(static function (Dic $dic) {
+        $consumer = Dic::build(static function (Dic $dic) {
             $dic->object(RedisCache::class)->bind(objectT(Cache::class), 'redis');
             $dic->object(ApcuCache::class)->bind(objectT(Cache::class), 'apcu');
 
@@ -685,7 +685,7 @@ final readonly class DicTest
     #[Test]
     public function attributeDoNotAutowireFallsBackToDefault(): void
     {
-        $consumer = Dic::assemble(
+        $consumer = Dic::build(
             static fn(Dic $dic) => $dic->object(OptionalConsumer::class),
         );
 
@@ -695,7 +695,7 @@ final readonly class DicTest
     #[Test]
     public function bindWithEnumQualifier(): void
     {
-        $consumer = Dic::assemble(static function (Dic $dic) {
+        $consumer = Dic::build(static function (Dic $dic) {
             $dic->object(RedisCache::class)->bind(objectT(Cache::class), CacheStore::Redis);
             $dic->object(ApcuCache::class)->bind(objectT(Cache::class), CacheStore::Apcu);
 
@@ -708,7 +708,7 @@ final readonly class DicTest
     #[Test]
     public function canBeScopedStaysSingletonWithoutScopedDependencies(): void
     {
-        $scoped = Dic::assemble(
+        $scoped = Dic::build(
             static fn(Dic $dic) => $dic->scoped(
                 $dic->object(Counter::class)->canBeScoped(),
             ),
@@ -723,7 +723,7 @@ final readonly class DicTest
     #[Test]
     public function canBeScopedBecomesScopedWithScopedDependency(): void
     {
-        $scoped = Dic::assemble(
+        $scoped = Dic::build(
             static fn(Dic $dic) => $dic->scoped(
                 $dic
                     ->object(CounterHolder::class)
@@ -741,7 +741,7 @@ final readonly class DicTest
     #[Test]
     public function positionalArgument(): void
     {
-        $object = Dic::assemble(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic->object(WithDefault::class)->arg(0, 7),
         );
 
@@ -751,7 +751,7 @@ final readonly class DicTest
     #[Test]
     public function positionalFactoryWiresDependencyAndVariadic(): void
     {
-        $object = Dic::assemble(static function (Dic $dic) {
+        $object = Dic::build(static function (Dic $dic) {
             $dic->object(Counter::class)->bind(objectT(Counter::class));
 
             return $dic->object(CounterAndNumbers::class)->variadic([1, 2]);
@@ -764,7 +764,7 @@ final readonly class DicTest
     #[Test]
     public function eagerObjectIsUsable(): void
     {
-        $counter = Dic::assemble(
+        $counter = Dic::build(
             static fn(Dic $dic) => $dic->object(Counter::class)->lazy()->eager(),
         );
 
@@ -782,7 +782,7 @@ final readonly class DicTest
         $captured = null;
         $rethrown = null;
 
-        $scoped = Dic::assemble(
+        $scoped = Dic::build(
             static function (Dic $dic) use (&$captured) {
                 return $dic->scoped(
                     $dic
@@ -812,7 +812,7 @@ final readonly class DicTest
     {
         $tag = new CacheTag();
 
-        $caches = Dic::assemble(static function (Dic $dic) use ($tag) {
+        $caches = Dic::build(static function (Dic $dic) use ($tag) {
             $dic->object(RedisCache::class)->tag($tag);
             $dic->object(ApcuCache::class)->tag(new CacheTag());
 
@@ -825,7 +825,7 @@ final readonly class DicTest
     #[Test]
     public function emptyTaggedListIsEmptyArray(): void
     {
-        $caches = Dic::assemble(
+        $caches = Dic::build(
             static fn(Dic $dic) => $dic->taggedList(CacheTag::class),
         );
 
@@ -837,7 +837,7 @@ final readonly class DicTest
     {
         Expect::exception(BuildError::class)->withMessageContaining('cannot autowire');
 
-        Dic::assemble(static fn(Dic $dic) => $dic->object(Consumer::class));
+        Dic::build(static fn(Dic $dic) => $dic->object(Consumer::class));
     }
 
     #[Test]
@@ -845,7 +845,7 @@ final readonly class DicTest
     {
         Expect::exception(BuildError::class)->withMessageContaining('is not instantiable');
 
-        Dic::assemble(static fn(Dic $dic) => $dic->object(Cache::class));
+        Dic::build(static fn(Dic $dic) => $dic->object(Cache::class));
     }
 
     #[Test]
@@ -853,7 +853,7 @@ final readonly class DicTest
     {
         Expect::exception(BuildError::class)->withMessageContaining('is not callable');
 
-        Dic::assemble(
+        Dic::build(
             /** @phpstan-ignore argument.type */
             static fn(Dic $dic) => $dic->object(Counter::class, factory: $dic->value(42)),
         );
@@ -864,7 +864,7 @@ final readonly class DicTest
     {
         Expect::exception(BuildError::class)->withMessageContaining('is not callable');
 
-        Dic::assemble(static function (Dic $dic) {
+        Dic::build(static function (Dic $dic) {
             $factory = $dic->object(TestService::class);
 
             return $dic->object(TestService::class, factory: [$factory, '__toString']);
@@ -876,7 +876,7 @@ final readonly class DicTest
     {
         Expect::exception(BuildError::class)->withMessageContaining('already bound');
 
-        Dic::assemble(static function (Dic $dic) {
+        Dic::build(static function (Dic $dic) {
             $dic->object(RedisCache::class)->bind(objectT(Cache::class));
             $dic->object(ApcuCache::class)->bind(objectT(Cache::class));
 
@@ -889,7 +889,7 @@ final readonly class DicTest
     {
         Expect::exception(BuildError::class)->withMessageContaining('is not supported for binding');
 
-        Dic::assemble(static function (Dic $dic) {
+        Dic::build(static function (Dic $dic) {
             $dic->value(new \ArrayObject())->bind(objectT(\ArrayObject::class, [intT]));
 
             return $dic->value(null);
@@ -901,6 +901,6 @@ final readonly class DicTest
     {
         Expect::exception(BuildError::class)->withMessageContaining('combine #[Autowire] and #[DoNotAutowire]');
 
-        Dic::assemble(static fn(Dic $dic) => $dic->object(ConflictingConsumer::class));
+        Dic::build(static fn(Dic $dic) => $dic->object(ConflictingConsumer::class));
     }
 }
