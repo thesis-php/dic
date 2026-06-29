@@ -46,6 +46,7 @@ final class TaggedListConfig extends Config
             builder: $builder,
             autowiring: $autowiring,
             declaredAt: $declaredAt,
+            defaultLifetimeStrategy: LifetimeStrategy::Inferred,
         );
 
         $builder->onTagResolution(function (TaggedRefs $taggedRefs) use ($tag, $sort): void {
@@ -59,13 +60,8 @@ final class TaggedListConfig extends Config
         });
     }
 
-    protected LifetimeStrategy $lifetimeStrategy {
-        get => LifetimeStrategy::Inferred;
-    }
-
-    protected function defaultLabel(): string
-    {
-        return "tagged({$this->stringifyTag()})";
+    protected string $label {
+        get => "tagged({$this->stringifyTag()})";
     }
 
     /**

@@ -11,7 +11,7 @@ Public behavior is documented in `docs/` — consult it (and `README.md`) before
 - [Functions and closures](docs/closure.md) — `function()`, `closure()`, runtime parameters vs. dependencies
 - [Arguments](docs/arguments.md) — `arg()` / `args()` / `variadic()`
 - [Autowiring](docs/autowiring.md) — `bind()`, qualifiers, per-parameter markers/attributes
-- [Tags](docs/tags.md) — `tag()`, `taggedList()`, `onTagResolution()`, `autoconfigure()`
+- [Tags](docs/tags.md) — `tag()`, `taggedList()`, `onTagResolution()`, `onObject()` / `onFunction()`
 - [Modularity](docs/modularity.md) — `require()` vs. shared autowiring
 - [Lifetimes](docs/lifetime.md) — singleton, scoped, `canBeScoped`
 - [Disposal](docs/disposal.md) — `disposer()`
@@ -25,6 +25,11 @@ Public behavior is documented in `docs/` — consult it (and `README.md`) before
 - `make run CMD='php …'` — one-off command in the php container.
 
 After any source change run `make phpstan` and `make test`; before finishing, `make fixer`.
+
+## Tests
+
+- A unit test lives in the **same namespace as the class it covers**, mirroring `src/` under `tests/` (e.g. `Thesis\Dic\Internal\Builder\Autoconfiguration` → `tests/Dic/Internal/Builder/AutoconfigurationTest.php`), and is marked with `#[Covers(...)]`.
+  Feature tests that exercise the public API through the `Dic` facade live in `tests/DicTest.php` (namespace `Thesis`).
 
 ## Errors (`Thesis\Dic\BuildError`)
 

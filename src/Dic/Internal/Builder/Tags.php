@@ -39,14 +39,14 @@ final class Tags
     /**
      * @var list<callable(TaggedRefs): void>
      */
-    private array $resolutionListeners = [];
+    private array $listeners = [];
 
     /**
      * @param callable(TaggedRefs): void $listener
      */
     public function onResolution(callable $listener): void
     {
-        $this->resolutionListeners[] = $listener;
+        $this->listeners[] = $listener;
     }
 
     public function resolve(): void
@@ -57,10 +57,10 @@ final class Tags
 
         $this->taggedRefs = [];
 
-        for ($i = 0; $i < \count($this->resolutionListeners); ++$i) {
-            $this->resolutionListeners[$i]($taggedRefs);
+        for ($i = 0; $i < \count($this->listeners); ++$i) {
+            $this->listeners[$i]($taggedRefs);
         }
 
-        $this->resolutionListeners = [];
+        $this->listeners = [];
     }
 }

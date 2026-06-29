@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Thesis;
 
 use Thesis\Dic\Configuration\Config;
+use Thesis\Dic\Configuration\FunctionAutoconfig;
 use Thesis\Dic\Configuration\FunctionConfig;
+use Thesis\Dic\Configuration\ObjectAutoconfig;
 use Thesis\Dic\Configuration\ObjectConfig;
-use Thesis\Dic\Configuration\ObjectFactoryConfig;
 use Thesis\Dic\Configuration\ScopedConfig;
 use Thesis\Dic\Configuration\TaggedListConfig;
 use Thesis\Dic\Configuration\ValueConfig;
@@ -157,9 +158,9 @@ final readonly class Dic
      * @template T of object
      * @param class-string<T> $class
      * @param null|callable(): T|array{Ref<class-string|object>, string}|Ref<callable(): T> $factory
-     * @return ObjectFactoryConfig<T>
+     * @return ObjectConfig<T>
      */
-    public function object(string $class, null|callable|array|Ref $factory = null): ObjectFactoryConfig
+    public function object(string $class, null|callable|array|Ref $factory = null): ObjectConfig
     {
         $declaredAt = Location::caller();
 
@@ -173,7 +174,7 @@ final readonly class Dic
             );
         }
 
-        return new ObjectFactoryConfig(
+        return new ObjectConfig(
             builder: $this->builder,
             autowiring: $this->autowiring,
             reflection: new \ReflectionClass($class),
@@ -216,18 +217,26 @@ final readonly class Dic
     }
 
     /**
+     * @param callable(FunctionAutoconfig): void $listener
+     */
+    public function onFunction(callable $listener): void
+    {
+        $this->builder->onFunction($listener);
+    }
+
+    /**
+     * @param callable(ObjectAutoconfig<object>): void $listener
+     */
+    public function onObject(callable $listener): void
+    {
+        $this->builder->onObject($listener);
+    }
+
+    /**
      * @param callable(TaggedRefs): void $listener
      */
     public function onTagResolution(callable $listener): void
     {
         $this->builder->onTagResolution($listener);
-    }
-
-    /**
-     * @param callable(FunctionConfig<*>|ObjectConfig<*>): void $configurator
-     */
-    public function autoconfigure(callable $configurator): void
-    {
-        $this->builder->addAutoconfigurator($configurator);
     }
 }

@@ -51,12 +51,12 @@ final class ClosureConfig extends Config
             builder: $builder,
             autowiring: $autowiring,
             declaredAt: $declaredAt,
+            defaultLifetimeStrategy: LifetimeStrategy::Singleton,
         );
     }
 
-    protected function defaultLabel(): string
-    {
-        return stringify($this->type);
+    protected string $label {
+        get => stringify($this->type);
     }
 
     protected ClosureSignature $signature {
@@ -71,25 +71,23 @@ final class ClosureConfig extends Config
         get => new \ReflectionClass(\Closure::class);
     }
 
-    protected private(set) LifetimeStrategy $lifetimeStrategy = LifetimeStrategy::Singleton;
-
     public function singleton(): static
     {
-        $this->lifetimeStrategy = LifetimeStrategy::Singleton;
+        $this->builder->setLifetimeStrategy($this, LifetimeStrategy::Singleton);
 
         return $this;
     }
 
     public function canBeScoped(): static
     {
-        $this->lifetimeStrategy = LifetimeStrategy::CanBeScoped;
+        $this->builder->setLifetimeStrategy($this, LifetimeStrategy::CanBeScoped);
 
         return $this;
     }
 
     public function scoped(): static
     {
-        $this->lifetimeStrategy = LifetimeStrategy::Scoped;
+        $this->builder->setLifetimeStrategy($this, LifetimeStrategy::Scoped);
 
         return $this;
     }

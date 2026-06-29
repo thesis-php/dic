@@ -18,9 +18,11 @@ abstract class Ref
     /**
      * @var non-empty-string
      */
-    abstract public string $label { get; }
+    abstract protected string $label { get; }
 
-    abstract public Location $declaredAt { get; }
+    abstract protected Location $declaredAt { get; }
+
+    abstract protected ?Signature $signature { get; }
 
     abstract protected null|\ReflectionFunction|\ReflectionMethod $reflectionFunction { get; }
 
@@ -28,8 +30,6 @@ abstract class Ref
      * @var (T is object ? \ReflectionClass<covariant T> : null)
      */
     abstract protected ?\ReflectionClass $reflectionClass { get; }
-
-    abstract protected ?Signature $signature { get; }
 
     /**
      * @return non-empty-string

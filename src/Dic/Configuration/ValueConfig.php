@@ -33,16 +33,17 @@ final class ValueConfig extends Config
         private readonly mixed $value,
         Location $declaredAt,
     ) {
-        parent::__construct($builder, $autowiring, $declaredAt);
+        parent::__construct(
+            builder: $builder,
+            autowiring: $autowiring,
+            declaredAt: $declaredAt,
+            defaultLifetimeStrategy: LifetimeStrategy::Inferred,
+        );
     }
 
-    protected LifetimeStrategy $lifetimeStrategy {
-        get => LifetimeStrategy::Inferred;
-    }
-
-    protected function defaultLabel(): string
-    {
-        return format($this->value);
+    protected string $label {
+        // todo REF???
+        get => format($this->value);
     }
 
     private bool $isSignatureSet = false;
@@ -56,33 +57,6 @@ final class ValueConfig extends Config
 
             return $this->signature;
         }
-    }
-
-    protected null|\ReflectionFunction|\ReflectionMethod $reflectionFunction {
-        get => $this->signature?->reflection;
-    }
-
-    private bool $isClassSet = false;
-
-    protected private(set) ?\ReflectionClass $reflectionClass = null {
-        get {
-            if (!$this->isClassSet) {
-                /** @phpstan-ignore assign.propertyType */
-                $this->reflectionClass = match (true) {
-                    $this->value instanceof Ref => $this->value->reflectionClass,
-                    \is_object($this->value) => new \ReflectionObject($this->value),
-                    default => null,
-                };
-                $this->isClassSet = true;
-            }
-
-            return $this->reflectionClass;
-        }
-    }
-
-    protected function createFactory(): Factory
-    {
-        return ValueFactory::from($this->value);
     }
 
     private function resolveSignature(): ?Signature
@@ -139,5 +113,32 @@ final class ValueConfig extends Config
         }
 
         return $value;
+    }
+
+    protected null|\ReflectionFunction|\ReflectionMethod $reflectionFunction {
+        get => $this->signature?->reflection;
+    }
+
+    private bool $isClassSet = false;
+
+    protected private(set) ?\ReflectionClass $reflectionClass = null {
+        get {
+            if (!$this->isClassSet) {
+                /** @phpstan-ignore assign.propertyType */
+                $this->reflectionClass = match (true) {
+                    $this->value instanceof Ref => $this->value->reflectionClass,
+                    \is_object($this->value) => new \ReflectionObject($this->value),
+                    default => null,
+                };
+                $this->isClassSet = true;
+            }
+
+            return $this->reflectionClass;
+        }
+    }
+
+    protected function createFactory(): Factory
+    {
+        return ValueFactory::from($this->value);
     }
 }

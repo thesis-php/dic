@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Thesis\Dic\Internal\Builder;
 
 use Thesis\Dic\BuildError;
-use Thesis\Dic\Configuration\Config;
+use Thesis\Dic\Configuration\FunctionAutoconfig;
 use Thesis\Dic\Configuration\FunctionConfig;
+use Thesis\Dic\Configuration\ObjectAutoconfig;
 use Thesis\Dic\Configuration\ObjectConfig;
 
 /**
@@ -14,80 +15,114 @@ use Thesis\Dic\Configuration\ObjectConfig;
  */
 final class Autoconfiguration
 {
-    private bool $autoconfigured = false;
+    public function __construct(
+        private readonly Services $services,
+    ) {
+        $this->configs = new \SplObjectStorage();
+    }
+
+    private bool $started = false;
 
     /**
-     * @var list<callable(FunctionConfig<*>|ObjectConfig<*>): void>
+     * @var list<callable(FunctionAutoconfig): void>
      */
-    private array $autoconfigurators = [];
+    private array $functionListeners = [];
 
     /**
-     * @param callable(FunctionConfig<*>|ObjectConfig<*>): void $autoconfigurator
+     * @param callable(FunctionAutoconfig): void $listener
      */
-    public function addAutoconfigurator(callable $autoconfigurator): void
+    public function onFunction(callable $listener): void
     {
-        if ($this->autoconfigured) {
+        if ($this->started) {
             throw BuildError::configurationFrozen();
         }
 
-        $this->autoconfigurators[] = $autoconfigurator;
+        $this->functionListeners[] = $listener;
     }
 
     /**
-     * @var list<FunctionConfig<*>|ObjectConfig<*>>
+     * @var list<callable(ObjectAutoconfig<object>): void>
      */
-    private array $queue = [];
+    private array $objectListeners = [];
 
     /**
-     * @param FunctionConfig<*>|ObjectConfig<*> $config
+     * @param callable(ObjectAutoconfig<object>): void $listener
      */
-    public function schedule(FunctionConfig|ObjectConfig $config): void
+    public function onObject(callable $listener): void
     {
-        if (!$this->autoconfigured) {
-            $this->queue[] = $config;
+        if ($this->started) {
+            throw BuildError::configurationFrozen();
         }
+
+        $this->objectListeners[] = $listener;
     }
 
-    public function autoconfigure(): void
+    /**
+     * @var \SplObjectStorage<FunctionConfig<callable>|ObjectConfig<object>, true>
+     */
+    private \SplObjectStorage $configs;
+
+    /**
+     * @param FunctionConfig<callable>|ObjectConfig<object> $config
+     */
+    public function autoconfigure(FunctionConfig|ObjectConfig $config): void
     {
-        if ($this->autoconfigured) {
+        $this->configs[$config] = true;
+    }
+
+    /**
+     * @param FunctionConfig<callable>|ObjectConfig<object> $config
+     */
+    public function doNotAutoconfigure(FunctionConfig|ObjectConfig $config): void
+    {
+        unset($this->configs[$config]);
+    }
+
+    public function start(): void
+    {
+        if ($this->started) {
             return;
         }
 
-        $this->autoconfigured = true;
+        $this->started = true;
 
-        if ($this->autoconfigurators === []) {
-            $this->queue = [];
+        $hasObjectCallbacks = $this->objectListeners !== [];
+        $hasFunctionCallbacks = $this->functionListeners !== [];
+
+        if (!$hasObjectCallbacks && !$hasFunctionCallbacks) {
+            $this->configs = new \SplObjectStorage();
 
             return;
         }
 
-        $autoconfigurators = $this->autoconfigurators;
-        $autoconfigurator = \Closure::bind(
-            closure: static function (FunctionConfig|ObjectConfig $config) use ($autoconfigurators): void {
-                if (!$config->isAutoconfigurable) {
-                    return;
-                }
+        $this->configs->rewind();
 
-                $config->isAutoconfiguring = true;
+        while ($this->configs->valid()) {
+            $config = $this->configs->current();
 
-                try {
-                    foreach ($autoconfigurators as $autoconfigurator) {
-                        $autoconfigurator($config);
+            if ($config instanceof FunctionConfig) {
+                if ($hasFunctionCallbacks) {
+                    $autoconfig = new FunctionAutoconfig($config);
+
+                    foreach ($this->functionListeners as $callback) {
+                        $callback($autoconfig);
                     }
-                } finally {
-                    $config->isAutoconfiguring = false;
                 }
-            },
-            newThis: null,
-            newScope: Config::class,
-        );
+            } else {
+                if ($hasObjectCallbacks) {
+                    $autoconfig = new ObjectAutoconfig($this->services, $config);
 
-        foreach ($this->queue as $config) {
-            $autoconfigurator($config);
+                    foreach ($this->objectListeners as $callback) {
+                        $callback($autoconfig);
+                    }
+                }
+            }
+
+            unset($this->configs[$config]);
         }
 
-        $this->autoconfigurators = [];
-        $this->queue = [];
+        $this->objectListeners = [];
+        $this->functionListeners = [];
+        $this->configs = new \SplObjectStorage();
     }
 }

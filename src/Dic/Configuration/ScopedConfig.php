@@ -36,16 +36,12 @@ final class ScopedConfig extends Config
             builder: $builder,
             autowiring: $autowiring,
             declaredAt: $declaredAt,
+            defaultLifetimeStrategy: LifetimeStrategy::Detached,
         );
     }
 
-    protected LifetimeStrategy $lifetimeStrategy {
-        get => LifetimeStrategy::Detached;
-    }
-
-    protected function defaultLabel(): string
-    {
-        return "Scoped<{$this->ref->label}>";
+    protected string $label {
+        get => "Scoped<{$this->ref->label}>";
     }
 
     protected null $signature { get => null; }

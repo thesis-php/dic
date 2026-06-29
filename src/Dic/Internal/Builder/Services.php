@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Thesis\Dic\Internal\Builder;
 
 use Thesis\Dic\BuildError;
-use Thesis\Dic\Configuration\Config;
 use Thesis\Dic\Internal\Container\Factories;
 use Thesis\Dic\Internal\Dependency;
 use Thesis\Dic\Internal\Factory;
@@ -20,6 +19,16 @@ final class Services
     private bool $resolving = false;
 
     /**
+     * @var \WeakMap<Ref<mixed>, LifetimeStrategy>
+     */
+    private \WeakMap $defaultLifetimeStrategies;
+
+    /**
+     * @var \WeakMap<Ref<mixed>, LifetimeStrategy>
+     */
+    private \WeakMap $lifetimeStrategies;
+
+    /**
      * @var \SplObjectStorage<Ref<mixed>, (\Closure(): Factory<mixed>)|true|Resolution>
      */
     private \SplObjectStorage $resolution;
@@ -28,6 +37,8 @@ final class Services
         private readonly Factories $singletonFactories,
         private readonly Factories $scopedFactories,
     ) {
+        $this->defaultLifetimeStrategies = new \WeakMap();
+        $this->lifetimeStrategies = new \WeakMap();
         $this->resolution = new \SplObjectStorage();
     }
 
@@ -36,7 +47,7 @@ final class Services
      * @param Ref<T> $ref
      * @param \Closure(): Factory<T> $createFactory
      */
-    public function register(Ref $ref, \Closure $createFactory): void
+    public function register(Ref $ref, \Closure $createFactory, LifetimeStrategy $defaultLifetimeStrategy): void
     {
         if ($this->resolving) {
             throw new ShouldNotHappen("Cannot register {$ref}: service resolution has already started");
@@ -47,6 +58,23 @@ final class Services
         }
 
         $this->resolution[$ref] = $createFactory;
+        $this->defaultLifetimeStrategies[$ref] = $defaultLifetimeStrategy;
+    }
+
+    /**
+     * @param Ref<mixed> $ref
+     */
+    public function setDefaultLifetimeStrategy(Ref $ref, LifetimeStrategy $lifetimeStrategy): void
+    {
+        $this->defaultLifetimeStrategies[$ref] = $lifetimeStrategy;
+    }
+
+    /**
+     * @param Ref<mixed> $ref
+     */
+    public function setLifetimeStrategy(Ref $ref, LifetimeStrategy $lifetimeStrategy): void
+    {
+        $this->lifetimeStrategies[$ref] = $lifetimeStrategy;
     }
 
     public function resolve(): void
@@ -131,20 +159,8 @@ final class Services
      */
     private function lifetimeStrategyOf(Ref $ref): LifetimeStrategy
     {
-        if (!$ref instanceof Config) {
-            return LifetimeStrategy::Singleton;
-        }
-
-        /**
-         * @var \Closure(Config<mixed>): LifetimeStrategy
-         * @phpstan-ignore varTag.type
-         */
-        static $get = \Closure::bind(
-            closure: static fn(Config $config) => $config->lifetimeStrategy,
-            newThis: null,
-            newScope: Config::class,
-        );
-
-        return $get($ref);
+        return $this->lifetimeStrategies[$ref]
+            ?? $this->defaultLifetimeStrategies[$ref]
+            ?? LifetimeStrategy::Singleton;
     }
 }

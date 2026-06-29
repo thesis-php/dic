@@ -110,7 +110,7 @@ $dic
 ## Deferred configuration
 
 A config stays mutable until the container is built, so arguments can be set later —
-for example inside an `onTagResolution()` listener or during `autoconfigure()`:
+for example inside an `onTagResolution()` listener or an autoconfigurator:
 
 ```php
 $logger = $dic->object(Logger::class);

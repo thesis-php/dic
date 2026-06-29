@@ -30,51 +30,13 @@ abstract class Config extends Ref
         protected readonly Builder $builder,
         protected readonly Autowiring $autowiring,
         public readonly Location $declaredAt,
+        LifetimeStrategy $defaultLifetimeStrategy,
     ) {
-        $builder->register($this, $this->createFactory(...));
-    }
-
-    final protected bool $isAutoconfiguring = false;
-
-    /**
-     * @see Services::lifetimeStrategyOf()
-     */
-    abstract protected LifetimeStrategy $lifetimeStrategy { get; }
-
-    /**
-     * @var non-empty-string
-     * @phpstan-ignore property.uninitialized
-     */
-    private string $defaultLabel {
-        get => $this->defaultLabel ??= $this->defaultLabel();
-    }
-
-    /**
-     * @return non-empty-string
-     */
-    abstract protected function defaultLabel(): string;
-
-    /**
-     * @phpstan-ignore property.uninitialized
-     */
-    public private(set) string $label {
-        get => match ($this->isAutoconfiguring) {
-            true => $this->defaultLabel,
-            false => $this->label ??= $this->defaultLabel,
-        };
-    }
-
-    /**
-     * @param non-empty-string $label
-     */
-    final public function label(string $label): static
-    {
-        match ($this->isAutoconfiguring) {
-            true => $this->defaultLabel = $label,
-            false => $this->label = $label,
-        };
-
-        return $this;
+        $builder->register(
+            config: $this,
+            createFactory: $this->createFactory(...),
+            defaultLifetimeStrategy: $defaultLifetimeStrategy,
+        );
     }
 
     /**

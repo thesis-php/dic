@@ -106,31 +106,46 @@ tagging a service inside a resolution listener fails the build.
 ## Autoconfiguration
 
 Tagging each service by hand is fine for a handful; for a convention applied across many services,
-`autoconfigure()` does it from a single rule.
-The introspectable services are visited once, just before tags resolve,
-and the callback receives each one's config —
-an [`ObjectConfig`](../src/Dic/Configuration/ObjectConfig.php) or a
-[`FunctionConfig`](../src/Dic/Configuration/FunctionConfig.php), the two kinds that expose real reflection:
+a callback applies it from one place.
+Register a callback with `onObject()` (for `object()` services) or `onFunction()` (for `function()` / `method()`
+services); each receives a small facade over the service, not the raw config.
+A convention that spans both kinds is two callbacks — typically a pair of methods on your module,
+passed as first-class callables, so there is no interface to implement and no `instanceof` dance:
 
-- an `object()` service → `ObjectConfig`, whose `$service->reflection` is a `ReflectionClass`;
-- a `function()` or `method()` service → `FunctionConfig`, whose `$service->reflection` is a
-  `ReflectionFunction` / `ReflectionMethod`.
+```php
+$dic->onObject($this->tagCommands(...));
+$dic->onFunction($this->tagCommandFunctions(...));
+```
 
-`value()`, `closure()`, `scoped()` and `taggedList()` are **not** visited:
+- `onObject(callable(`[`ObjectAutoconfig`](../src/Dic/Configuration/ObjectAutoconfig.php)`): void)` —
+  `$object->reflection` is its `ReflectionClass`, `$object->attributes` reads its class attributes, `$object->methods`
+  lists its public methods; you can `tag()` it, give it a `disposer()`, set a default lifetime with `defaultScoped()` /
+  `defaultCanBeScoped()`, or narrow it to a type with `is()` / `isInvokable()`.
+- `onFunction(callable(`[`FunctionAutoconfig`](../src/Dic/Configuration/FunctionAutoconfig.php)`): void)` —
+  `$function->reflection` is its `ReflectionFunction` / `ReflectionMethod`, `$function->attributes` reads its
+  attributes; you can `tag()` it, give it a `disposer()`, or adapt it to a typed `\Closure` with `closure()`.
+
+Only the introspectable kinds are visited — `object()`, `function()` and `method()`.
+`value()`, `closure()`, `scoped()` and `taggedList()` are **not**:
 a `value()` is an opaque carrier by design, and a `closure()` only reflects its declared signature,
 not the implementation — the convention belongs on the `function()` it was built from.
 
-From there you can `tag()` the service, give it a `disposer()`, `bind()` it, read its attributes
-and declare further services (setting a lifetime needs an `instanceof ObjectConfig` check — see below).
+### Reaching a method: the two halves
+
+An object callback cannot build a service from a method directly — it can only *schedule* the method with
+`$method->autoconfigure()`, which registers it as a `function()` service.
+That service then comes back through the `onFunction()` callback, where the real work happens.
+The split keeps a single place that handles a callable: whether a method arrives by hand or via a convention, it is
+configured exactly once in the function callback.
 
 The example below turns a routing convention into tagged closures.
-Methods annotated with an `#[Action]` attribute become [`\Closure(Request): Response`](closure.md) services,
+Methods annotated with an `#[Route]` attribute become [`\Closure(Request): Response`](closure.md) services,
 each tagged with the attribute it was found on, and finally collected into one list:
 
 ```php
 use Thesis\Dic;
-use Thesis\Dic\Configuration\FunctionConfig;
-use Thesis\Dic\Configuration\ObjectConfig;
+use Thesis\Dic\Configuration\FunctionAutoconfig;
+use Thesis\Dic\Configuration\ObjectAutoconfig;
 use Thesis\Dic\Tag;
 use function Typhoon\Type\closureT;
 use function Typhoon\Type\objectT;
@@ -139,7 +154,7 @@ use function Typhoon\Type\objectT;
  * @implements Tag<callable(Request): Response>
  */
 #[\Attribute(\Attribute::TARGET_METHOD)]
-final readonly class Action implements Tag
+final readonly class Route implements Tag
 {
     public function __construct(
         public string $path,
@@ -148,38 +163,45 @@ final readonly class Action implements Tag
 
 final readonly class Controller
 {
-    #[Action('/products')]
+    #[Route('/products')]
     public function list(Request $request): Response { /* … */ }
 }
 
 $actions = Dic::assemble(static function (Dic $dic): Dic\Ref {
-    $dic->autoconfigure(static function (FunctionConfig|ObjectConfig $service) use ($dic): void {
-        if (!$service instanceof ObjectConfig) {
-            return;
-        }
-
-        foreach ($service->reflection->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
-            foreach ($method->getAttributes(Action::class) as $attribute) {
-                $dic
-                    ->function([$service, $method->name])
-                    ->closure(closureT(params: [objectT(Request::class)], return: objectT(Response::class)))
-                    ->tag($attribute->newInstance());
+    // Discover the action methods and schedule each one.
+    $dic->onObject(static function (ObjectAutoconfig $object): void {
+        foreach ($object->methods as $method) {
+            if ($method->attributes->has(Route::class)) {
+                $method->autoconfigure();
             }
+        }
+    });
+
+    // A scheduled method arrives here: adapt it to a typed closure and tag it.
+    $dic->onFunction(static function (FunctionAutoconfig $function): void {
+        foreach ($function->attributes->find(Route::class) as $route) {
+            $function
+                ->closure(closureT(
+                    params: [objectT(Request::class)],
+                    return: objectT(Response::class),
+                ))
+                ->tag($route);
         }
     });
 
     $dic->object(Controller::class);
 
-    return $dic->taggedList(Action::class);
+    return $dic->taggedList(Route::class);
 });
 ```
 
-Note the order: the autoconfigurator visits `Controller`,
-and from its `#[Action]` methods registers the tagged closures;
-then the resolution phase collects them, which is why `taggedList(Action::class)` sees them all.
+Note the order: the object callback visits `Controller` and schedules its `#[Route]` methods,
+the function callback then turns each into a tagged closure,
+and the resolution phase collects them, which is why `taggedList(Route::class)` sees them all.
+Any dependency an action method declares beyond the `Request` is [autowired](autowiring.md) into the closure.
 
-A service can opt out of every autoconfigurator with `doNotAutoconfigure()` —
-useful when a broad rule would otherwise touch a service you want left alone:
+A service can opt out of all autoconfiguration with `doNotAutoconfigure()` —
+useful when a broad convention would otherwise touch a service you want left alone:
 
 ```php
 $dic
@@ -189,9 +211,9 @@ $dic
 
 Two more details worth knowing:
 
-- Of the services an autoconfigurator sees, only `object()` carries a lifetime, so guard the call with an
-  `instanceof` check against [`ObjectConfig`](../src/Dic/Configuration/ObjectConfig.php):
-  `if ($service instanceof ObjectConfig) { $service->canBeScoped(); }`.
-  A lifetime set this way is a **default** — an explicit lifetime on the service itself still wins.
-- Services created *by* an autoconfigurator are not themselves autoconfigured,
-  so a rule can't recurse into its own output.
+- A lifetime set with `defaultScoped()` / `defaultCanBeScoped()` is a **default** —
+  an explicit lifetime on the service itself still wins.
+  Only the object callback offers them, since a `function()` always infers its lifetime from what it carries.
+- Services scheduled *by* a callback are visited too — that is what makes the method round-trip work —
+  but the loop terminates: a function callback only ever produces `closure()`s, which are not introspectable and so
+  are never visited.

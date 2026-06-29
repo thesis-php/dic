@@ -49,16 +49,14 @@ final class FunctionConfig extends Config
             builder: $builder,
             autowiring: $autowiring,
             declaredAt: $declaredAt,
+            defaultLifetimeStrategy: LifetimeStrategy::Inferred,
         );
+
+        $builder->autoconfigure($this);
     }
 
-    protected LifetimeStrategy $lifetimeStrategy {
-        get => LifetimeStrategy::Inferred;
-    }
-
-    protected function defaultLabel(): string
-    {
-        return formatReflectedFunction($this->reflection);
+    protected string $label {
+        get => formatReflectedFunction($this->reflection);
     }
 
     protected ?Signature $signature {
@@ -73,14 +71,9 @@ final class FunctionConfig extends Config
         get => $this->value->reflectionClass;
     }
 
-    /**
-     * @see Builder\Autoconfiguration::autoconfigure()
-     */
-    protected bool $isAutoconfigurable = true;
-
     public function doNotAutoconfigure(): static
     {
-        $this->isAutoconfigurable = false;
+        $this->builder->doNotAutoconfigure($this);
 
         return $this;
     }
