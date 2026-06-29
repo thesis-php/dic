@@ -14,6 +14,7 @@ use Thesis\Dic\Internal\Signature\DefaultValue;
 use Thesis\Dic\Internal\Signature\Parameter;
 use Thesis\Dic\Ref;
 use Typhoon\Type\Parameter as ClosureParameter;
+use const Thesis\Dic\autowire;
 use const Thesis\Dic\doNotAutowire;
 
 /**
@@ -204,10 +205,11 @@ final class Arguments
         } else {
             $argument = $parameter->autowiringMode
                 ?? $this->autowiringMode
-                ?? $this->signature->autowiringMode;
+                ?? $this->signature->autowiringMode
+                ?? autowire;
         }
 
-        if ($argument === null || $argument instanceof Autowire) {
+        if ($argument instanceof Autowire) {
             return $this->autowire($parameter, $argument);
         }
 
@@ -237,7 +239,7 @@ final class Arguments
     /**
      * @return ValueFactory|TClosureParameter|DefaultValue
      */
-    private function autowire(Parameter $parameter, ?Autowire $autowire): ValueFactory|ClosureParameter|DefaultValue
+    private function autowire(Parameter $parameter, Autowire $autowire): ValueFactory|ClosureParameter|DefaultValue
     {
         try {
             $bindingType = $parameter->bindingType;
@@ -247,11 +249,12 @@ final class Arguments
 
         $candidates = [];
 
-        if ($autowire === null) {
+        // todo think about it
+        if ($autowire->qualifier === '') {
             $candidates = $this->closureArguments->autowire($parameter);
         }
 
-        $ref = $this->autowiring->autowire($bindingType, $autowire->qualifier ?? '');
+        $ref = $this->autowiring->autowire($bindingType, $autowire->qualifier);
 
         if ($ref !== null) {
             $candidates[] = $ref;
