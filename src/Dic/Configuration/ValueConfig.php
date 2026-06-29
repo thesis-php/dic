@@ -36,14 +36,10 @@ final class ValueConfig extends Config
         parent::__construct(
             builder: $builder,
             autowiring: $autowiring,
+            label: format($value),
             declaredAt: $declaredAt,
             defaultLifetimeStrategy: LifetimeStrategy::Inferred,
         );
-    }
-
-    protected string $label {
-        // todo REF???
-        get => format($this->value);
     }
 
     private bool $isSignatureSet = false;

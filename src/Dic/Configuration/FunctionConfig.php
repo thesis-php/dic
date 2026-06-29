@@ -48,15 +48,12 @@ final class FunctionConfig extends Config
         parent::__construct(
             builder: $builder,
             autowiring: $autowiring,
+            label: formatReflectedFunction($reflection),
             declaredAt: $declaredAt,
             defaultLifetimeStrategy: LifetimeStrategy::Inferred,
         );
 
         $builder->autoconfigure($this);
-    }
-
-    protected string $label {
-        get => formatReflectedFunction($this->reflection);
     }
 
     protected ?Signature $signature {

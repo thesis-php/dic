@@ -64,15 +64,12 @@ final class ObjectConfig extends Config
         parent::__construct(
             builder: $builder,
             autowiring: $autowiring,
+            label: formatReflectedClass($reflection),
             declaredAt: $declaredAt,
             defaultLifetimeStrategy: LifetimeStrategy::Singleton,
         );
 
         $builder->autoconfigure($this);
-    }
-
-    protected string $label {
-        get => formatReflectedClass($this->reflection);
     }
 
     /**

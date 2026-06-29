@@ -38,13 +38,18 @@ final class TaggedListConfig extends Config
     public function __construct(
         Builder $builder,
         Autowiring $autowiring,
-        private readonly string|Tag $tag,
+        string|Tag $tag,
         ?callable $sort,
         Location $declaredAt,
     ) {
         parent::__construct(
             builder: $builder,
             autowiring: $autowiring,
+            label: \sprintf('tagged(%s)', match (true) {
+                \is_string($tag) => $tag,
+                $tag instanceof \UnitEnum => \sprintf('%s::%s', $tag::class, $tag->name),
+                default => $tag::class,
+            }),
             declaredAt: $declaredAt,
             defaultLifetimeStrategy: LifetimeStrategy::Inferred,
         );
@@ -58,26 +63,6 @@ final class TaggedListConfig extends Config
 
             $this->refs = array_column($trs, 'ref');
         });
-    }
-
-    protected string $label {
-        get => "tagged({$this->stringifyTag()})";
-    }
-
-    /**
-     * @return non-empty-string
-     */
-    private function stringifyTag(): string
-    {
-        if (\is_string($this->tag)) {
-            return $this->tag;
-        }
-
-        if ($this->tag instanceof \UnitEnum) {
-            return \sprintf('%s::%s', $this->tag::class, $this->tag->name);
-        }
-
-        return $this->tag::class;
     }
 
     protected null $signature { get => null; }

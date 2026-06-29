@@ -35,13 +35,10 @@ final class ScopedConfig extends Config
         parent::__construct(
             builder: $builder,
             autowiring: $autowiring,
+            label: "Scoped<{$ref->label}>",
             declaredAt: $declaredAt,
             defaultLifetimeStrategy: LifetimeStrategy::Detached,
         );
-    }
-
-    protected string $label {
-        get => "Scoped<{$this->ref->label}>";
     }
 
     protected null $signature { get => null; }

@@ -16,11 +16,12 @@ use Thesis\Dic\Internal\Signature;
 abstract class Ref
 {
     /**
-     * @var non-empty-string
+     * @param non-empty-string $label
      */
-    abstract protected string $label { get; }
-
-    abstract protected Location $declaredAt { get; }
+    public function __construct(
+        public readonly string $label,
+        public readonly Location $declaredAt,
+    ) {}
 
     abstract protected ?Signature $signature { get; }
 

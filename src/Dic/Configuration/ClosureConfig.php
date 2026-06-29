@@ -50,13 +50,10 @@ final class ClosureConfig extends Config
         parent::__construct(
             builder: $builder,
             autowiring: $autowiring,
+            label: stringify($type),
             declaredAt: $declaredAt,
             defaultLifetimeStrategy: LifetimeStrategy::Singleton,
         );
-    }
-
-    protected string $label {
-        get => stringify($this->type);
     }
 
     protected ClosureSignature $signature {

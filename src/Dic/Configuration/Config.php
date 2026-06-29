@@ -26,12 +26,18 @@ use Typhoon\Type;
  */
 abstract class Config extends Ref
 {
+    /**
+     * @param non-empty-string $label
+     */
     protected function __construct(
         protected readonly Builder $builder,
         protected readonly Autowiring $autowiring,
-        public readonly Location $declaredAt,
+        string $label,
+        Location $declaredAt,
         LifetimeStrategy $defaultLifetimeStrategy,
     ) {
+        parent::__construct($label, $declaredAt);
+
         $builder->register(
             config: $this,
             createFactory: $this->createFactory(...),
