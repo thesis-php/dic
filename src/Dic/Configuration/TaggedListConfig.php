@@ -45,7 +45,7 @@ final class TaggedListConfig extends Config
         parent::__construct(
             builder: $builder,
             autowiring: $autowiring,
-            label: \sprintf('tagged(%s)', match (true) {
+            label: \sprintf('taggedList(%s)', match (true) {
                 \is_string($tag) => $tag,
                 $tag instanceof \UnitEnum => \sprintf('%s::%s', $tag::class, $tag->name),
                 default => $tag::class,

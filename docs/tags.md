@@ -179,7 +179,7 @@ $actions = Dic::assemble(static function (Dic $dic): Dic\Ref {
 
     // A scheduled method arrives here: adapt it to a typed closure and tag it.
     $dic->onFunction(static function (FunctionAutoconfig $function): void {
-        foreach ($function->attributes->find(Route::class) as $route) {
+        foreach ($function->attributes->all(Route::class) as $route) {
             $function
                 ->closure(closureT(
                     params: [objectT(Request::class)],

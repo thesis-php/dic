@@ -9,6 +9,7 @@ use Thesis\Dic\Configuration\FunctionAutoconfig;
 use Thesis\Dic\Configuration\FunctionConfig;
 use Thesis\Dic\Configuration\ObjectAutoconfig;
 use Thesis\Dic\Configuration\ObjectConfig;
+use Thesis\Dic\Configuration\ProviderConfig;
 use Thesis\Dic\Configuration\ScopedConfig;
 use Thesis\Dic\Configuration\TaggedListConfig;
 use Thesis\Dic\Configuration\ValueConfig;
@@ -195,6 +196,33 @@ final readonly class Dic
             autowiring: $this->autowiring,
             ref: $ref,
             declaredAt: Location::caller(),
+        );
+    }
+
+    /**
+     * @template T
+     * @param T|Ref<T> $value
+     * @return ProviderConfig<T>
+     */
+    public function provider(mixed $value): ProviderConfig
+    {
+        $declaredAt = Location::caller();
+
+        if (!$value instanceof Ref) {
+            $value = new ValueConfig(
+                builder: $this->builder,
+                autowiring: $this->autowiring,
+                value: $value,
+                declaredAt: $declaredAt,
+            );
+        }
+
+        /** @var Ref<T> $value */
+        return new ProviderConfig(
+            builder: $this->builder,
+            autowiring: $this->autowiring,
+            ref: $value,
+            declaredAt: $declaredAt,
         );
     }
 

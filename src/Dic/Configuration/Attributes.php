@@ -33,7 +33,7 @@ final readonly class Attributes
      * @param int-mask-of<\ReflectionAttribute::*> $flags
      * @return ?A
      */
-    public function findOne(string $name, int $flags = 0): ?object
+    public function first(string $name, int $flags = 0): ?object
     {
         return array_first($this->reflection->getAttributes($name, $flags))?->newInstance();
     }
@@ -44,7 +44,7 @@ final readonly class Attributes
      * @param int-mask-of<\ReflectionAttribute::*> $flags
      * @return list<A>
      */
-    public function find(string $name, int $flags = 0): array
+    public function all(string $name, int $flags = 0): array
     {
         return array_map(
             static fn(\ReflectionAttribute $attribute) => $attribute->newInstance(),

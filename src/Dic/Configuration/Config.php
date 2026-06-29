@@ -22,7 +22,7 @@ use Typhoon\Type;
  * @template-covariant T
  * @extends Ref<T>
  *
- * @phpstan-sealed ClosureConfig|ObjectConfig|FunctionConfig|ScopedConfig|TaggedListConfig|ValueConfig
+ * @phpstan-sealed ClosureConfig|ObjectConfig|FunctionConfig|ScopedConfig|TaggedListConfig|ValueConfig|ProviderConfig
  */
 abstract class Config extends Ref
 {
