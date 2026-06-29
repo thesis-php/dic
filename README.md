@@ -154,7 +154,7 @@ Assert::instanceOf($cli, ConsoleApplication::class);
 
 - [Objects](docs/object.md) — declaring object services, factories, post-construction calls, lazy instantiation
 - [Values](docs/value.md) — declaring ready-made values and refs as services
-- [Closures](docs/closure.md) — type-safe closure services, runtime parameters and dependencies
+- [Functions and closures](docs/closure.md) — type-safe callable services, runtime parameters and dependencies
 - [Arguments](docs/arguments.md) — named, positional and variadic arguments
 - [Autowiring](docs/autowiring.md) — binding services to types and qualifiers
 - [Tags](docs/tags.md) — tagging, collecting tagged services, tag resolution and autoconfiguration

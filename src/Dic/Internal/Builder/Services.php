@@ -86,7 +86,7 @@ final class Services
 
         $dependencies = $this->resolveDependencies($ref, $factory->dependencies());
 
-        $resolution = $this->strategyOf($ref)->resolve($ref, $dependencies);
+        $resolution = $this->lifetimeStrategyOf($ref)->resolve($ref, $dependencies);
 
         // The strategy may decide before consuming every dependency; resolve the rest so the whole graph is built.
         while ($dependencies->valid()) {
@@ -129,7 +129,7 @@ final class Services
     /**
      * @param Ref<mixed> $ref
      */
-    private function strategyOf(Ref $ref): LifetimeStrategy
+    private function lifetimeStrategyOf(Ref $ref): LifetimeStrategy
     {
         if (!$ref instanceof Config) {
             return LifetimeStrategy::Singleton;

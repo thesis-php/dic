@@ -50,9 +50,9 @@ final class ScopedConfig extends Config
 
     protected null $signature { get => null; }
 
-    public null $function { get => null; }
+    protected null $reflectionFunction { get => null; }
 
-    public \ReflectionClass $class {
+    protected \ReflectionClass $reflectionClass {
         get => new \ReflectionClass(Scoped::class);
     }
 

@@ -54,8 +54,7 @@ final readonly class Disposers
             return [];
         }
 
-        /** @phpstan-ignore argument.type */
-        if ($ref->class?->isUninitializedLazyObject($value) ?? false) {
+        if (\is_object($value) && new \ReflectionObject($value)->isUninitializedLazyObject($value)) {
             return [];
         }
 

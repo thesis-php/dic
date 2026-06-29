@@ -9,7 +9,6 @@ use Thesis\Dic\Internal\Signature\ClosureSignature;
 use Thesis\Dic\Internal\Signature\ImplicitConstructorSignature;
 use Thesis\Dic\Internal\Signature\Parameter;
 use Thesis\Dic\Internal\Signature\ReflectionFunctionSignature;
-use Thesis\Dic\Ref;
 use Typhoon\Type\ClosureT;
 
 /**
@@ -31,23 +30,13 @@ abstract class Signature
     }
 
     /**
-     * @return ?ReflectionFunctionSignature<\ReflectionFunction|\ReflectionMethod>
+     * @template F of \ReflectionFunction|\ReflectionMethod
+     * @param F $function
+     * @return ReflectionFunctionSignature<F>
      */
-    final public static function ofValue(mixed $value): ?self
+    final public static function ofFunction(\ReflectionFunction|\ReflectionMethod $function): ReflectionFunctionSignature
     {
-        if (\is_callable($value)) {
-            return self::ofCallable($value);
-        }
-
-        if (\is_array($value)
-            && \count($value) === 2
-            && isset($value[0]) && $value[0] instanceof Ref && ($class = $value[0]->class) !== null
-            && isset($value[1]) && \is_string($value[1]) && $class->hasMethod($value[1]) && ($method = $class->getMethod($value[1]))->isPublic()
-        ) {
-            return self::ofMethod($method);
-        }
-
-        return null;
+        return new ReflectionFunctionSignature($function);
     }
 
     /**

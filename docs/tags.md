@@ -107,15 +107,21 @@ tagging a service inside a resolution listener fails the build.
 
 Tagging each service by hand is fine for a handful; for a convention applied across many services,
 `autoconfigure()` does it from a single rule.
-Each registered service is visited once, just before tags resolve,
-and the callback receives its config as an [`Autoconfig`](../src/Dic/Configuration/Autoconfig.php) —
-a `Ref` that also exposes reflection about the service:
+The introspectable services are visited once, just before tags resolve,
+and the callback receives each one's config —
+an [`ObjectConfig`](../src/Dic/Configuration/ObjectConfig.php) or a
+[`FunctionConfig`](../src/Dic/Configuration/FunctionConfig.php), the two kinds that expose real reflection:
 
-- `$service->class` — the `ReflectionClass` of an object service, or `null`;
-- `$service->function` — the `ReflectionFunction` / `ReflectionMethod` behind the service, or `null`.
+- an `object()` service → `ObjectConfig`, whose `$service->reflection` is a `ReflectionClass`;
+- a `function()` or `method()` service → `FunctionConfig`, whose `$service->reflection` is a
+  `ReflectionFunction` / `ReflectionMethod`.
 
-From there you can `tag()` the service, give it a `disposer()`, read its attributes and declare further services
-(setting a lifetime needs an `instanceof LifetimeConfig` check — see below).
+`value()`, `closure()`, `scoped()` and `taggedList()` are **not** visited:
+a `value()` is an opaque carrier by design, and a `closure()` only reflects its declared signature,
+not the implementation — the convention belongs on the `function()` it was built from.
+
+From there you can `tag()` the service, give it a `disposer()`, `bind()` it, read its attributes
+and declare further services (setting a lifetime needs an `instanceof ObjectConfig` check — see below).
 
 The example below turns a routing convention into tagged closures.
 Methods annotated with an `#[Action]` attribute become [`\Closure(Request): Response`](closure.md) services,
@@ -123,7 +129,8 @@ each tagged with the attribute it was found on, and finally collected into one l
 
 ```php
 use Thesis\Dic;
-use Thesis\Dic\Configuration\Autoconfig;
+use Thesis\Dic\Configuration\FunctionConfig;
+use Thesis\Dic\Configuration\ObjectConfig;
 use Thesis\Dic\Tag;
 use function Typhoon\Type\closureT;
 use function Typhoon\Type\objectT;
@@ -146,18 +153,16 @@ final readonly class Controller
 }
 
 $actions = Dic::assemble(static function (Dic $dic): Dic\Ref {
-    $dic->autoconfigure(static function (Autoconfig $service) use ($dic): void {
-        if ($service->class === null) {
+    $dic->autoconfigure(static function (FunctionConfig|ObjectConfig $service) use ($dic): void {
+        if (!$service instanceof ObjectConfig) {
             return;
         }
 
-        foreach ($service->class->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
+        foreach ($service->reflection->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
             foreach ($method->getAttributes(Action::class) as $attribute) {
                 $dic
-                    ->closure(
-                        closureT(params: [objectT(Request::class)], return: objectT(Response::class)),
-                        [$service, $method->name],
-                    )
+                    ->function([$service, $method->name])
+                    ->closure(closureT(params: [objectT(Request::class)], return: objectT(Response::class)))
                     ->tag($attribute->newInstance());
             }
         }
@@ -184,9 +189,9 @@ $dic
 
 Two more details worth knowing:
 
-- Only `object()` and `closure()` services carry a lifetime, so guard the call with an `instanceof` check
-  against [`LifetimeConfig`](../src/Dic/Configuration/LifetimeConfig.php):
-  `if ($service instanceof LifetimeConfig) { $service->canBeScoped(); }`.
+- Of the services an autoconfigurator sees, only `object()` carries a lifetime, so guard the call with an
+  `instanceof` check against [`ObjectConfig`](../src/Dic/Configuration/ObjectConfig.php):
+  `if ($service instanceof ObjectConfig) { $service->canBeScoped(); }`.
   A lifetime set this way is a **default** — an explicit lifetime on the service itself still wins.
 - Services created *by* an autoconfigurator are not themselves autoconfigured,
   so a rule can't recurse into its own output.

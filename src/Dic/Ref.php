@@ -4,36 +4,38 @@ declare(strict_types=1);
 
 namespace Thesis\Dic;
 
-use Thesis\Dic\Configuration\Autoconfig;
+use Thesis\Dic\Internal\Signature;
 
 /**
  * @api
  *
  * @template-covariant T
  *
- * @phpstan-sealed Autoconfig
+ * @phpstan-sealed \Thesis\Dic\Configuration\Config
  */
-interface Ref
+abstract class Ref
 {
     /**
      * @var non-empty-string
      */
-    public string $label { get; }
+    abstract public string $label { get; }
 
-    public Location $declaredAt { get; }
+    abstract public Location $declaredAt { get; }
 
-    /**
-     * @var (T is callable ? \ReflectionFunction|\ReflectionMethod : null)
-     */
-    public null|\ReflectionFunction|\ReflectionMethod $function { get; }
+    abstract protected null|\ReflectionFunction|\ReflectionMethod $reflectionFunction { get; }
 
     /**
      * @var (T is object ? \ReflectionClass<covariant T> : null)
      */
-    public ?\ReflectionClass $class { get; }
+    abstract protected ?\ReflectionClass $reflectionClass { get; }
+
+    abstract protected ?Signature $signature { get; }
 
     /**
      * @return non-empty-string
      */
-    public function __toString(): string;
+    final public function __toString(): string
+    {
+        return \sprintf('"%s" (%s)', $this->label, $this->declaredAt);
+    }
 }

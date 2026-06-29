@@ -19,26 +19,31 @@ use function Thesis\Formatter\formatReflectedFunction;
 /**
  * @api
  *
- * @template-covariant T of callable-array
+ * @template-covariant T
  * @extends Config<T>
  */
-final class MethodConfig extends Config
+final class FunctionConfig extends Config
 {
+    public readonly \ReflectionFunction|\ReflectionMethod $reflection;
+
     /**
      * @internal
      *
-     * @param Ref<object> $object
+     * @param Ref<callable> $value
      */
     public function __construct(
         Builder $builder,
         Autowiring $autowiring,
-        public readonly \ReflectionMethod $function,
-        private readonly Ref $object,
+        private readonly Ref $value,
         Location $declaredAt,
     ) {
-        if (!$function->isPublic()) {
-            throw BuildError::factoryMethodNotPublic($function);
+        $reflection = $value->reflectionFunction ?? throw BuildError::notCallable($value);
+
+        if ($reflection instanceof \ReflectionMethod && !$reflection->isPublic()) {
+            throw BuildError::factoryMethodNotPublic($reflection);
         }
+
+        $this->reflection = $reflection;
 
         parent::__construct(
             builder: $builder,
@@ -53,15 +58,31 @@ final class MethodConfig extends Config
 
     protected function defaultLabel(): string
     {
-        return formatReflectedFunction($this->function);
+        return formatReflectedFunction($this->reflection);
     }
 
-    protected Signature $signature {
-        get => Signature::ofMethod($this->function);
+    protected ?Signature $signature {
+        get => $this->value->signature;
     }
 
-    public null $class {
-        get => null;
+    protected null|\ReflectionFunction|\ReflectionMethod $reflectionFunction {
+        get => $this->reflection;
+    }
+
+    protected ?\ReflectionClass $reflectionClass {
+        get => $this->value->reflectionClass;
+    }
+
+    /**
+     * @see Builder\Autoconfiguration::autoconfigure()
+     */
+    protected bool $isAutoconfigurable = true;
+
+    public function doNotAutoconfigure(): static
+    {
+        $this->isAutoconfigurable = false;
+
+        return $this;
     }
 
     /**
@@ -82,6 +103,6 @@ final class MethodConfig extends Config
 
     protected function createFactory(): Factory
     {
-        return ValueFactory::from([$this->object, $this->function->name]);
+        return ValueFactory::from($this->value);
     }
 }

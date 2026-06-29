@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Internal;
 
-use Thesis\Dic\Configuration\Autoconfig;
 use Thesis\Dic\Configuration\Config;
+use Thesis\Dic\Configuration\FunctionConfig;
+use Thesis\Dic\Configuration\ObjectConfig;
 use Thesis\Dic\Internal\Builder\Autoconfiguration;
 use Thesis\Dic\Internal\Builder\Services;
 use Thesis\Dic\Internal\Builder\Tags;
@@ -49,7 +50,7 @@ final readonly class Builder
     }
 
     /**
-     * @param callable(Autoconfig<*>): void $autoconfigurator
+     * @param callable(FunctionConfig<*>|ObjectConfig<*>): void $autoconfigurator
      */
     public function addAutoconfigurator(callable $autoconfigurator): void
     {
@@ -63,7 +64,10 @@ final readonly class Builder
      */
     public function register(Config $config, \Closure $createFactory): void
     {
-        $this->autoconfiguration->schedule($config);
+        if ($config instanceof FunctionConfig || $config instanceof ObjectConfig) {
+            $this->autoconfiguration->schedule($config);
+        }
+
         $this->services->register($config, $createFactory);
     }
 

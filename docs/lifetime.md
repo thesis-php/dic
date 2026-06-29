@@ -31,8 +31,8 @@ At build time Dic resolves every declared lifetime to a concrete one — singlet
 by walking the dependency graph.
 
 These lifetimes belong to the services Dic instantiates — `object()` and `closure()`.
-A [`value()`](value.md), a [`taggedList()`](tags.md) or a method ref takes no lifetime of its own:
-it is transparent and inherits the lifetime of whatever it carries.
+A [`value()`](value.md), a [`taggedList()`](tags.md) or a bare [`function()`](closure.md)/method ref takes no
+lifetime of its own: it is transparent and inherits the lifetime of whatever it carries.
 
 ## A singleton may only depend on singletons
 

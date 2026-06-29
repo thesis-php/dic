@@ -6,6 +6,8 @@ namespace Thesis\Dic\Internal\Builder;
 
 use Thesis\Dic\BuildError;
 use Thesis\Dic\Configuration\Config;
+use Thesis\Dic\Configuration\FunctionConfig;
+use Thesis\Dic\Configuration\ObjectConfig;
 
 /**
  * @internal
@@ -15,12 +17,12 @@ final class Autoconfiguration
     private bool $autoconfigured = false;
 
     /**
-     * @var list<callable(Config<*>): void>
+     * @var list<callable(FunctionConfig<*>|ObjectConfig<*>): void>
      */
     private array $autoconfigurators = [];
 
     /**
-     * @param callable(Config<*>): void $autoconfigurator
+     * @param callable(FunctionConfig<*>|ObjectConfig<*>): void $autoconfigurator
      */
     public function addAutoconfigurator(callable $autoconfigurator): void
     {
@@ -32,14 +34,14 @@ final class Autoconfiguration
     }
 
     /**
-     * @var list<Config<*>>
+     * @var list<FunctionConfig<*>|ObjectConfig<*>>
      */
     private array $queue = [];
 
     /**
-     * @param Config<*> $config
+     * @param FunctionConfig<*>|ObjectConfig<*> $config
      */
-    public function schedule(Config $config): void
+    public function schedule(FunctionConfig|ObjectConfig $config): void
     {
         if (!$this->autoconfigured) {
             $this->queue[] = $config;
@@ -62,7 +64,7 @@ final class Autoconfiguration
 
         $autoconfigurators = $this->autoconfigurators;
         $autoconfigurator = \Closure::bind(
-            closure: static function (Config $config) use ($autoconfigurators): void {
+            closure: static function (FunctionConfig|ObjectConfig $config) use ($autoconfigurators): void {
                 if (!$config->isAutoconfigurable) {
                     return;
                 }

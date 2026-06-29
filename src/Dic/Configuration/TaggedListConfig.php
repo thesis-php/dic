@@ -86,10 +86,9 @@ final class TaggedListConfig extends Config
 
     protected null $signature { get => null; }
 
-    /** @phpstan-ignore property.phpDocType */
-    public null $function { get => null; }
+    protected null $reflectionFunction { get => null; }
 
-    public null $class { get => null; }
+    protected null $reflectionClass { get => null; }
 
     protected function createFactory(): Factory
     {

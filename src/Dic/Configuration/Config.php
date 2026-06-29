@@ -11,8 +11,8 @@ use Thesis\Dic\Internal\Autowiring\UnsupportedBindingType;
 use Thesis\Dic\Internal\Builder;
 use Thesis\Dic\Internal\Builder\LifetimeStrategy;
 use Thesis\Dic\Internal\Factory;
-use Thesis\Dic\Internal\Signature;
 use Thesis\Dic\Location;
+use Thesis\Dic\Ref;
 use Thesis\Dic\Tag;
 use Typhoon\Type;
 
@@ -20,11 +20,11 @@ use Typhoon\Type;
  * @api
  *
  * @template-covariant T
- * @implements Autoconfig<T>
+ * @extends Ref<T>
  *
- * @phpstan-sealed FactoryConfig|MethodConfig|ScopedConfig|TaggedListConfig|ValueConfig
+ * @phpstan-sealed ClosureConfig|ObjectConfig|FunctionConfig|ScopedConfig|TaggedListConfig|ValueConfig
  */
-abstract class Config implements Autoconfig
+abstract class Config extends Ref
 {
     protected function __construct(
         protected readonly Builder $builder,
@@ -34,14 +34,20 @@ abstract class Config implements Autoconfig
         $builder->register($this, $this->createFactory(...));
     }
 
-    /**
-     * @see Builder\Autoconfiguration::autoconfigure()
-     */
-    protected private(set) bool $isAutoconfiguring = false;
+    final protected bool $isAutoconfiguring = false;
 
+    /**
+     * @see Services::lifetimeStrategyOf()
+     */
     abstract protected LifetimeStrategy $lifetimeStrategy { get; }
 
-    abstract protected ?Signature $signature { get; }
+    /**
+     * @var non-empty-string
+     * @phpstan-ignore property.uninitialized
+     */
+    private string $defaultLabel {
+        get => $this->defaultLabel ??= $this->defaultLabel();
+    }
 
     /**
      * @return non-empty-string
@@ -52,7 +58,10 @@ abstract class Config implements Autoconfig
      * @phpstan-ignore property.uninitialized
      */
     public private(set) string $label {
-        get => $this->label ??= $this->defaultLabel();
+        get => match ($this->isAutoconfiguring) {
+            true => $this->defaultLabel,
+            false => $this->label ??= $this->defaultLabel,
+        };
     }
 
     /**
@@ -60,7 +69,10 @@ abstract class Config implements Autoconfig
      */
     final public function label(string $label): static
     {
-        $this->label = $label;
+        match ($this->isAutoconfiguring) {
+            true => $this->defaultLabel = $label,
+            false => $this->label = $label,
+        };
 
         return $this;
     }
@@ -82,17 +94,8 @@ abstract class Config implements Autoconfig
     }
 
     /**
-     * @phpstan-ignore property.onlyWritten
+     * @param Tag<T> $tag
      */
-    private bool $isAutoconfigurable = true;
-
-    final public function doNotAutoconfigure(): static
-    {
-        $this->isAutoconfigurable = false;
-
-        return $this;
-    }
-
     final public function tag(Tag $tag): static
     {
         $this->builder->addTag($this, $tag);
@@ -100,6 +103,9 @@ abstract class Config implements Autoconfig
         return $this;
     }
 
+    /**
+     * @param callable(T, ?\Throwable): void $disposer
+     */
     final public function disposer(callable $disposer): static
     {
         $this->builder->addDisposer($this, $disposer);
@@ -111,9 +117,4 @@ abstract class Config implements Autoconfig
      * @return Factory<T>
      */
     abstract protected function createFactory(): Factory;
-
-    final public function __toString(): string
-    {
-        return \sprintf('"%s" (%s)', $this->label, $this->declaredAt);
-    }
 }

@@ -8,6 +8,7 @@ use Thesis\Dic\Internal\Arguments;
 use Thesis\Dic\Internal\Arguments\ClosureArguments;
 use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\Builder;
+use Thesis\Dic\Internal\Builder\LifetimeStrategy;
 use Thesis\Dic\Internal\Factory;
 use Thesis\Dic\Internal\Factory\ClosureFactory;
 use Thesis\Dic\Internal\ShouldNotHappen;
@@ -23,39 +24,33 @@ use function Typhoon\Type\stringify;
  * @api
  *
  * @template-covariant T of \Closure
- * @extends FactoryConfig<T, Parameter>
+ * @extends Config<T>
  */
-final class ClosureConfig extends FactoryConfig
+final class ClosureConfig extends Config
 {
-    /**
-     * @var Ref<callable>
-     */
-    private readonly Ref $functionRef;
-
     /**
      * @internal
      *
      * @param ClosureT<T> $type
-     * @param Config<callable> $function
+     * @param Ref<callable> $function
      */
     public function __construct(
         Builder $builder,
         Autowiring $autowiring,
         private readonly ClosureT $type,
-        Config $function,
+        private readonly Ref $function,
         Location $declaredAt,
     ) {
-        $this->functionRef = $function;
+        $this->arguments = new Arguments(
+            signature: $function->signature ?? throw new ShouldNotHappen('Ref does not reference a function'),
+            autowiring: $autowiring,
+            closureArguments: ClosureArguments::fromType($type),
+        );
 
         parent::__construct(
             builder: $builder,
             autowiring: $autowiring,
             declaredAt: $declaredAt,
-            arguments: new Arguments(
-                signature: $function->signature ?? throw new ShouldNotHappen('Ref does not reference a function'),
-                autowiring: $autowiring,
-                closureArguments: ClosureArguments::fromType($type),
-            ),
         );
     }
 
@@ -68,12 +63,74 @@ final class ClosureConfig extends FactoryConfig
         get => Signature::ofClosure($this->type);
     }
 
-    public \ReflectionFunction $function {
+    protected \ReflectionFunction $reflectionFunction {
         get => $this->signature->reflection;
     }
 
-    public \ReflectionClass $class {
+    protected \ReflectionClass $reflectionClass {
         get => new \ReflectionClass(\Closure::class);
+    }
+
+    protected private(set) LifetimeStrategy $lifetimeStrategy = LifetimeStrategy::Singleton;
+
+    public function singleton(): static
+    {
+        $this->lifetimeStrategy = LifetimeStrategy::Singleton;
+
+        return $this;
+    }
+
+    public function canBeScoped(): static
+    {
+        $this->lifetimeStrategy = LifetimeStrategy::CanBeScoped;
+
+        return $this;
+    }
+
+    public function scoped(): static
+    {
+        $this->lifetimeStrategy = LifetimeStrategy::Scoped;
+
+        return $this;
+    }
+
+    /**
+     * @var Arguments<Parameter>
+     */
+    private readonly Arguments $arguments;
+
+    public function doNotAutowire(): static
+    {
+        $this->arguments->doNotAutowire();
+
+        return $this;
+    }
+
+    public function arg(int|string $positionOrName, mixed $value): static
+    {
+        $this->arguments->arg($positionOrName, $value);
+
+        return $this;
+    }
+
+    /**
+     * @param iterable<array-key, mixed>|Ref<iterable<array-key, mixed>>|Parameter $variadic
+     */
+    public function variadic(iterable|Ref|Parameter $variadic): static
+    {
+        $this->arguments->variadic($variadic);
+
+        return $this;
+    }
+
+    /**
+     * @param array<mixed> $values
+     */
+    public function args(array $values): static
+    {
+        $this->arguments->args($values);
+
+        return $this;
     }
 
     protected function createFactory(): Factory
@@ -81,7 +138,7 @@ final class ClosureConfig extends FactoryConfig
         /** @var ClosureFactory<T> */
         return ClosureFactory::from(
             type: $this->type,
-            function: $this->functionRef,
+            function: $this->function,
             arguments: $this->arguments,
         );
     }

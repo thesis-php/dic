@@ -8,7 +8,7 @@ Public behavior is documented in `docs/` — consult it (and `README.md`) before
 
 - [Objects](docs/object.md) — `object()`, factories, post-construction calls, lazy instantiation
 - [Values](docs/value.md) — `value()` and refs as services
-- [Closures](docs/closure.md) — `closure()`, runtime parameters vs. dependencies
+- [Functions and closures](docs/closure.md) — `function()`, `closure()`, runtime parameters vs. dependencies
 - [Arguments](docs/arguments.md) — `arg()` / `args()` / `variadic()`
 - [Autowiring](docs/autowiring.md) — `bind()`, qualifiers, per-parameter markers/attributes
 - [Tags](docs/tags.md) — `tag()`, `taggedList()`, `onTagResolution()`, `autoconfigure()`

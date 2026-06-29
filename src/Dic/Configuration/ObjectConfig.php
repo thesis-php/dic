@@ -4,207 +4,128 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Configuration;
 
-use Thesis\Dic\BuildError;
-use Thesis\Dic\Internal\Arguments;
-use Thesis\Dic\Internal\Arguments\ClosureArguments;
 use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\Builder;
-use Thesis\Dic\Internal\Factory;
-use Thesis\Dic\Internal\Factory\ArgumentsFactory;
-use Thesis\Dic\Internal\Factory\LazyObjectFactory;
-use Thesis\Dic\Internal\Factory\NewFactory;
-use Thesis\Dic\Internal\Factory\RefFactory;
+use Thesis\Dic\Internal\Builder\LifetimeStrategy;
 use Thesis\Dic\Internal\Signature;
 use Thesis\Dic\Internal\Signature\ReflectionFunctionSignature;
 use Thesis\Dic\Location;
-use Thesis\Dic\Ref;
 use function Thesis\Formatter\formatReflectedClass;
 
 /**
  * @api
  *
  * @template-covariant T of object
- * @extends FactoryConfig<T, never>
+ * @extends Config<T>
+ *
+ * @phpstan-sealed ObjectFactoryConfig
  */
-final class ObjectConfig extends FactoryConfig
+abstract class ObjectConfig extends Config
 {
+    /**
+     * @var \ReflectionClass<covariant T>
+     */
+    final public readonly \ReflectionClass $reflection;
+
     /**
      * @internal
      *
-     * @param \ReflectionClass<covariant T> $class
-     * @param ?Config<callable(): T> $factory
+     * @param \ReflectionClass<covariant T> $reflection
      */
     public function __construct(
         Builder $builder,
         Autowiring $autowiring,
-        public readonly \ReflectionClass $class,
-        private readonly ?Config $factory,
+        \ReflectionClass $reflection,
         Location $declaredAt,
     ) {
+        $this->reflection = $reflection;
+
         parent::__construct(
             builder: $builder,
             autowiring: $autowiring,
             declaredAt: $declaredAt,
-            arguments: new Arguments(
-                signature: match ($factory) {
-                    null => match ($class->isInstantiable()) {
-                        true => Signature::ofConstructor($class),
-                        false => throw BuildError::classNotInstantiable($class),
-                    },
-                    default => $factory->signature ?? throw BuildError::factoryNotCallable($factory),
-                },
-                autowiring: $autowiring,
-                closureArguments: ClosureArguments::empty(),
-            ),
         );
     }
 
-    protected function defaultLabel(): string
+    final protected function defaultLabel(): string
     {
-        return formatReflectedClass($this->class);
+        return formatReflectedClass($this->reflection);
     }
 
     /**
      * @var ?ReflectionFunctionSignature<\ReflectionMethod>
      */
-    protected ?Signature $signature {
-        get => Signature::ofClass($this->class);
+    final protected ?Signature $signature {
+        get => Signature::ofClass($this->reflection);
     }
 
-    /** @phpstan-ignore property.phpDocType */
-    public ?\ReflectionMethod $function {
+    final protected ?\ReflectionMethod $reflectionFunction {
         get => $this->signature?->reflection;
     }
 
-    private bool $lazy = false;
+    final protected \ReflectionClass $reflectionClass {
+        get => $this->reflection;
+    }
 
-    public function lazy(): static
-    {
-        if (!$this->class->isInstantiable()) {
-            throw BuildError::lazyClassNotInstantiable($this->class);
+    /**
+     * @phpstan-ignore property.uninitialized
+     */
+    protected private(set) LifetimeStrategy $lifetimeStrategy {
+        get => $this->lifetimeStrategy ??= LifetimeStrategy::Singleton;
+        set {
+            if ($this->isAutoconfiguring) {
+                $this->lifetimeStrategy ??= $value;
+            } else {
+                $this->lifetimeStrategy = $value;
+            }
         }
+    }
 
-        $this->lazy = true;
+    /**
+     * @see Builder\Autoconfiguration::autoconfigure()
+     */
+    final protected bool $isAutoconfigurable = true;
+
+    final public function singleton(): static
+    {
+        $this->lifetimeStrategy = LifetimeStrategy::Singleton;
 
         return $this;
     }
 
-    public function eager(): static
+    final public function canBeScoped(): static
     {
-        $this->lazy = false;
+        $this->lifetimeStrategy = LifetimeStrategy::CanBeScoped;
 
         return $this;
     }
 
-    /**
-     * @var list<\Closure(Factory<T>): Factory<T>>
-     */
-    private array $factoryDecorators = [];
-
-    /**
-     * @param array<mixed> $args
-     * @param iterable<array-key, mixed>|Ref<iterable<array-key, mixed>> $variadic
-     */
-    public function call(string $method, array $args = [], iterable|Ref $variadic = []): static
+    final public function scoped(): static
     {
-        $arguments = $this->createMethodArguments($method, $args, $variadic);
-
-        /** @phpstan-ignore assign.propertyType */
-        $this->factoryDecorators[] = static fn(Factory $factory) => new Factory\PostCallFactory(
-            factory: $factory,
-            method: $method,
-            arguments: ArgumentsFactory::from($arguments),
-        );
+        $this->lifetimeStrategy = LifetimeStrategy::Scoped;
 
         return $this;
     }
 
     /**
-     * @param array<mixed> $args
-     * @param iterable<array-key, mixed>|Ref<iterable<array-key, mixed>> $variadic
+     * @return FunctionConfig<callable-array>
      */
-    public function chain(string $method, array $args = [], iterable|Ref $variadic = []): static
+    final public function method(string $name): FunctionConfig
     {
-        $arguments = $this->createMethodArguments($method, $args, $variadic);
-
-        /** @phpstan-ignore assign.propertyType */
-        $this->factoryDecorators[] = static fn(Factory $factory) => new Factory\PostChainFactory(
-            factory: $factory,
-            method: $method,
-            arguments: ArgumentsFactory::from($arguments),
-        );
-
-        return $this;
-    }
-
-    /**
-     * @param array<mixed> $args
-     * @param iterable<array-key, mixed>|Ref<iterable<array-key, mixed>> $variadic
-     */
-    private function createMethodArguments(string $name, array $args, iterable|Ref $variadic): Arguments
-    {
-        $reflection = $this->class->getMethod($name);
-
-        if (!$reflection->isPublic()) {
-            throw BuildError::calledMethodNotPublic($reflection);
-        }
-
-        $arguments = new Arguments(
-            signature: Signature::ofMethod($reflection),
-            autowiring: $this->autowiring,
-            closureArguments: ClosureArguments::empty(),
-        );
-        $arguments->args($args);
-        $arguments->variadic($variadic);
-
-        return $arguments;
-    }
-
-    /**
-     * @return MethodConfig<callable-array>
-     */
-    public function method(string $name): MethodConfig
-    {
-        /** @var MethodConfig<callable-array> */
-        return new MethodConfig(
+        /** @var ValueConfig<callable> */
+        $value = new ValueConfig(
             builder: $this->builder,
             autowiring: $this->autowiring,
-            function: $this->class->getMethod($name),
-            object: $this,
+            value: [$this, $name],
             declaredAt: Location::caller(),
         );
-    }
 
-    protected function createFactory(): Factory
-    {
-        $arguments = ArgumentsFactory::from($this->arguments);
-
-        $factory = match ($this->factory) {
-            null => new NewFactory(
-                class: $this->class->name,
-                arguments: $arguments,
-            ),
-            default => new RefFactory(
-                ref: $this->factory,
-                arguments: $arguments,
-            ),
-        };
-
-        foreach ($this->factoryDecorators as $factoryDecorator) {
-            $factory = $factoryDecorator($factory);
-        }
-
-        if ($this->lazy) {
-            $factory = new LazyObjectFactory(
-                /**
-                 * @todo think about it...
-                 * @phpstan-ignore argument.type
-                 */
-                class: $this->class,
-                factory: $factory,
-            );
-        }
-
-        return $factory;
+        /** @var FunctionConfig<callable-array> */
+        return new FunctionConfig(
+            builder: $this->builder,
+            autowiring: $this->autowiring,
+            value: $value,
+            declaredAt: Location::caller(),
+        );
     }
 }

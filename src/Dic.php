@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Thesis;
 
-use Thesis\Dic\Configuration\Autoconfig;
-use Thesis\Dic\Configuration\ClosureConfig;
 use Thesis\Dic\Configuration\Config;
+use Thesis\Dic\Configuration\FunctionConfig;
 use Thesis\Dic\Configuration\ObjectConfig;
+use Thesis\Dic\Configuration\ObjectFactoryConfig;
 use Thesis\Dic\Configuration\ScopedConfig;
 use Thesis\Dic\Configuration\TaggedListConfig;
 use Thesis\Dic\Configuration\ValueConfig;
@@ -21,7 +21,6 @@ use Thesis\Dic\Ref;
 use Thesis\Dic\Tag;
 use Thesis\Dic\TaggedRef;
 use Thesis\Dic\TaggedRefs;
-use Typhoon\Type\ClosureT;
 
 /**
  * @api
@@ -128,56 +127,58 @@ final readonly class Dic
     }
 
     /**
+     * @param callable|array{Ref<object>, string}|Ref<callable> $function
+     * @return FunctionConfig<callable>
+     */
+    public function function(callable|array|Ref $function): FunctionConfig
+    {
+        $declaredAt = Location::caller();
+
+        if (!$function instanceof Ref) {
+            /** @var ValueConfig<callable> */
+            $function = new ValueConfig(
+                builder: $this->builder,
+                autowiring: $this->autowiring,
+                value: $function,
+                declaredAt: $declaredAt,
+            );
+        }
+
+        /** @var FunctionConfig<callable> */
+        return new FunctionConfig(
+            builder: $this->builder,
+            autowiring: $this->autowiring,
+            value: $function,
+            declaredAt: $declaredAt,
+        );
+    }
+
+    /**
      * @template T of object
      * @param class-string<T> $class
      * @param null|callable(): T|array{Ref<class-string|object>, string}|Ref<callable(): T> $factory
-     * @return ObjectConfig<T>
+     * @return ObjectFactoryConfig<T>
      */
-    public function object(string $class, null|callable|array|Ref $factory = null): ObjectConfig
+    public function object(string $class, null|callable|array|Ref $factory = null): ObjectFactoryConfig
     {
+        $declaredAt = Location::caller();
+
         if ($factory !== null && !$factory instanceof Config) {
             /** @var ValueConfig<callable(): T> */
             $factory = new ValueConfig(
                 builder: $this->builder,
                 autowiring: $this->autowiring,
                 value: $factory,
-                declaredAt: Location::caller(),
+                declaredAt: $declaredAt,
             );
         }
 
-        return new ObjectConfig(
+        return new ObjectFactoryConfig(
             builder: $this->builder,
             autowiring: $this->autowiring,
-            class: new \ReflectionClass($class),
+            reflection: new \ReflectionClass($class),
             factory: $factory,
-            declaredAt: Location::caller(),
-        );
-    }
-
-    /**
-     * @template T of \Closure
-     * @param ClosureT<T> $type
-     * @param callable|array{Ref<class-string|object>, string}|Ref<callable> $function
-     * @return ClosureConfig<T>
-     */
-    public function closure(ClosureT $type, callable|array|Ref $function): ClosureConfig
-    {
-        if (!$function instanceof Config) {
-            /** @var ValueConfig<callable> */
-            $function = new ValueConfig(
-                builder: $this->builder,
-                autowiring: $this->autowiring,
-                value: $function,
-                declaredAt: Location::caller(),
-            );
-        }
-
-        return new ClosureConfig(
-            builder: $this->builder,
-            autowiring: $this->autowiring,
-            type: $type,
-            function: $function,
-            declaredAt: Location::caller(),
+            declaredAt: $declaredAt,
         );
     }
 
@@ -223,7 +224,7 @@ final readonly class Dic
     }
 
     /**
-     * @param callable(Autoconfig<*>): void $configurator
+     * @param callable(FunctionConfig<*>|ObjectConfig<*>): void $configurator
      */
     public function autoconfigure(callable $configurator): void
     {

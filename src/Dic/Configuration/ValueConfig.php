@@ -13,7 +13,6 @@ use Thesis\Dic\Internal\Signature;
 use Thesis\Dic\Location;
 use Thesis\Dic\Ref;
 use function Thesis\Formatter\format;
-use function Thesis\Formatter\formatReflectedFunction;
 
 /**
  * @api
@@ -43,13 +42,7 @@ final class ValueConfig extends Config
 
     protected function defaultLabel(): string
     {
-        $function = $this->function;
-
-        if ($function === null) {
-            return format($this->value);
-        }
-
-        return formatReflectedFunction($function);
+        return format($this->value);
     }
 
     private bool $isSignatureSet = false;
@@ -57,10 +50,7 @@ final class ValueConfig extends Config
     protected ?Signature $signature = null {
         get {
             if (!$this->isSignatureSet) {
-                $this->signature = match (true) {
-                    $this->value instanceof Ref => $this->signature,
-                    default => Signature::ofValue(self::unwrap($this->value, maxDepth: 2)),
-                };
+                $this->signature = $this->resolveSignature();
                 $this->isSignatureSet = true;
             }
 
@@ -68,31 +58,64 @@ final class ValueConfig extends Config
         }
     }
 
-    public null|\ReflectionFunction|\ReflectionMethod $function {
+    protected null|\ReflectionFunction|\ReflectionMethod $reflectionFunction {
         get => $this->signature?->reflection;
     }
 
     private bool $isClassSet = false;
 
-    public private(set) ?\ReflectionClass $class = null {
+    protected private(set) ?\ReflectionClass $reflectionClass = null {
         get {
             if (!$this->isClassSet) {
                 /** @phpstan-ignore assign.propertyType */
-                $this->class = match (true) {
-                    $this->value instanceof Ref => $this->value->class,
+                $this->reflectionClass = match (true) {
+                    $this->value instanceof Ref => $this->value->reflectionClass,
                     \is_object($this->value) => new \ReflectionObject($this->value),
                     default => null,
                 };
                 $this->isClassSet = true;
             }
 
-            return $this->class;
+            return $this->reflectionClass;
         }
     }
 
     protected function createFactory(): Factory
     {
         return ValueFactory::from($this->value);
+    }
+
+    private function resolveSignature(): ?Signature
+    {
+        if ($this->value instanceof Ref) {
+            return $this->value->signature;
+        }
+
+        $value = self::unwrap($this->value, maxDepth: 2);
+
+        // this should go before is_callable() to avoid matching Ref methods
+        if (\is_array($value)
+            && \count($value) === 2
+            && isset($value[0]) && $value[0] instanceof Ref
+            && isset($value[1]) && \is_string($value[1])
+        ) {
+            [$ref, $name] = $value;
+
+            if ($ref->reflectionClass === null
+                || !$ref->reflectionClass->hasMethod($name)
+                || !($method = $ref->reflectionClass->getMethod($name))->isPublic()
+            ) {
+                return null;
+            }
+
+            return Signature::ofMethod($method);
+        }
+
+        if (\is_callable($value)) {
+            return Signature::ofCallable($value);
+        }
+
+        return null;
     }
 
     /**

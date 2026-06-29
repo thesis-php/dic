@@ -647,10 +647,9 @@ final readonly class DicTest
         $function = Dic::assemble(static function (Dic $dic) use ($signature) {
             $dic->object(RedisCache::class)->bind(objectT(Cache::class));
 
-            return $dic->closure(
-                $signature,
-                static fn(Cache $cache, int $n): int => \strlen($cache->get('key') ?? '') + $n,
-            );
+            return $dic
+                ->function(static fn(Cache $cache, int $n): int => \strlen($cache->get('key') ?? '') + $n)
+                ->closure($signature);
         });
 
         Assert::same($function(10), 15);
@@ -662,10 +661,9 @@ final readonly class DicTest
         $signature = closureT([param(intT, variadic: true, name: 'numbers')], intT);
 
         $function = Dic::assemble(
-            static fn(Dic $dic) => $dic->closure(
-                $signature,
-                static fn(int ...$numbers): int => array_sum($numbers),
-            ),
+            static fn(Dic $dic) => $dic
+                ->function(static fn(int ...$numbers): int => array_sum($numbers))
+                ->closure($signature),
         );
 
         Assert::same($function(1, 2, 3), 6);
@@ -859,6 +857,18 @@ final readonly class DicTest
             /** @phpstan-ignore argument.type */
             static fn(Dic $dic) => $dic->object(Counter::class, factory: $dic->value(42)),
         );
+    }
+
+    #[Test]
+    public function refMethodFactoryFails(): void
+    {
+        Expect::exception(BuildError::class)->withMessageContaining('is not callable');
+
+        Dic::assemble(static function (Dic $dic) {
+            $factory = $dic->object(TestService::class);
+
+            return $dic->object(TestService::class, factory: [$factory, '__toString']);
+        });
     }
 
     #[Test]

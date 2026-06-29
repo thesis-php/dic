@@ -175,6 +175,16 @@ final class BuildError extends \LogicException
 
     /**
      * @internal
+     *
+     * @param Ref<mixed> $ref
+     */
+    public static function notCallable(Ref $ref): self
+    {
+        return new self("{$ref} is not callable");
+    }
+
+    /**
+     * @internal
      */
     public static function factoryMethodNotPublic(\ReflectionMethod $method): self
     {
