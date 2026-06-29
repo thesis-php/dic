@@ -5,11 +5,6 @@ declare(strict_types=1);
 namespace Thesis\Dic\Internal;
 
 use Thesis\Dic\Configuration\Config;
-use Thesis\Dic\Configuration\FunctionAutoconfig;
-use Thesis\Dic\Configuration\FunctionConfig;
-use Thesis\Dic\Configuration\ObjectAutoconfig;
-use Thesis\Dic\Configuration\ObjectConfig;
-use Thesis\Dic\Internal\Builder\Autoconfiguration;
 use Thesis\Dic\Internal\Builder\LifetimeStrategy;
 use Thesis\Dic\Internal\Builder\Services;
 use Thesis\Dic\Internal\Builder\Tags;
@@ -26,8 +21,6 @@ use Thesis\Dic\TaggedRefs;
 final readonly class Builder
 {
     use NonCopyable;
-
-    private Autoconfiguration $autoconfiguration;
 
     private Services $services;
 
@@ -47,7 +40,6 @@ final readonly class Builder
             singletonFactories: $this->singletonFactories,
             scopedFactories: $this->scopedFactories,
         );
-        $this->autoconfiguration = new Autoconfiguration($this->services);
         $this->tags = new Tags();
         $this->disposers = new Disposers();
     }
@@ -63,27 +55,19 @@ final readonly class Builder
     }
 
     /**
-     * @param FunctionConfig<callable>|ObjectConfig<object> $config
-     */
-    public function autoconfigure(FunctionConfig|ObjectConfig $config): void
-    {
-        $this->autoconfiguration->autoconfigure($config);
-    }
-
-    /**
-     * @param FunctionConfig<callable>|ObjectConfig<object> $config
-     */
-    public function doNotAutoconfigure(FunctionConfig|ObjectConfig $config): void
-    {
-        $this->autoconfiguration->doNotAutoconfigure($config);
-    }
-
-    /**
      * @param Ref<mixed> $ref
      */
     public function setLifetimeStrategy(Ref $ref, LifetimeStrategy $lifetimeStrategy): void
     {
         $this->services->setLifetimeStrategy($ref, $lifetimeStrategy);
+    }
+
+    /**
+     * @param Ref<mixed> $ref
+     */
+    public function setDefaultLifetimeStrategy(Ref $ref, LifetimeStrategy $lifetimeStrategy): void
+    {
+        $this->services->setDefaultLifetimeStrategy($ref, $lifetimeStrategy);
     }
 
     /**
@@ -114,26 +98,8 @@ final readonly class Builder
         $this->tags->onResolution($listener);
     }
 
-    /**
-     * @param callable(FunctionAutoconfig): void $listener
-     */
-    public function onFunction(callable $listener): void
-    {
-        $this->autoconfiguration->onFunction($listener);
-    }
-
-    /**
-     * @param callable(ObjectAutoconfig<object>): void $listener
-     */
-    public function onObject(callable $listener): void
-    {
-        $this->autoconfiguration->onObject($listener);
-    }
-
     public function build(): Container
     {
-        $this->autoconfiguration->start();
-
         $this->tags->resolve();
 
         $this->services->resolve();

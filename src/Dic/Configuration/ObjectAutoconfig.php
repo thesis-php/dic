@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Thesis\Dic\Configuration;
 
+use Thesis\Dic\Internal\Builder;
 use Thesis\Dic\Internal\Builder\LifetimeStrategy;
-use Thesis\Dic\Internal\Builder\Services;
 use Thesis\Dic\Ref;
 use Thesis\Dic\Tag;
 
@@ -52,7 +52,7 @@ final class ObjectAutoconfig
      * @param ObjectConfig<T> $config
      */
     public function __construct(
-        private readonly Services $services,
+        private readonly Builder $builder,
         private readonly ObjectConfig $config,
     ) {
         $this->attributes = new Attributes($config->reflection);
@@ -82,14 +82,14 @@ final class ObjectAutoconfig
 
     public function defaultScoped(): static
     {
-        $this->services->setDefaultLifetimeStrategy($this->config, LifetimeStrategy::Scoped);
+        $this->builder->setDefaultLifetimeStrategy($this->config, LifetimeStrategy::Scoped);
 
         return $this;
     }
 
     public function defaultCanBeScoped(): static
     {
-        $this->services->setDefaultLifetimeStrategy($this->config, LifetimeStrategy::CanBeScoped);
+        $this->builder->setDefaultLifetimeStrategy($this->config, LifetimeStrategy::CanBeScoped);
 
         return $this;
     }

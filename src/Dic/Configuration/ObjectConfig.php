@@ -9,6 +9,7 @@ use Thesis\Dic\Internal\Arguments;
 use Thesis\Dic\Internal\Arguments\ClosureArguments;
 use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\Builder;
+use Thesis\Dic\Internal\Builder\Autoconfiguration;
 use Thesis\Dic\Internal\Builder\LifetimeStrategy;
 use Thesis\Dic\Internal\Factory;
 use Thesis\Dic\Internal\Factory\ArgumentsFactory;
@@ -42,6 +43,7 @@ final class ObjectConfig extends Config
      */
     public function __construct(
         Builder $builder,
+        private readonly Autoconfiguration $autoconfiguration,
         Autowiring $autowiring,
         \ReflectionClass $reflection,
         private readonly ?Ref $factory,
@@ -69,7 +71,7 @@ final class ObjectConfig extends Config
             defaultLifetimeStrategy: LifetimeStrategy::Singleton,
         );
 
-        $builder->autoconfigure($this);
+        $autoconfiguration->schedule($this);
     }
 
     /**
@@ -89,7 +91,7 @@ final class ObjectConfig extends Config
 
     public function doNotAutoconfigure(): static
     {
-        $this->builder->doNotAutoconfigure($this);
+        $this->autoconfiguration->unschedule($this);
 
         return $this;
     }
@@ -119,6 +121,7 @@ final class ObjectConfig extends Config
         /** @var FunctionConfig<callable-array> */
         return $this->methods[$name] = new FunctionConfig(
             builder: $this->builder,
+            autoconfiguration: $this->autoconfiguration,
             autowiring: $this->autowiring,
             value: $value,
             declaredAt: Location::caller(),

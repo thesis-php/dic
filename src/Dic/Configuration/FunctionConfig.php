@@ -7,6 +7,7 @@ namespace Thesis\Dic\Configuration;
 use Thesis\Dic\BuildError;
 use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\Builder;
+use Thesis\Dic\Internal\Builder\Autoconfiguration;
 use Thesis\Dic\Internal\Builder\LifetimeStrategy;
 use Thesis\Dic\Internal\Factory;
 use Thesis\Dic\Internal\Factory\ValueFactory;
@@ -33,6 +34,7 @@ final class FunctionConfig extends Config
      */
     public function __construct(
         Builder $builder,
+        private readonly Autoconfiguration $autoconfiguration,
         Autowiring $autowiring,
         private readonly Ref $value,
         Location $declaredAt,
@@ -53,7 +55,7 @@ final class FunctionConfig extends Config
             defaultLifetimeStrategy: LifetimeStrategy::Inferred,
         );
 
-        $builder->autoconfigure($this);
+        $autoconfiguration->schedule($this);
     }
 
     protected ?Signature $signature {
@@ -70,7 +72,7 @@ final class FunctionConfig extends Config
 
     public function doNotAutoconfigure(): static
     {
-        $this->builder->doNotAutoconfigure($this);
+        $this->autoconfiguration->unschedule($this);
 
         return $this;
     }

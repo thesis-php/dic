@@ -13,7 +13,6 @@ use Thesis\Dic\Configuration\ObjectAutoconfig;
 use Thesis\Dic\Configuration\ObjectConfig;
 use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\Builder;
-use Thesis\Dic\Internal\Container\Factories;
 use Thesis\Dic\Location;
 use Thesis\Dic\Ref;
 use Thesis\Fixture\Counter;
@@ -37,8 +36,8 @@ final class AutoconfigurationTest
 
         $object = self::objectConfig();
         $function = self::functionConfig();
-        $autoconfiguration->autoconfigure($object);
-        $autoconfiguration->autoconfigure($function);
+        $autoconfiguration->schedule($object);
+        $autoconfiguration->schedule($function);
 
         $autoconfiguration->start();
 
@@ -61,12 +60,12 @@ final class AutoconfigurationTest
 
             if (!$scheduled) {
                 $scheduled = true;
-                $autoconfiguration->autoconfigure($appended);
+                $autoconfiguration->schedule($appended);
             }
         });
 
         $object = self::objectConfig();
-        $autoconfiguration->autoconfigure($object);
+        $autoconfiguration->schedule($object);
 
         $autoconfiguration->start();
 
@@ -87,8 +86,8 @@ final class AutoconfigurationTest
         });
 
         $object = self::objectConfig();
-        $autoconfiguration->autoconfigure($object);
-        $autoconfiguration->autoconfigure($object);
+        $autoconfiguration->schedule($object);
+        $autoconfiguration->schedule($object);
 
         $autoconfiguration->start();
 
@@ -108,9 +107,9 @@ final class AutoconfigurationTest
 
         $kept = self::objectConfig();
         $removed = self::objectConfig();
-        $autoconfiguration->autoconfigure($kept);
-        $autoconfiguration->autoconfigure($removed);
-        $autoconfiguration->doNotAutoconfigure($removed);
+        $autoconfiguration->schedule($kept);
+        $autoconfiguration->schedule($removed);
+        $autoconfiguration->unschedule($removed);
 
         $autoconfiguration->start();
 
@@ -120,10 +119,7 @@ final class AutoconfigurationTest
 
     private static function autoconfiguration(): Autoconfiguration
     {
-        return new Autoconfiguration(new Services(
-            singletonFactories: new Factories(),
-            scopedFactories: new Factories(),
-        ));
+        return new Autoconfiguration(new Builder());
     }
 
     /**
@@ -132,7 +128,8 @@ final class AutoconfigurationTest
     private static function objectConfig(): ObjectConfig
     {
         return new ObjectConfig(
-            builder: new Builder(),
+            builder: $builder = new Builder(),
+            autoconfiguration: new Autoconfiguration($builder),
             autowiring: new Autowiring(),
             reflection: new \ReflectionClass(Counter::class),
             factory: null,
@@ -146,7 +143,8 @@ final class AutoconfigurationTest
     private static function functionConfig(): FunctionConfig
     {
         $object = new ObjectConfig(
-            builder: new Builder(),
+            builder: $builder = new Builder(),
+            autoconfiguration: new Autoconfiguration($builder),
             autowiring: new Autowiring(),
             reflection: new \ReflectionClass(TestService::class),
             factory: null,

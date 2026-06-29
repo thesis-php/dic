@@ -47,6 +47,9 @@ never through a shared type binding.
 That is why `appModule` injects the exported `$cache` explicitly instead of autowiring `Cache`:
 `cacheModule`'s binding is invisible here.
 
+[Autoconfiguration](tags.md) is scoped the same way: an `onObject()` / `onFunction()` listener registered inside a
+module visits only that module's services, and a required module's listeners never touch yours.
+
 Isolation is only about configuration — the binding table and the `Dic` surface.
 The underlying container is still shared, so every service across every module is built once, in one container.
 
@@ -76,6 +79,8 @@ function appModule(Dic $dic): Ref
 
 Now the modules share one autowiring table: a type bound in one is autowirable in any of the others,
 so you can split a project into functions and let bindings flow between them without exporting every `Ref`.
+They also share one [autoconfiguration](tags.md) scope, so an `onObject()` / `onFunction()` convention registered on the
+shared `$dic` applies to every service declared through it.
 This brings the container closer to the conventional, global-scope style of Symfony, Laravel and the like,
 where every binding lives in one shared registry.
 

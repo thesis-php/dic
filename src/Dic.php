@@ -16,6 +16,7 @@ use Thesis\Dic\Configuration\ValueConfig;
 use Thesis\Dic\DisposalFailed;
 use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\Builder;
+use Thesis\Dic\Internal\Builder\Autoconfiguration;
 use Thesis\Dic\Internal\Factory\ValueFactory;
 use Thesis\Dic\Internal\NonCopyable;
 use Thesis\Dic\Location;
@@ -45,8 +46,7 @@ final readonly class Dic
     {
         $builder = new Builder();
 
-        $result = $module(new self($builder));
-        $factory = ValueFactory::from($result);
+        $result = self::doRequire($builder, $module);
 
         $container = $builder->build();
 
@@ -55,7 +55,7 @@ final readonly class Dic
         $error = null;
 
         try {
-            $value = $factory->create($scope);
+            $value = ValueFactory::from($result)->create($scope);
 
             return $main($value);
         } catch (\Throwable $error) {
@@ -86,7 +86,7 @@ final readonly class Dic
     {
         $builder = new Builder();
 
-        $result = $module(new self($builder));
+        $result = self::doRequire($builder, $module);
 
         // a scope is used to resolve a service of any lifetime: singleton or scoped
         $scope = $builder->build()->startScope();
@@ -94,11 +94,14 @@ final readonly class Dic
         return ValueFactory::from($result)->create($scope);
     }
 
+    private Autoconfiguration $autoconfiguration;
+
     private Autowiring $autowiring;
 
     private function __construct(
         private Builder $builder,
     ) {
+        $this->autoconfiguration = new Autoconfiguration($builder);
         $this->autowiring = new Autowiring();
     }
 
@@ -109,7 +112,21 @@ final readonly class Dic
      */
     public function require(callable $module): mixed
     {
-        return $module(new self($this->builder));
+        return self::doRequire($this->builder, $module);
+    }
+
+    /**
+     * @template T
+     * @param callable(self): T $module
+     * @return T
+     */
+    private static function doRequire(Builder $builder, callable $module): mixed
+    {
+        $dic = new self($builder);
+        $result = $module($dic);
+        $dic->autoconfiguration->start();
+
+        return $result;
     }
 
     /**
@@ -149,6 +166,7 @@ final readonly class Dic
         /** @var FunctionConfig<callable> */
         return new FunctionConfig(
             builder: $this->builder,
+            autoconfiguration: $this->autoconfiguration,
             autowiring: $this->autowiring,
             value: $function,
             declaredAt: $declaredAt,
@@ -177,6 +195,7 @@ final readonly class Dic
 
         return new ObjectConfig(
             builder: $this->builder,
+            autoconfiguration: $this->autoconfiguration,
             autowiring: $this->autowiring,
             reflection: new \ReflectionClass($class),
             factory: $factory,
@@ -245,19 +264,19 @@ final readonly class Dic
     }
 
     /**
-     * @param callable(FunctionAutoconfig): void $listener
-     */
-    public function onFunction(callable $listener): void
-    {
-        $this->builder->onFunction($listener);
-    }
-
-    /**
      * @param callable(ObjectAutoconfig<object>): void $listener
      */
     public function onObject(callable $listener): void
     {
-        $this->builder->onObject($listener);
+        $this->autoconfiguration->onObject($listener);
+    }
+
+    /**
+     * @param callable(FunctionAutoconfig): void $listener
+     */
+    public function onFunction(callable $listener): void
+    {
+        $this->autoconfiguration->onFunction($listener);
     }
 
     /**
