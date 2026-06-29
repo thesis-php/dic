@@ -122,7 +122,7 @@ final readonly class Dic
     /**
      * @param callable(self): void $config
      */
-    public function include(callable $config): void
+    public function apply(callable $config): void
     {
         $config($this);
     }

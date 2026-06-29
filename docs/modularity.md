@@ -63,22 +63,22 @@ You do not control a vendor's bindings, and isolation guarantees their autowirin
 nor accidentally satisfy one of your parameters.
 Calling a vendor module directly would merge two codebases into one binding table — fragile and surprising.
 
-## `include()`: shared autowiring across your own modules
+## `apply()`: shared autowiring across your own modules
 
-Within your own project you can pull a module into the **same** `$dic` with `include()` instead,
+Within your own project you can pull a module into the **same** `$dic` with `apply()` instead,
 so its bindings stay visible here:
 
 ```php
 function appModule(Dic $dic): Ref
 {
-    $dic->include(cacheModule(...)); // same $dic — the Cache binding is now visible here
+    $dic->apply(cacheModule(...)); // same $dic — the Cache binding is now visible here
 
     return $dic->object(ProductRepository::class); // its Cache parameter autowires to RedisCache
 }
 ```
 
 A module is an ordinary function, so a bare `cacheModule($dic)` does the same thing;
-`include()` only names the intent and discards what the module returns.
+`apply()` only names the intent and discards what the module returns.
 
 Now the modules share one autowiring table: a type bound in one is autowirable in any of the others,
 so you can split a project into functions and let bindings flow between them without exporting every `Ref`.
@@ -91,5 +91,5 @@ This is a deliberate trade-off, **not** the default we recommend.
 Sharing makes autowiring effectively global across those modules,
 so the local reasoning that [autowiring](autowiring.md) is built around no longer holds:
 a binding added in one place can change resolution somewhere far away.
-Prefer `import()`; reach for `include()` only for a few tightly-coupled internal modules
+Prefer `import()`; reach for `apply()` only for a few tightly-coupled internal modules
 where you genuinely want them to live in one autowiring scope.

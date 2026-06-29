@@ -12,7 +12,7 @@ Public behavior is documented in `docs/` — consult it (and `README.md`) before
 - [Arguments](docs/arguments.md) — `arg()` / `args()` / `variadic()`
 - [Autowiring](docs/autowiring.md) — `bind()`, qualifiers, per-parameter markers/attributes
 - [Tags](docs/tags.md) — `tag()`, `taggedList()`, `onTagResolution()`, `onObject()` / `onFunction()`
-- [Modularity](docs/modularity.md) — `import()` (isolated) vs. `include()` (shared autowiring)
+- [Modularity](docs/modularity.md) — `import()` (isolated) vs. `apply()` (shared autowiring)
 - [Lifetimes](docs/lifetime.md) — singleton, scoped, `canBeScoped`
 - [Disposal](docs/disposal.md) — `disposer()`
 
