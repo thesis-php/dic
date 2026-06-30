@@ -9,6 +9,7 @@ use Testo\Assert\ExpectException;
 use Testo\Expect;
 use Testo\Test;
 use Thesis\Dic\BuildError;
+use Thesis\Dic\ClosureModule;
 use Thesis\Dic\DisposalFailed;
 use Thesis\Dic\Ref;
 use Thesis\Dic\TaggedRef;

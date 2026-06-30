@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Thesis;
+namespace Thesis\Dic;
 
-use Thesis\Dic\Module;
+use Thesis\Dic;
 
 /**
+ * @api
+ *
  * @template-covariant T
  * @implements Module<T>
  */
