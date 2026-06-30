@@ -11,6 +11,10 @@ A fresh take on the PHP dependency injection container, with all the features yo
 - **Callable** services — functions and methods as first-class services
 - **Variadic parameters** supported
 
+## Requirements
+
+- PHP 8.4+
+
 ## Contents
 
 - [Installation](#installation)
