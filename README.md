@@ -2,13 +2,13 @@
 
 A fresh take on the PHP dependency injection container, with all the features you expect.
 
-- **Modular** — isolated modules, no global scope
+- **Modular** — isolated or shared config scope per module
 - **Type-safe** with local reasoning
 - **Autowiring** at the module level
 - **Autoconfiguration** — plug in your attributes or autoconfigure by type
 - **Tags** with flexible resolution
-- **Scoped** service lifetimes
-- **Callable** services (closures, methods, …)
+- **Lifetimes** — singleton / canBeScoped / scoped
+- **Callable** services — functions and methods as first-class services
 - **Variadic parameters** supported
 
 ## Contents
@@ -37,7 +37,8 @@ It lets you declare services, require modules, subscribe to events and more.
 A module is the unit of composition: you compose your application from modules,
 and the application itself is just the root module.
 
-A module is a `callable` that accepts `Dic` and returns whatever it exports.
+A module is a class implementing [`Thesis\Dic\Module`](src/Dic/Module.php):
+it receives a `Dic`, declares services, and returns whatever it exports — usually a `Ref<T>`.
 
 ### Ref
 
@@ -59,14 +60,18 @@ Use `object()` to declare an object service, and `arg()` to override individual 
 ```php
 use Psr\Log\NullLogger;
 use Thesis\Dic;
+use Thesis\Dic\Module;
 
-function consoleModule(Dic $dic): void
+final readonly class ConsoleModule implements Module
 {
-    $logger = $dic->object(NullLogger::class);
-
-    $dic
-        ->object(ConsoleApplication::class)
-        ->arg('logger', $logger);
+    public function configure(Dic $dic)
+    {
+        $logger = $dic->object(NullLogger::class);
+    
+        $dic
+            ->object(ConsoleApplication::class)
+            ->arg('logger', $logger);
+    }   
 }
 ```
 
@@ -75,14 +80,18 @@ See [Arguments](docs/arguments.md) for named, positional and variadic arguments.
 
 ### Putting it all together
 
-A module can depend on services it doesn't declare itself: typehint them as `Ref<T>` and wire them in.
+A module can depend on services it doesn't declare itself: accept them as constructor arguments and wire them in.
 
 ```php
 use Psr\Log\LoggerInterface;
 use Thesis\Dic;
+use Thesis\Dic\Module;
 use Thesis\Dic\Ref;
 
-final readonly class ConsoleModule
+/**
+ * @implements Module<Ref<ConsoleApplication>>
+ */
+final readonly class ConsoleModule implements Module
 {
     /**
      * @param Ref<LoggerInterface> $logger
@@ -91,10 +100,7 @@ final readonly class ConsoleModule
         private Ref $logger,
     ) {}
 
-    /**
-     * @return Ref<ConsoleApplication>
-     */
-    public function __invoke(Dic $dic): Ref
+    public function configure(Dic $dic): mixed
     {
         return $dic
             ->object(ConsoleApplication::class)
@@ -104,23 +110,25 @@ final readonly class ConsoleModule
 ```
 
 To use a module inside another one, call `import()` and get whatever that module exports.
-See [Modularity](docs/modularity.md) for how `import` isolates modules and when you might share autowiring instead.
+See [Modularity](docs/modularity.md) for how `import()` isolates modules and when to use `apply()` instead.
 
 ```php
 use Psr\Log\NullLogger;
 use Thesis\Dic;
+use Thesis\Dic\Module;
 use Thesis\Dic\Ref;
 
 /**
- * @return Ref<ConsoleApplication>
+ * @implements Module<Ref<ConsoleApplication>>
  */
-function myApp(Dic $dic): Ref
+final readonly class MyApp implements Module
 {
-    $logger = $dic->object(NullLogger::class);
+    public function configure(Dic $dic): mixed
+    {
+        $logger = $dic->object(NullLogger::class);
 
-    $cli = $dic->import(new ConsoleModule($logger));
-
-    return $cli;
+        return $dic->import(new ConsoleModule($logger));
+    }
 }
 ```
 
@@ -132,7 +140,7 @@ The container builds, calls `$main`, and disposes everything afterwards — even
 use Thesis\Dic;
 
 $status = Dic::run(
-    module: myApp(...),
+    module: new MyApp(),
     main: static fn (ConsoleApplication $cli) => $cli->run(),
 );
 
@@ -145,7 +153,7 @@ For tests and debugging, `Dic::build()` returns the resolved module's export wit
 use Testo\Assert;
 use Thesis\Dic;
 
-$cli = Dic::build(myApp(...));
+$cli = Dic::build(new MyApp());
 
 Assert::instanceOf($cli, ConsoleApplication::class);
 ```
@@ -158,6 +166,6 @@ Assert::instanceOf($cli, ConsoleApplication::class);
 - [Arguments](docs/arguments.md) — named, positional and variadic arguments
 - [Autowiring](docs/autowiring.md) — binding services to types and qualifiers
 - [Tags](docs/tags.md) — tagging, collecting tagged services, tag resolution and autoconfiguration
-- [Modularity](docs/modularity.md) — composing modules with `require`, and when to share autowiring
+- [Modularity](docs/modularity.md) — `Module` interface, `import()` and `apply()`
 - [Lifetimes](docs/lifetime.md) — singleton, scoped and canBeScoped lifetimes, and the `Scoped<T>` handle
 - [Disposal](docs/disposal.md) — releasing resources when a scope or the container is disposed

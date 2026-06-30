@@ -1,51 +1,56 @@
 # Modularity
 
-You compose an application from **modules**, and the application itself is just the root module.
-A module is a `callable` that accepts a `Dic` and returns whatever it exports — usually a `Ref<T>`:
+You compose an application from modules.
+A module is a class implementing the `Module<T>` interface:
 
 ```php
 use Thesis\Dic;
+use Thesis\Dic\Module;
 use Thesis\Dic\Ref;
 use function Typhoon\Type\objectT;
 
 /**
- * @return Ref<Cache>
+ * @implements Module<Ref<Cache>>
  */
-function cacheModule(Dic $dic): Ref
+final readonly class CacheModule implements Module
 {
-    return $dic
-        ->object(RedisCache::class)
-        ->bind(objectT(Cache::class));
+    public function configure(Dic $dic): mixed
+    {
+        return $dic
+            ->object(RedisCache::class)
+            ->bind(objectT(Cache::class));
+    }
 }
 ```
 
 The root module is the one you hand to `Dic::run()` or `Dic::build()`.
-A small application can live entirely in that one module — splitting into more is never required,
-only worth it once a single function grows unwieldy or you want to reuse a piece.
 
-When you do split, every other module is pulled in from inside another one.
-There are two ways to do that, and they differ in one thing: whether [autowiring](autowiring.md) is shared.
-
-## `import()`: isolated bindings (recommended)
+## `import()`: isolated bindings
 
 `import()` runs a module in a **fresh** `Dic` of its own, then hands you back whatever it returns:
 
 ```php
-function appModule(Dic $dic): Ref
+/**
+ * @implements Module<Ref<Application>>
+ */
+final readonly class AppModule implements Module
 {
-    $cache = $dic->import(cacheModule(...)); // Ref<Cache>
+    public function configure(Dic $dic): mixed
+    {
+        $cache = $dic->import(new CacheModule()); // Ref<Cache>
 
-    return $dic
-        ->object(ProductRepository::class)
-        ->arg('cache', $cache);
+        return $dic
+            ->object(ProductRepository::class)
+            ->arg('cache', $cache);
+    }
 }
 ```
 
 The submodule's bindings live in that fresh `Dic`, so they neither leak out nor see yours.
 An imported module is a black box: you wire it in only through the `Ref`s it exports and the `Ref`s you pass in —
 never through a shared type binding.
-That is why `appModule` injects the exported `$cache` explicitly instead of autowiring `Cache`:
-`cacheModule`'s binding is invisible here.
+That is why `AppModule` injects the exported `$cache` explicitly instead of autowiring `Cache`:
+`CacheModule`'s binding is invisible here.
 
 [Autoconfiguration](tags.md) is scoped the same way: an `onObject()` / `onFunction()` listener registered inside a
 module visits only that module's services, and an imported module's listeners never touch yours.
@@ -53,43 +58,39 @@ module visits only that module's services, and an imported module's listeners ne
 Isolation is only about configuration — the binding table and the `Dic` surface.
 The underlying container is still shared, so every service across every module is built once, in one container.
 
-This is the recommended way to compose modules: each one reasons about its own autowiring,
-and adding a binding in one module can never silently change how another resolves a type.
-
-## Vendor modules: always `import()`
-
-For third-party modules, `import()` is not just a recommendation — it is the only safe option.
+For third-party modules, isolation is not just useful — it is the only safe option.
 You do not control a vendor's bindings, and isolation guarantees their autowiring choices never collide with yours,
 nor accidentally satisfy one of your parameters.
-Calling a vendor module directly would merge two codebases into one binding table — fragile and surprising.
 
-## `apply()`: shared autowiring across your own modules
+## `apply()`: shared scope
 
-Within your own project you can pull a module into the **same** `$dic` with `apply()` instead,
-so its bindings stay visible here:
+`apply()` calls a function on the **same** `$dic`, so its bindings and autoconfiguration listeners stay visible:
 
 ```php
-function appModule(Dic $dic): Ref
+final readonly class AppModule implements Module
 {
-    $dic->apply(cacheModule(...)); // same $dic — the Cache binding is now visible here
+    public function configure(Dic $dic): mixed
+    {
+        $dic->apply($this->registerCache(...));
 
-    return $dic->object(ProductRepository::class); // its Cache parameter autowires to RedisCache
+        return $dic->object(ProductRepository::class); // autowires Cache from registerCache()
+    }
+
+    private function registerCache(Dic $dic): void
+    {
+        $dic
+            ->object(RedisCache::class)
+            ->bind(objectT(Cache::class));
+    }
 }
 ```
 
-A module is an ordinary function, so a bare `cacheModule($dic)` does the same thing;
-`apply()` only names the intent and discards what the module returns.
+`apply()` is a lightweight way to split a large `configure()` into smaller functions without changing the scope.
+A direct call `$this->registerCache($dic)` does the same thing; `apply()` only names the intent.
 
-Now the modules share one autowiring table: a type bound in one is autowirable in any of the others,
-so you can split a project into functions and let bindings flow between them without exporting every `Ref`.
-They also share one [autoconfiguration](tags.md) scope, so an `onObject()` / `onFunction()` convention registered on the
-shared `$dic` applies to every service declared through it.
-This brings the container closer to the conventional, global-scope style of Symfony, Laravel and the like,
-where every binding lives in one shared registry.
+Because the scope is shared, a type bound in one function is autowirable in any of the others, and an `onObject()` /
+`onFunction()` convention registered via `apply()` applies to every service on that `$dic`.
 
-This is a deliberate trade-off, **not** the default we recommend.
-Sharing makes autowiring effectively global across those modules,
-so the local reasoning that [autowiring](autowiring.md) is built around no longer holds:
-a binding added in one place can change resolution somewhere far away.
-Prefer `import()`; reach for `apply()` only for a few tightly-coupled internal modules
-where you genuinely want them to live in one autowiring scope.
+The flip side: a binding added in one applied function can silently change how another resolves a type.
+Use `apply()` when the functions are tightly coupled parts of the same module;
+use `import()` when the boundary matters.

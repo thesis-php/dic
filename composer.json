@@ -20,6 +20,7 @@
         "typhoon/type": "^0.8.1"
     },
     "require-dev": {
+        "symfony/console": "^8.1",
         "symfony/var-dumper": "^8.1.0",
         "testo/assert": "^0.1.9",
         "testo/codecov": "^0.1.11",

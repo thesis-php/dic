@@ -11,15 +11,19 @@ Once `RedisCache` is bound to `Cache`, every parameter typed `Cache` resolves to
 
 ```php
 use Thesis\Dic;
+use Thesis\Dic\Module;
 use function Typhoon\Type\objectT;
 
-function cacheModule(Dic $dic): void
+final readonly class CacheModule implements Dic
 {
-    $dic
-        ->object(RedisCache::class)
-        ->bind(objectT(Cache::class));
-
-    $dic->object(CachedProductRepository::class); // its Cache parameter now resolves to RedisCache
+    public function configure(Dic $dic): void
+    {
+        $dic
+            ->object(RedisCache::class)
+            ->bind(objectT(Cache::class));
+    
+        $dic->object(CachedProductRepository::class); // its Cache parameter now resolves to RedisCache
+    }
 }
 ```
 

@@ -20,6 +20,7 @@ use Thesis\Dic\Internal\Builder\Autoconfiguration;
 use Thesis\Dic\Internal\Factory\ValueFactory;
 use Thesis\Dic\Internal\NonCopyable;
 use Thesis\Dic\Location;
+use Thesis\Dic\Module;
 use Thesis\Dic\Ref;
 use Thesis\Dic\Tag;
 use Thesis\Dic\TaggedRef;
@@ -38,11 +39,11 @@ final readonly class Dic
      *
      * @template T
      * @template R
-     * @param callable(self): (Ref<T>|mixed) $module
+     * @param Module<T|Ref<T>> $module
      * @param callable(T): R $main
      * @return R
      */
-    public static function run(callable $module, callable $main): mixed
+    public static function run(Module $module, callable $main): mixed
     {
         $builder = new Builder();
 
@@ -79,10 +80,10 @@ final readonly class Dic
      * Meant for tests and debugging modules; otherwise prefer {@see self::run()}.
      *
      * @template T
-     * @param callable(self): mixed $module
-     * @return ($module is (callable(self): Ref<T>) ? T : mixed)
+     * @param Module<T|Ref<T>> $module
+     * @return T
      */
-    public static function build(callable $module): mixed
+    public static function build(Module $module): mixed
     {
         $builder = new Builder();
 
@@ -107,24 +108,26 @@ final readonly class Dic
 
     /**
      * @template T
-     * @param callable(self): T $module
+     * @param Module<T> $module
      * @return T
      */
-    public function import(callable $module): mixed
+    public function import(Module $module): mixed
     {
         $dic = new self($this->builder);
-        $result = $module($dic);
+        $result = $module->configure($dic);
         $dic->autoconfiguration->start();
 
         return $result;
     }
 
     /**
-     * @param callable(self): void $config
+     * @template T
+     * @param callable(self): T $configurator
+     * @return T
      */
-    public function apply(callable $config): void
+    public function apply(callable $configurator): mixed
     {
-        $config($this);
+        return $configurator($this);
     }
 
     /**
