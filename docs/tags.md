@@ -123,7 +123,10 @@ $dic->onFunction($this->tagCommandFunctions(...));
 
 - `onObject(callable(`[`ObjectAutoconfig`](../src/Dic/Configuration/ObjectAutoconfig.php)`): void)` —
   `$object->reflection` is its `ReflectionClass`, `$object->attributes` reads its class attributes, `$object->methods`
-  lists its public methods; you can `tag()` it, give it a `disposer()`, set a default lifetime with `defaultScoped()` /
+  iterates its public methods as [`MethodAutoconfig`](../src/Dic/Configuration/MethodAutoconfig.php) values —
+  each exposes `reflection` and `attributes` for inspection, and `register()` to register that method as a `function()` service
+  (making it visible to `onFunction()` listeners);
+  you can `tag()` it, give it a `disposer()`, set a default lifetime with `defaultScoped()` /
   `defaultCanBeScoped()`, or narrow it to a type with `is()` / `isInvokable()`.
 - `onFunction(callable(`[`FunctionAutoconfig`](../src/Dic/Configuration/FunctionAutoconfig.php)`): void)` —
   `$function->reflection` is its `ReflectionFunction` / `ReflectionMethod`, `$function->attributes` reads its
