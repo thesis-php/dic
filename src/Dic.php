@@ -107,6 +107,8 @@ final readonly class Dic
     }
 
     /**
+     * Runs $module in a fresh isolated Dic scope and returns whatever it returns.
+     *
      * @template T
      * @param Module<T> $module
      * @return T
@@ -121,6 +123,8 @@ final readonly class Dic
     }
 
     /**
+     * Calls $configurator on this Dic and returns whatever it returns; its bindings stay visible in the current scope.
+     *
      * @template T
      * @param callable(self): T $configurator
      * @return T
@@ -131,6 +135,8 @@ final readonly class Dic
     }
 
     /**
+     * Declares $value as a service.
+     *
      * @template T
      * @param T|Ref<T> $value
      * @return ValueConfig<T>
@@ -147,6 +153,8 @@ final readonly class Dic
     }
 
     /**
+     * Declares a callable as a service; chain {@see FunctionConfig::closure()} to expose it as a typed \Closure.
+     *
      * @param callable|array{Ref<object>, string}|Ref<callable> $function
      * @return FunctionConfig<callable>
      */
@@ -175,6 +183,8 @@ final readonly class Dic
     }
 
     /**
+     * Declares $class as an object service; constructor parameters are autowired unless a $factory is provided.
+     *
      * @template T of object
      * @param class-string<T> $class
      * @param null|callable(): T|array{Ref<class-string|object>, string}|Ref<callable(): T> $factory
@@ -205,6 +215,8 @@ final readonly class Dic
     }
 
     /**
+     * Declares a Scoped<T> handle that opens a fresh scope, resolves $ref inside it, and disposes on exit.
+     *
      * @template T
      * @param Ref<T> $ref
      * @return ScopedConfig<T>
@@ -220,6 +232,8 @@ final readonly class Dic
     }
 
     /**
+     * Declares a lazy \Closure(): T that resolves $value on each call without opening a scope.
+     *
      * @template T
      * @param T|Ref<T> $value
      * @return ProviderConfig<T>
@@ -247,6 +261,8 @@ final readonly class Dic
     }
 
     /**
+     * Declares a list of every service tagged with $tag, resolved once after all modules have run.
+     *
      * @template T
      * @template TTag of Tag<T>
      * @param class-string<TTag>|TTag $tag
@@ -265,6 +281,8 @@ final readonly class Dic
     }
 
     /**
+     * Registers a listener called for every object() service declared on this Dic, before the container is built.
+     *
      * @param callable(ObjectAutoconfig<object>): void $listener
      */
     public function onObject(callable $listener): void
@@ -273,6 +291,9 @@ final readonly class Dic
     }
 
     /**
+     * Registers a listener called for every function() / method() service declared on this Dic, before the container
+     * is built.
+     *
      * @param callable(FunctionAutoconfig): void $listener
      */
     public function onFunction(callable $listener): void
@@ -281,6 +302,8 @@ final readonly class Dic
     }
 
     /**
+     * Registers a listener called once after all modules run, receiving the complete set of tagged services.
+     *
      * @param callable(TaggedRefs): void $listener
      */
     public function onTagResolution(callable $listener): void

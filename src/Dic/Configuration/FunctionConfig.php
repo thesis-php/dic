@@ -70,6 +70,9 @@ final class FunctionConfig extends Config
         get => $this->value->reflectionClass;
     }
 
+    /**
+     * Opts this service out of all onFunction() autoconfiguration listeners.
+     */
     public function doNotAutoconfigure(): static
     {
         $this->autoconfiguration->unschedule($this);
@@ -78,6 +81,8 @@ final class FunctionConfig extends Config
     }
 
     /**
+     * Returns a ClosureConfig that exposes this callable as a typed \Closure service with autowired dependencies.
+     *
      * @template C of \Closure
      * @param ClosureT<C> $type
      * @return ClosureConfig<C>

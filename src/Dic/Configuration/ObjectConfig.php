@@ -89,6 +89,9 @@ final class ObjectConfig extends Config
         get => $this->reflection;
     }
 
+    /**
+     * Opts this service out of all onObject() autoconfiguration listeners.
+     */
     public function doNotAutoconfigure(): static
     {
         $this->autoconfiguration->unschedule($this);
@@ -102,6 +105,8 @@ final class ObjectConfig extends Config
     private array $methods = [];
 
     /**
+     * Exposes $name as a callable service; chain closure() on the result to adapt it to a typed \Closure.
+     *
      * @return FunctionConfig<callable-array>
      */
     public function method(string $name): FunctionConfig
@@ -128,6 +133,9 @@ final class ObjectConfig extends Config
         );
     }
 
+    /**
+     * One shared instance for the life of the container (the default).
+     */
     public function singleton(): static
     {
         $this->builder->setLifetimeStrategy($this, LifetimeStrategy::Singleton);
@@ -135,6 +143,9 @@ final class ObjectConfig extends Config
         return $this;
     }
 
+    /**
+     * Adaptive lifetime: scoped if any transitive dependency is scoped, singleton otherwise.
+     */
     public function canBeScoped(): static
     {
         $this->builder->setLifetimeStrategy($this, LifetimeStrategy::CanBeScoped);
@@ -142,6 +153,9 @@ final class ObjectConfig extends Config
         return $this;
     }
 
+    /**
+     * One instance per scope.
+     */
     public function scoped(): static
     {
         $this->builder->setLifetimeStrategy($this, LifetimeStrategy::Scoped);
@@ -154,6 +168,9 @@ final class ObjectConfig extends Config
      */
     private readonly Arguments $arguments;
 
+    /**
+     * Disables autowiring for all parameters; every dependency must be set explicitly with arg() / args().
+     */
     public function doNotAutowire(): static
     {
         $this->arguments->doNotAutowire();
@@ -161,6 +178,9 @@ final class ObjectConfig extends Config
         return $this;
     }
 
+    /**
+     * Sets a single constructor / factory parameter by position or name.
+     */
     public function arg(int|string $positionOrName, mixed $value): static
     {
         $this->arguments->arg($positionOrName, $value);
@@ -169,6 +189,8 @@ final class ObjectConfig extends Config
     }
 
     /**
+     * Passes a list to the variadic constructor / factory parameter.
+     *
      * @param iterable<array-key, mixed>|Ref<iterable<array-key, mixed>> $variadic
      */
     public function variadic(iterable|Ref $variadic): static
@@ -179,6 +201,8 @@ final class ObjectConfig extends Config
     }
 
     /**
+     * Sets multiple constructor / factory parameters at once.
+     *
      * @param array<mixed> $values
      */
     public function args(array $values): static
@@ -190,6 +214,9 @@ final class ObjectConfig extends Config
 
     private bool $lazy = false;
 
+    /**
+     * Defers instantiation until first use, returning a lazy proxy in the meantime.
+     */
     public function lazy(): static
     {
         if (!$this->reflection->isInstantiable()) {
@@ -201,6 +228,9 @@ final class ObjectConfig extends Config
         return $this;
     }
 
+    /**
+     * Cancels lazy(); the object is instantiated eagerly when the scope is built.
+     */
     public function eager(): static
     {
         $this->lazy = false;
@@ -214,6 +244,8 @@ final class ObjectConfig extends Config
     private array $factoryDecorators = [];
 
     /**
+     * Calls $method on the constructed object; use for setters and other side-effecting post-construction steps.
+     *
      * @param array<mixed> $args
      * @param iterable<array-key, mixed>|Ref<iterable<array-key, mixed>> $variadic
      */
@@ -232,6 +264,8 @@ final class ObjectConfig extends Config
     }
 
     /**
+     * Calls $method and replaces the instance with its return value; use for wither-style (immutable) builders.
+     *
      * @param array<mixed> $args
      * @param iterable<array-key, mixed>|Ref<iterable<array-key, mixed>> $variadic
      */

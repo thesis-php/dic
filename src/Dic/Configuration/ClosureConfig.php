@@ -68,6 +68,9 @@ final class ClosureConfig extends Config
         get => new \ReflectionClass(\Closure::class);
     }
 
+    /**
+     * One shared instance for the life of the container (the default).
+     */
     public function singleton(): static
     {
         $this->builder->setLifetimeStrategy($this, LifetimeStrategy::Singleton);
@@ -75,6 +78,9 @@ final class ClosureConfig extends Config
         return $this;
     }
 
+    /**
+     * Adaptive lifetime: scoped if any transitive dependency is scoped, singleton otherwise.
+     */
     public function canBeScoped(): static
     {
         $this->builder->setLifetimeStrategy($this, LifetimeStrategy::CanBeScoped);
@@ -82,6 +88,9 @@ final class ClosureConfig extends Config
         return $this;
     }
 
+    /**
+     * One instance per scope.
+     */
     public function scoped(): static
     {
         $this->builder->setLifetimeStrategy($this, LifetimeStrategy::Scoped);
@@ -94,6 +103,9 @@ final class ClosureConfig extends Config
      */
     private readonly Arguments $arguments;
 
+    /**
+     * Disables autowiring for all dependencies; every dependency must be set explicitly with arg() / args().
+     */
     public function doNotAutowire(): static
     {
         $this->arguments->doNotAutowire();
@@ -101,6 +113,9 @@ final class ClosureConfig extends Config
         return $this;
     }
 
+    /**
+     * Sets a single dependency parameter by position or name (runtime parameters declared in ClosureT are unaffected).
+     */
     public function arg(int|string $positionOrName, mixed $value): static
     {
         $this->arguments->arg($positionOrName, $value);
@@ -109,6 +124,8 @@ final class ClosureConfig extends Config
     }
 
     /**
+     * Passes a list to the variadic dependency parameter.
+     *
      * @param iterable<array-key, mixed>|Ref<iterable<array-key, mixed>>|Parameter $variadic
      */
     public function variadic(iterable|Ref|Parameter $variadic): static
@@ -119,6 +136,8 @@ final class ClosureConfig extends Config
     }
 
     /**
+     * Sets multiple dependency parameters at once (runtime parameters declared in ClosureT are unaffected).
+     *
      * @param array<mixed> $values
      */
     public function args(array $values): static

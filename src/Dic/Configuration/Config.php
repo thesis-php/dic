@@ -46,6 +46,8 @@ abstract class Config extends Ref
     }
 
     /**
+     * Binds this service to $type so it is injected wherever that type (with optional $qualifier) is required.
+     *
      * @param Type<contravariant T> $type
      */
     final public function bind(Type $type, string|\Stringable|\UnitEnum $qualifier = ''): static
@@ -62,6 +64,8 @@ abstract class Config extends Ref
     }
 
     /**
+     * Attaches $tag to this service so it appears in every taggedList() that collects by that tag.
+     *
      * @param Tag<T> $tag
      */
     final public function tag(Tag $tag): static
@@ -72,6 +76,8 @@ abstract class Config extends Ref
     }
 
     /**
+     * Registers a callback that runs when the service's owning scope or container is torn down.
+     *
      * @param callable(T, ?\Throwable): void $disposer
      */
     final public function disposer(callable $disposer): static
