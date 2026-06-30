@@ -19,36 +19,36 @@ final readonly class Attributes
     ) {}
 
     /**
-     * @param class-string $name
+     * @param class-string $class
      * @param int-mask-of<\ReflectionAttribute::*> $flags
      */
-    public function has(string $name, int $flags = 0): bool
+    public function has(string $class, int $flags = 0): bool
     {
-        return $this->reflection->getAttributes($name, $flags) !== [];
+        return $this->reflection->getAttributes($class, $flags) !== [];
     }
 
     /**
      * @template A of object
-     * @param class-string<A> $name
+     * @param class-string<A> $class
      * @param int-mask-of<\ReflectionAttribute::*> $flags
      * @return ?A
      */
-    public function first(string $name, int $flags = 0): ?object
+    public function find(string $class, int $flags = 0): ?object
     {
-        return array_first($this->reflection->getAttributes($name, $flags))?->newInstance();
+        return array_first($this->reflection->getAttributes($class, $flags))?->newInstance();
     }
 
     /**
      * @template A of object
-     * @param class-string<A> $name
+     * @param class-string<A> $class
      * @param int-mask-of<\ReflectionAttribute::*> $flags
      * @return list<A>
      */
-    public function all(string $name, int $flags = 0): array
+    public function all(string $class, int $flags = 0): array
     {
         return array_map(
             static fn(\ReflectionAttribute $attribute) => $attribute->newInstance(),
-            $this->reflection->getAttributes($name, $flags),
+            $this->reflection->getAttributes($class, $flags),
         );
     }
 }
