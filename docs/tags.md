@@ -103,6 +103,10 @@ $dic->onTagResolution(static function (TaggedRefs $tags) use ($logger): void {
 You can read and rewire during resolution, but you cannot add new tags then —
 tagging a service inside a resolution listener fails the build.
 
+[`thesis/symfony-console-module`](https://github.com/thesis-php/symfony-console-module) ships two tags built this way:
+`CommandTag` carries the command `name`, `description`, and `aliases` for invokable commands and functions;
+`LegacyCommandTag` marks `Command` subclasses, optionally with a `name` to make them lazy.
+
 ## Autoconfiguration
 
 Tagging each service by hand is fine for a handful; for a convention applied across many services,
@@ -136,76 +140,6 @@ Only the introspectable kinds are visited — `object()`, `function()` and `meth
 a `value()` is an opaque carrier by design, and a `closure()` only reflects its declared signature,
 not the implementation — the convention belongs on the `function()` it was built from.
 
-### Reaching a method: the two halves
-
-An object callback cannot build a service from a method directly — it can only *schedule* the method with
-`$method->autoconfigure()`, which registers it as a `function()` service.
-That service then comes back through the `onFunction()` callback, where the real work happens.
-The split keeps a single place that handles a callable: whether a method arrives by hand or via a convention, it is
-configured exactly once in the function callback.
-
-The example below turns a routing convention into tagged closures.
-Methods annotated with an `#[Route]` attribute become [`\Closure(Request): Response`](closure.md) services,
-each tagged with the attribute it was found on, and finally collected into one list:
-
-```php
-use Thesis\Dic;
-use Thesis\Dic\Configuration\FunctionAutoconfig;
-use Thesis\Dic\Configuration\ObjectAutoconfig;
-use Thesis\Dic\Tag;
-use function Typhoon\Type\closureT;
-use function Typhoon\Type\objectT;
-
-/**
- * @implements Tag<callable(Request): Response>
- */
-#[\Attribute(\Attribute::TARGET_METHOD)]
-final readonly class Route implements Tag
-{
-    public function __construct(
-        public string $path,
-    ) {}
-}
-
-final readonly class Controller
-{
-    #[Route('/products')]
-    public function list(Request $request): Response { /* … */ }
-}
-
-$actions = Dic::build(static function (Dic $dic): Dic\Ref {
-    // Discover the action methods and schedule each one.
-    $dic->onObject(static function (ObjectAutoconfig $object): void {
-        foreach ($object->methods as $method) {
-            if ($method->attributes->has(Route::class)) {
-                $method->autoconfigure();
-            }
-        }
-    });
-
-    // A scheduled method arrives here: adapt it to a typed closure and tag it.
-    $dic->onFunction(static function (FunctionAutoconfig $function): void {
-        foreach ($function->attributes->all(Route::class) as $route) {
-            $function
-                ->closure(closureT(
-                    params: [objectT(Request::class)],
-                    return: objectT(Response::class),
-                ))
-                ->tag($route);
-        }
-    });
-
-    $dic->object(Controller::class);
-
-    return $dic->taggedList(Route::class);
-});
-```
-
-Note the order: the object callback visits `Controller` and schedules its `#[Route]` methods,
-the function callback then turns each into a tagged closure,
-and the resolution phase collects them, which is why `taggedList(Route::class)` sees them all.
-Any dependency an action method declares beyond the `Request` is [autowired](autowiring.md) into the closure.
-
 A service can opt out of all autoconfiguration with `doNotAutoconfigure()` —
 useful when a broad convention would otherwise touch a service you want left alone:
 
@@ -220,6 +154,9 @@ Two more details worth knowing:
 - A lifetime set with `defaultScoped()` / `defaultCanBeScoped()` is a **default** —
   an explicit lifetime on the service itself still wins.
   Only the object callback offers them, since a `function()` always infers its lifetime from what it carries.
-- Services scheduled *by* a callback are visited too — that is what makes the method round-trip work —
-  but the loop terminates: a function callback only ever produces `closure()`s, which are not introspectable and so
-  are never visited.
+- Services scheduled *by* a callback are visited too, but the loop terminates: a function callback only ever
+  produces `closure()`s, which are not introspectable and so are never visited.
+
+[`thesis/symfony-console-module`](https://github.com/thesis-php/symfony-console-module) ships this pattern as
+`AutoconfigureCommands`: call `$dic->apply(new AutoconfigureCommands())` once, and every class and method annotated
+with `#[AsCommand]` is tagged automatically in that module.
