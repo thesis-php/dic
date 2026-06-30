@@ -9,38 +9,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `Dic::run(callable $module, callable $function)` — recommended entry point. Resolves the service the module returns, runs `$function` with it, then disposes the scope and the container even on throw.
-- `Dic::assemble(callable $module)` — resolves a service without disposing anything; meant for tests and debugging.
-- `Dic::autoconfigure(callable $configurator)` — apply configuration to every service.
-- `Dic::object()` now accepts an optional factory: `object(string $class, null|Ref|callable $factory = null)`.
-- Typed error hierarchy under `Thesis\Dic\Error\*`: the root marker interface `Thesis\Dic\Error`, the phase bases `ConfigurationError` and `RuntimeError`, and concrete errors (`CircularDependency`, `SingletonDependsOnScoped`, `UnknownRef`, `CannotAutowire`, `UnsupportedBindingType`, `ConfigurationFrozen`, `TaggedAfterResolution`, `InvalidArgument`, …).
-- `#[Autowire]` parameter attribute, with the `autowire()` helper and `autowire` constant, to set a binding qualifier per parameter.
-- New configurator methods on the shared `Config` / `Autoconfig` base:
-  - `bind(Type $type, qualifier)` — bind a service to a type.
-  - `label(string $label)` — human-readable label.
-  - `disposer(callable $disposer)` — register a disposer.
-  - `canBeScoped()` lifetime.
-- New `ObjectConfig` methods: `call()` (call a method after construction), `chain()` (call a method and use the returned instance), `variadic()`, `eager()`.
+- `Dic::run(Module $module, callable $main)` — recommended entry point.
+  Resolves the service the module returns, runs `$main` with it, then disposes the scope and the container even on
+  throw.
+- `Dic::build(Module $module)` — resolves a service without disposing anything; meant for tests and debugging.
+- `Dic::apply(callable $configurator)` — calls the configurator on the **same** `Dic`, keeping its bindings and
+  autoconfiguration listeners in scope.
+  A lightweight way to split a large `configure()` into smaller functions without changing the scope.
+- `Module` interface (`configure(Dic): mixed`) — modules are now typed classes instead of plain callables.
+- `Dic::provider($ref)` — registers a lazy `\Closure(): T` handle that resolves the wrapped service on each call.
+- `Dic::onObject(callable(ObjectAutoconfig): void)` and
+  `Dic::onFunction(callable(FunctionAutoconfig): void)` — autoconfiguration hooks.
+  Each listener visits every `object()` / `function()` service declared on the same `Dic`;
+  a submodule pulled in with `import()` runs its own isolated set of listeners.
+- `Dic::object()` now accepts an optional factory: `object(string $class, null|callable|array|Ref $factory = null)`.
+- `ObjectConfig::call(string $method, array $args, variadic)` — call a method on the object after construction
+  (setter / side-effect).
+- `ObjectConfig::chain(string $method, array $args, variadic)` — call a wither-style method and keep
+  the returned instance.
+- `ObjectConfig::variadic(iterable|Ref $variadic)` — pass a variadic argument to the constructor.
+- `ObjectConfig::eager()` — explicitly disable lazy instantiation (counterpart to `lazy()`).
+- `ObjectConfig::canBeScoped()` — adaptive lifetime: scoped if any transitive dependency is scoped,
+  singleton otherwise.
+- `ObjectConfig::method(string $name)` — expose a method as a `FunctionConfig` service.
+- `ObjectConfig::doNotAutoconfigure()` and `FunctionConfig::doNotAutoconfigure()` — opt a service out of all
+  `onObject()` / `onFunction()` listeners.
+- `FunctionConfig::closure(ClosureT $type)` — turn a callable service into a typed `\Closure` service whose
+  dependencies the container resolves.
+  Dependencies are autowired; parameters declared in the `ClosureT` type are passed by the caller at call time.
+- `#[Autowire]` parameter attribute, with the `autowire()` helper and `autowire` constant, to override the binding
+  qualifier for a single parameter.
+- New methods on the `Config` base (shared by all configurators): `bind(Type, qualifier)`, `tag(Tag)`,
+  `disposer(callable)`.
+- `Thesis\Dic\DisposalFailed` — thrown after teardown when one or more disposers fail.
+  Disposal is best-effort: every disposer still runs, all failures are collected in `DisposalFailed::$errors`,
+  and the throwable that triggered teardown (if any) is preserved as `getPrevious()`.
 
 ### Changed
 
 - **BC break:** Namespace and facade renamed `Thesis\DIC` → `Thesis\Dic` (class `DIC` → `Dic`).
-- **BC break:** Configurators moved and renamed `Thesis\DIC\Configurator\*` → `Thesis\Dic\Configuration\*Config`: `Value` → `ValueConfig`, `Obj` → `ObjectConfig`, `Func`/`Call` → `ClosureConfig`, `ScopedOf` → `ScopedConfig`, `TaggedList` → `TaggedListConfig`, `Method` → `MethodConfig`.
-- **BC break:** `DIC::init()` replaced by `Dic::run()` and `Dic::assemble()`.
-- **BC break:** `DIC::function()` renamed to `Dic::closure()` and now takes the closure `Type` explicitly.
+- **BC break:** Configurators moved and renamed `Thesis\DIC\Configurator\*` → `Thesis\Dic\Configuration\*Config`:
+  `Value` → `ValueConfig`, `Obj` → `ObjectConfig`, `ScopedOf` → `ScopedConfig`,
+  `TaggedList` → `TaggedListConfig`.
+  `Func` and `Method` are unified into `FunctionConfig` (callable service);
+  the typed-closure concept from `Func` / `Method` is now `ClosureConfig`,
+  obtained via `FunctionConfig::closure(ClosureT)`.
+- **BC break:** `DIC::init()` replaced by `Dic::run()` and `Dic::build()`.
+- **BC break:** `DIC::require(callable)` renamed to `Dic::import(Module)`.
+  The argument is now a `Module` instance instead of a plain callable;
+  the submodule's bindings and autoconfiguration listeners are isolated from the caller's scope.
+- **BC break:** `DIC::function()` now returns `FunctionConfig` — a callable-as-service ref.
+  To get a typed `\Closure` service (the old `Func` behaviour), chain `->closure(ClosureT $type)` onto it.
 - **BC break:** `DIC::scopedOf()` renamed to `Dic::scoped()`.
-- **BC break:** `DIC::onResolveTags()` renamed to `Dic::onTagResolution()`.
-- **BC break:** Lifetime `transient` replaced by `canBeScoped`; the `Lifetime` enum is now internal (configure via `singleton()` / `scoped()` / `canBeScoped()`).
-- **BC break:** Qualifier mapping moved from the `#[Qualifier]` attribute to the `#[Autowire]` parameter attribute.
+- **BC break:** `DIC::onResolveTags()` renamed to `Dic::onTagResolution()`;
+  the callback parameter type `Tags` renamed to `TaggedRefs`.
+- **BC break:** Lifetime `transient` replaced by `canBeScoped`; the `Lifetime` enum is now internal
+  (configure via `singleton()` / `scoped()` / `canBeScoped()`).
+- **BC break:** Qualifier mapping moved from the `#[Qualifier]` parameter attribute to `#[Autowire(qualifier: …)]`
+  (or the `autowire(qualifier: …)` helper).
 - **BC break:** `Mapping\DoNotAutowire` → `Thesis\Dic\DoNotAutowire`.
-- **BC break:** Union types are now autowired as a single composite type (`A|B`) instead of matching each member individually. Intersection types (`A&B`) are now autowirable too.
+- **BC break:** Union types are autowired as a single composite type (`A|B`) instead of matching each member
+  individually.
+  Intersection types (`A&B`) are now autowirable too.
 
 ### Removed
 
 - **BC break:** `DIC::inheritAutowiring()`.
 - **BC break:** Instance-level `DIC::bind()` and `DIC::tag()` — bind via `Config::bind()`, tag via `Config::tag()`.
-- **BC break:** Top-level `DIC::call()` entry — use `Dic::closure()`.
-- **BC break:** The `Thesis\DIC\Mapping` namespace, including the `#[Singleton]`, `#[Scoped]`, `#[Transient]` and `#[Qualifier]` attributes.
+- **BC break:** Top-level `DIC::call()` — use `Dic::function()` to register a callable service,
+  or `Dic::object(class, factory)` to register the object a factory produces.
+- **BC break:** The `Thesis\DIC\Mapping` namespace, including the `#[Singleton]`, `#[Scoped]`, `#[Transient]`
+  and `#[Qualifier]` attributes.
 - **BC break:** Public `Thesis\DIC\Lifetime` enum (now internal).
 
 ## [0.4.0] - 2026-04-23
@@ -48,7 +87,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `DIC::function()` now supports `#[Tag]` attributes on the function.
-- `DIC::function()` now supports `#[Singleton]` and `#[Transient]` lifetime attributes on the function (defaults to `scoped`).
+- `DIC::function()` now supports `#[Singleton]` and `#[Transient]` lifetime attributes on the function
+  (defaults to `scoped`).
 
 ### Changed
 
@@ -57,7 +97,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BC break:** Rename `Thesis\DIC\Configurator\Scope` to `ScopedOf`.
 - **BC break:** Rename `Scope::obtain()` to `resolve()`.
 - **BC break:** Rename `DIC::scope()` to `DIC::scopedOf()`.
-- **BC break:** Merge `DIC::bind()` and `bindQualifier()` into single `DIC::bind(mixed $value, Type $type, string|\Stringable|\UnitEnum $qualifier = '')`.
+- **BC break:** Merge `DIC::bind()` and `bindQualifier()` into single
+  `DIC::bind(mixed $value, Type $type, string|\Stringable|\UnitEnum $qualifier = '')`.
 - **BC break:** Autowiring now matches bindings by exact type only.
 - **BC break:** `DIC::bind()` and `Scoped::with()` now override previous bindings.
 
