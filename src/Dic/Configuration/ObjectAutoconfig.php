@@ -33,9 +33,9 @@ final class ObjectAutoconfig
     public readonly Attributes $attributes;
 
     /**
-     * @var \Generator<int, MethodAutoconfig>
+     * @var iterable<int, MethodAutoconfig>
      */
-    public \Generator $methods {
+    public iterable $methods {
         get {
             foreach ($this->reflection->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
                 yield new MethodAutoconfig(
@@ -66,7 +66,7 @@ final class ObjectAutoconfig
     public function is(string $class): bool
     {
         return match (true) {
-            class_exists($class) => $this->reflection->isSubclassOf($class),
+            class_exists($class) => $this->reflection->name === $class || $this->reflection->isSubclassOf($class),
             interface_exists($class) => $this->reflection->implementsInterface($class),
             default => false,
         };

@@ -21,7 +21,7 @@ final readonly class MethodAutoconfig
         $this->attributes = new Attributes($reflection);
     }
 
-    public function autoconfigure(): void
+    public function register(): void
     {
         $this->object->method($this->reflection->name);
     }
