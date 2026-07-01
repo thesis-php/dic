@@ -13,7 +13,7 @@ A fresh take on the PHP dependency injection container, with all the features yo
 
 ## Requirements
 
-- PHP 8.4+
+- PHP 8.4.12+
 
 ## Contents
 

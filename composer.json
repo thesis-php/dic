@@ -14,7 +14,7 @@
         }
     ],
     "require": {
-        "php": "^8.4",
+        "php": "^8.4.12",
         "symfony/polyfill-php85": "^1.37",
         "thesis/formatter": "^0.1",
         "typhoon/type": "^0.8.1"
