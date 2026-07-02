@@ -99,7 +99,7 @@ composer-normalize-check: ## Check composer.json is normalized
 fix: fixer rector composer-normalize ## Fix code style and normalize composer.json
 .PHONY: fix
 
-check: fixer-check rector-check composer-validate composer-normalize-check deps-analyze phpstan ## Run all checks
+check: fixer-check rector-check composer-validate composer-normalize-check deps-analyze phpstan test ## Run all checks
 .PHONY: check
 
 rescaffold:
