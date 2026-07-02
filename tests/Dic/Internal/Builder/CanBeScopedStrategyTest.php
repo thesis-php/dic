@@ -10,10 +10,10 @@ use Testo\Test;
 use Thesis\Dic\Internal\Dependency;
 use function Thesis\Fixture\ref;
 
+#[Test]
 #[Covers(LifetimeStrategy::class)]
 final class CanBeScopedStrategyTest
 {
-    #[Test]
     public function resolvesToSingletonWithoutDependencies(): void
     {
         $resolution = LifetimeStrategy::CanBeScoped->resolve(ref(), self::edges([]));
@@ -23,7 +23,6 @@ final class CanBeScopedStrategyTest
         Assert::null($resolution->scopedPath);
     }
 
-    #[Test]
     public function staysSingletonWhenAllDependenciesAreSingletons(): void
     {
         $resolution = LifetimeStrategy::CanBeScoped->resolve(ref(), self::edges([
@@ -35,7 +34,6 @@ final class CanBeScopedStrategyTest
         Assert::true($resolution->isSingleton);
     }
 
-    #[Test]
     public function becomesScopedFromTheFirstScopedDependency(): void
     {
         $dependency = Dependency::of(ref());
@@ -49,7 +47,6 @@ final class CanBeScopedStrategyTest
         Assert::same($resolution->scopedPath, [$dependency]);
     }
 
-    #[Test]
     public function recordsThePathDescendingThroughAnInferredCarrier(): void
     {
         $carrier = Dependency::of(ref())->arg('caches');
@@ -62,7 +59,6 @@ final class CanBeScopedStrategyTest
         Assert::same($resolution->scopedPath, [$carrier, $leaf]);
     }
 
-    #[Test]
     public function stopsAtTheFirstScopedDependency(): void
     {
         $first = Dependency::of(ref());

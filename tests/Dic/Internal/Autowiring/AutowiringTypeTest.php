@@ -31,11 +31,11 @@ use const Typhoon\Type\objectT;
 use const Typhoon\Type\stringT;
 use const Typhoon\Type\trueT;
 
+#[Test]
 #[Covers(BindingType::class)]
 #[Covers(BindingTypeStringifier::class)]
 final class AutowiringTypeTest
 {
-    #[Test]
     #[DataProvider('typhoonTypes')]
     public function typhoon(Type $type, string $expected): void
     {
@@ -65,7 +65,6 @@ final class AutowiringTypeTest
         yield [intersectionT(objectT(\Countable::class), objectT(\ArrayAccess::class)), '(arrayaccess&countable)'];
     }
 
-    #[Test]
     #[DataProvider('unsupportedTyphoonTypes')]
     public function unsupportedTyphoon(Type $type): void
     {
@@ -83,7 +82,6 @@ final class AutowiringTypeTest
         yield [objectT(\ArrayObject::class, templateArguments: [intT])];
     }
 
-    #[Test]
     #[DataProvider('parameters')]
     public function parameter(\Closure $function, string $expected): void
     {
@@ -106,7 +104,6 @@ final class AutowiringTypeTest
         yield [new ParentTyped()->withParent(...), strtolower(Base::class)];
     }
 
-    #[Test]
     #[DataProvider('unsupportedParameters')]
     public function unsupportedParameter(\Closure $function): void
     {
@@ -123,7 +120,6 @@ final class AutowiringTypeTest
         yield 'no type' => [static fn($p) => null];
     }
 
-    #[Test]
     public function equalsComparesNormalizedString(): void
     {
         $typhoon = BindingType::ofTyphoonType(intT);

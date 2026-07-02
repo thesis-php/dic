@@ -10,10 +10,10 @@ use Testo\Test;
 use Thesis\Dic\Internal\Signature;
 use function Thesis\Fixture\ref;
 
+#[Test]
 #[Covers(BuildError::class)]
 final class BuildErrorTest
 {
-    #[Test]
     public function cannotAutowireMessage(): void
     {
         $parameter = Signature::ofCallable(static fn(int $value) => null)->findParameter(0);
@@ -24,7 +24,6 @@ final class BuildErrorTest
         Assert::same($error->getMessage(), \sprintf('Cannot autowire "%s": no autowiring candidate found', $parameter));
     }
 
-    #[Test]
     public function configurationFrozenMessage(): void
     {
         $error = BuildError::configurationFrozen();
@@ -35,7 +34,6 @@ final class BuildErrorTest
         );
     }
 
-    #[Test]
     public function invalidServiceFactoryWrapsPreviousWithRefAndDetail(): void
     {
         $ref = ref();
@@ -46,7 +44,6 @@ final class BuildErrorTest
         Assert::same($error->getMessage(), \sprintf('Invalid factory for %s: %s', $ref, lcfirst($previous->getMessage())));
     }
 
-    #[Test]
     public function fileAndLinePointAtFactoryCallSite(): void
     {
         $line = __LINE__ + 1;
@@ -56,7 +53,6 @@ final class BuildErrorTest
         Assert::same($error->getLine(), $line);
     }
 
-    #[Test]
     public function fileAndLinePointAtCallSiteThroughDelegatingFactory(): void
     {
         $parameter = Signature::ofCallable(static fn(int $value) => null)->findParameter(0);

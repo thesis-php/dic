@@ -11,10 +11,10 @@ use Thesis\Dic\Internal\Container;
 use Thesis\Dic\Internal\Factory\ValueFactory;
 use function Thesis\Fixture\ref;
 
+#[Test]
 #[Covers(Container::class)]
 final class ContainerTest
 {
-    #[Test]
     public function disposesEveryCreatedInstance(): void
     {
         $factories = new Factories();
@@ -38,7 +38,6 @@ final class ContainerTest
         Assert::same($log, ['a', 'b', 'c']);
     }
 
-    #[Test]
     public function disposeIsIdempotent(): void
     {
         $factories = new Factories();
@@ -62,7 +61,6 @@ final class ContainerTest
         Assert::same($calls, 1);
     }
 
-    #[Test]
     public function disposesInstanceCreatedDuringDisposal(): void
     {
         $factories = new Factories();

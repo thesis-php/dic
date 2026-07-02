@@ -10,10 +10,10 @@ use Testo\Test;
 use Thesis\Dic\Internal\Dependency;
 use function Thesis\Fixture\ref;
 
+#[Test]
 #[Covers(LifetimeStrategy::class)]
 final class DetachedStrategyTest
 {
-    #[Test]
     public function resolvesToSingleton(): void
     {
         $resolution = LifetimeStrategy::Detached->resolve(ref(), self::empty());
@@ -23,7 +23,6 @@ final class DetachedStrategyTest
         Assert::null($resolution->scopedPath);
     }
 
-    #[Test]
     public function ignoresDependencies(): void
     {
         $dependencies = (static function (): \Generator {

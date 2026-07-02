@@ -18,10 +18,10 @@ use Thesis\Dic\Ref;
 use Thesis\Fixture\Counter;
 use Thesis\TestService;
 
+#[Test]
 #[Covers(Autoconfiguration::class)]
 final class AutoconfigurationTest
 {
-    #[Test]
     public function autoconfiguresEveryScheduledConfig(): void
     {
         $autoconfiguration = self::autoconfiguration();
@@ -46,7 +46,6 @@ final class AutoconfigurationTest
         Assert::contains($seen, $function);
     }
 
-    #[Test]
     public function autoconfiguresConfigScheduledDuringTheRun(): void
     {
         $autoconfiguration = self::autoconfiguration();
@@ -74,7 +73,6 @@ final class AutoconfigurationTest
         Assert::contains($seen, $appended);
     }
 
-    #[Test]
     public function autoconfiguresEachConfigOnce(): void
     {
         $autoconfiguration = self::autoconfiguration();
@@ -94,7 +92,6 @@ final class AutoconfigurationTest
         Assert::count($seen, 1);
     }
 
-    #[Test]
     public function unscheduledConfigIsNotAutoconfigured(): void
     {
         $autoconfiguration = self::autoconfiguration();

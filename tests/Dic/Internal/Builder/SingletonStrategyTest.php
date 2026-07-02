@@ -12,10 +12,10 @@ use Thesis\Dic\BuildError;
 use Thesis\Dic\Internal\Dependency;
 use function Thesis\Fixture\ref;
 
+#[Test]
 #[Covers(LifetimeStrategy::class)]
 final class SingletonStrategyTest
 {
-    #[Test]
     public function resolvesToSingletonWithoutDependencies(): void
     {
         $resolution = LifetimeStrategy::Singleton->resolve(ref(), self::edges([]));
@@ -25,7 +25,6 @@ final class SingletonStrategyTest
         Assert::null($resolution->scopedPath);
     }
 
-    #[Test]
     public function allowsSingletonAndDetachedDependencies(): void
     {
         $resolution = LifetimeStrategy::Singleton->resolve(ref(), self::edges([
@@ -37,7 +36,6 @@ final class SingletonStrategyTest
         Assert::true($resolution->isSingleton);
     }
 
-    #[Test]
     public function allowsAnInferredCarrierHoldingOnlySingletons(): void
     {
         $resolution = LifetimeStrategy::Singleton->resolve(ref(), self::edges([
@@ -47,7 +45,6 @@ final class SingletonStrategyTest
         Assert::true($resolution->isSingleton);
     }
 
-    #[Test]
     public function rejectsAScopedDependencyAfterSingletonOnes(): void
     {
         Expect::exception(BuildError::class)
@@ -60,7 +57,6 @@ final class SingletonStrategyTest
         ]));
     }
 
-    #[Test]
     public function rejectsACanBeScopedDependencyEvenWhenItResolvedToSingleton(): void
     {
         Expect::exception(BuildError::class)
@@ -71,7 +67,6 @@ final class SingletonStrategyTest
         ]));
     }
 
-    #[Test]
     public function rejectsAnInferredCarrierHoldingAScopedServiceAndNamesTheLeaf(): void
     {
         $carrier = Dependency::of(ref())->arg('caches');
@@ -87,7 +82,6 @@ final class SingletonStrategyTest
         ]));
     }
 
-    #[Test]
     public function failsOnTheFirstOffendingDependency(): void
     {
         $dependencies = self::edges([

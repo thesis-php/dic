@@ -37,9 +37,9 @@ use function Typhoon\Type\objectT;
 use function Typhoon\Type\param;
 use const Typhoon\Type\intT;
 
+#[Test]
 final readonly class DicTest
 {
-    #[Test]
     public function value(): void
     {
         $value = self::build(static fn(Dic $dic) => $dic->value(1));
@@ -47,7 +47,6 @@ final readonly class DicTest
         Assert::same($value, 1);
     }
 
-    #[Test]
     public function valueRef(): void
     {
         $value = self::build(static function (Dic $dic) {
@@ -59,7 +58,6 @@ final readonly class DicTest
         Assert::same($value, 1);
     }
 
-    #[Test]
     public function valueArrayRef(): void
     {
         $value = self::build(static function (Dic $dic) {
@@ -72,7 +70,6 @@ final readonly class DicTest
         Assert::same($value, [1, 2]);
     }
 
-    #[Test]
     public function object(): void
     {
         $object = self::build(
@@ -82,7 +79,6 @@ final readonly class DicTest
         Assert::equals($object, new TestService());
     }
 
-    #[Test]
     public function objectStaticFactory(): void
     {
         $object = self::build(
@@ -92,7 +88,6 @@ final readonly class DicTest
         Assert::equals($object, TestService::new());
     }
 
-    #[Test]
     public function objectMethodFactory(): void
     {
         $object = self::build(
@@ -105,7 +100,6 @@ final readonly class DicTest
         Assert::equals($object, TestService::new());
     }
 
-    #[Test]
     public function objectCallableArrayClassMethodFactory(): void
     {
         $object = self::build(
@@ -122,7 +116,6 @@ final readonly class DicTest
         Assert::equals($object, TestService::new());
     }
 
-    #[Test]
     public function objectCallableArrayObjectMethodFactory(): void
     {
         $object = self::build(
@@ -139,7 +132,6 @@ final readonly class DicTest
         Assert::equals($object, TestService::new());
     }
 
-    #[Test]
     public function objectRefMethodArrayFactory(): void
     {
         $object = self::build(
@@ -152,7 +144,6 @@ final readonly class DicTest
         Assert::equals($object, TestService::new());
     }
 
-    #[Test]
     public function objectCall(): void
     {
         $value = 123;
@@ -166,7 +157,6 @@ final readonly class DicTest
         Assert::same($object->value, $value);
     }
 
-    #[Test]
     public function objectCallWithVariadic(): void
     {
         $object = self::build(
@@ -178,7 +168,6 @@ final readonly class DicTest
         Assert::same($object->value, [1, 2, 3]);
     }
 
-    #[Test]
     public function dependencyDeclaredAfterDependent(): void
     {
         $object = self::build(
@@ -190,7 +179,6 @@ final readonly class DicTest
         Assert::equals($object->value, new TestService());
     }
 
-    #[Test]
     public function circularDependency(): void
     {
         $line = __LINE__;
@@ -225,7 +213,6 @@ final readonly class DicTest
         });
     }
 
-    #[Test]
     #[ExpectException(\LogicException::class)]
     public function selfDependency(): void
     {
@@ -236,7 +223,6 @@ final readonly class DicTest
         });
     }
 
-    #[Test]
     #[ExpectException(\LogicException::class)]
     public function scopedCircularDependency(): void
     {
@@ -251,7 +237,6 @@ final readonly class DicTest
         });
     }
 
-    #[Test]
     public function objectChain(): void
     {
         $value = 123;
@@ -265,7 +250,6 @@ final readonly class DicTest
         Assert::same($object->value, $value);
     }
 
-    #[Test]
     public function objectChainWithVariadic(): void
     {
         $object = self::build(
@@ -277,7 +261,6 @@ final readonly class DicTest
         Assert::same($object->value, [1, 2, 3]);
     }
 
-    #[Test]
     public function singletonScopedDependency(): void
     {
         $line = __LINE__;
@@ -305,7 +288,6 @@ final readonly class DicTest
         });
     }
 
-    #[Test]
     public function autowiresConstructorByBoundType(): void
     {
         $consumer = self::build(static function (Dic $dic) {
@@ -318,7 +300,6 @@ final readonly class DicTest
         Assert::same($consumer->cache->get('key'), 'redis');
     }
 
-    #[Test]
     public function bindWithQualifierSelectsImplementation(): void
     {
         $consumer = self::build(static function (Dic $dic) {
@@ -331,7 +312,6 @@ final readonly class DicTest
         Assert::instanceOf($consumer->cache, ApcuCache::class);
     }
 
-    #[Test]
     public function singletonInstanceIsSharedBetweenDependents(): void
     {
         $pair = self::build(static function (Dic $dic) {
@@ -343,7 +323,6 @@ final readonly class DicTest
         Assert::same($pair->first, $pair->second);
     }
 
-    #[Test]
     public function defaultValueIsUsedWhenNotAutowirable(): void
     {
         $object = self::build(
@@ -353,7 +332,6 @@ final readonly class DicTest
         Assert::same($object->number, 42);
     }
 
-    #[Test]
     public function argOverridesDefaultValue(): void
     {
         $object = self::build(
@@ -363,7 +341,6 @@ final readonly class DicTest
         Assert::same($object->number, 7);
     }
 
-    #[Test]
     public function variadicArguments(): void
     {
         $object = self::build(
@@ -373,7 +350,6 @@ final readonly class DicTest
         Assert::same($object->numbers, [1, 2, 3]);
     }
 
-    #[Test]
     public function emptyVariadicDefaultsToEmptyArray(): void
     {
         $object = self::build(
@@ -383,7 +359,6 @@ final readonly class DicTest
         Assert::same($object->numbers, []);
     }
 
-    #[Test]
     public function requireComposesSubmodule(): void
     {
         $value = self::build(
@@ -395,7 +370,6 @@ final readonly class DicTest
         Assert::same($value, 42);
     }
 
-    #[Test]
     public function lazyObjectIsUsable(): void
     {
         $counter = self::build(
@@ -409,7 +383,6 @@ final readonly class DicTest
         Assert::same($counter->value, 5);
     }
 
-    #[Test]
     public function lazyOnNonInstantiableClassRejected(): void
     {
         Expect::exception(BuildError::class)->withMessageContaining('cannot be made lazy');
@@ -421,7 +394,6 @@ final readonly class DicTest
         );
     }
 
-    #[Test]
     public function scopedWrapperProducesFreshInstancePerRun(): void
     {
         $scoped = self::build(
@@ -436,7 +408,6 @@ final readonly class DicTest
         Assert::notSame($first, $second);
     }
 
-    #[Test]
     public function runInvokesDisposerWithValue(): void
     {
         $disposed = [];
@@ -456,7 +427,6 @@ final readonly class DicTest
         Assert::count($disposed, 1);
     }
 
-    #[Test]
     public function runPassesThrownErrorToDisposerAndRethrows(): void
     {
         $thrown = new \RuntimeException('boom');
@@ -484,7 +454,6 @@ final readonly class DicTest
         Assert::same($captured, $thrown);
     }
 
-    #[Test]
     public function disposerExceptionsDoNotStopOtherDisposers(): void
     {
         $boom = new \RuntimeException('boom');
@@ -514,7 +483,6 @@ final readonly class DicTest
         Assert::same($caught->errors, [$boom]);
     }
 
-    #[Test]
     public function disposerExceptionDoesNotMaskMainError(): void
     {
         $mainError = new \RuntimeException('main');
@@ -542,7 +510,6 @@ final readonly class DicTest
         Assert::same($caught->errors, [$disposerError]);
     }
 
-    #[Test]
     public function unusedLazyServiceIsNotDisposed(): void
     {
         $disposed = false;
@@ -564,7 +531,6 @@ final readonly class DicTest
         Assert::false($disposed);
     }
 
-    #[Test]
     public function usedLazyServiceIsDisposed(): void
     {
         $disposed = false;
@@ -588,7 +554,6 @@ final readonly class DicTest
         Assert::true($disposed);
     }
 
-    #[Test]
     public function taggedListCollectsTaggedServices(): void
     {
         $caches = self::build(static function (Dic $dic) {
@@ -605,7 +570,6 @@ final readonly class DicTest
         );
     }
 
-    #[Test]
     public function taggedListRespectsSort(): void
     {
         $caches = self::build(static function (Dic $dic) {
@@ -624,7 +588,6 @@ final readonly class DicTest
         );
     }
 
-    #[Test]
     public function onResolveTagsReceivesTaggedRefs(): void
     {
         $found = null;
@@ -643,7 +606,6 @@ final readonly class DicTest
         Assert::count($found, 1);
     }
 
-    #[Test]
     public function signatureWiresFunctionArguments(): void
     {
         $signature = closureT([param(intT, name: 'n')], intT);
@@ -659,7 +621,6 @@ final readonly class DicTest
         Assert::same($function(10), 15);
     }
 
-    #[Test]
     public function signatureWithVariadicRuntimeParameter(): void
     {
         $signature = closureT([param(intT, variadic: true, name: 'numbers')], intT);
@@ -673,7 +634,6 @@ final readonly class DicTest
         Assert::same($function(1, 2, 3), 6);
     }
 
-    #[Test]
     public function attributeAutowireQualifierSelectsImplementation(): void
     {
         $consumer = self::build(static function (Dic $dic) {
@@ -686,7 +646,6 @@ final readonly class DicTest
         Assert::instanceOf($consumer->cache, ApcuCache::class);
     }
 
-    #[Test]
     public function attributeDoNotAutowireFallsBackToDefault(): void
     {
         $consumer = self::build(
@@ -696,7 +655,6 @@ final readonly class DicTest
         Assert::null($consumer->cache);
     }
 
-    #[Test]
     public function bindWithEnumQualifier(): void
     {
         $consumer = self::build(static function (Dic $dic) {
@@ -709,7 +667,6 @@ final readonly class DicTest
         Assert::instanceOf($consumer->cache, ApcuCache::class);
     }
 
-    #[Test]
     public function canBeScopedStaysSingletonWithoutScopedDependencies(): void
     {
         $scoped = self::build(
@@ -724,7 +681,6 @@ final readonly class DicTest
         Assert::same($first, $second);
     }
 
-    #[Test]
     public function canBeScopedBecomesScopedWithScopedDependency(): void
     {
         $scoped = self::build(
@@ -742,7 +698,6 @@ final readonly class DicTest
         Assert::notSame($first, $second);
     }
 
-    #[Test]
     public function positionalArgument(): void
     {
         $object = self::build(
@@ -752,7 +707,6 @@ final readonly class DicTest
         Assert::same($object->number, 7);
     }
 
-    #[Test]
     public function positionalFactoryWiresDependencyAndVariadic(): void
     {
         $object = self::build(static function (Dic $dic) {
@@ -765,7 +719,6 @@ final readonly class DicTest
         Assert::same($object->numbers, [1, 2]);
     }
 
-    #[Test]
     public function eagerObjectIsUsable(): void
     {
         $counter = self::build(
@@ -779,7 +732,6 @@ final readonly class DicTest
         Assert::same($counter->value, 3);
     }
 
-    #[Test]
     public function scopedRunDisposesAndRethrowsOnError(): void
     {
         $thrown = new \RuntimeException('boom');
@@ -811,7 +763,6 @@ final readonly class DicTest
         Assert::same($captured, $thrown);
     }
 
-    #[Test]
     public function taggedListFindsByTagInstance(): void
     {
         $tag = new CacheTag();
@@ -826,7 +777,6 @@ final readonly class DicTest
         Assert::count($caches, 1);
     }
 
-    #[Test]
     public function emptyTaggedListIsEmptyArray(): void
     {
         $caches = self::build(
@@ -836,7 +786,6 @@ final readonly class DicTest
         Assert::same($caches, []);
     }
 
-    #[Test]
     public function unboundDependencyWrapsCannotAutowire(): void
     {
         Expect::exception(BuildError::class)->withMessageContaining('cannot autowire');
@@ -844,7 +793,6 @@ final readonly class DicTest
         self::build(static fn(Dic $dic) => $dic->object(Consumer::class));
     }
 
-    #[Test]
     public function nonInstantiableClassRejected(): void
     {
         Expect::exception(BuildError::class)->withMessageContaining('is not instantiable');
@@ -852,7 +800,6 @@ final readonly class DicTest
         self::build(static fn(Dic $dic) => $dic->object(Cache::class));
     }
 
-    #[Test]
     public function factoryRefThatIsNotCallableRejected(): void
     {
         Expect::exception(BuildError::class)->withMessageContaining('is not callable');
@@ -863,7 +810,6 @@ final readonly class DicTest
         );
     }
 
-    #[Test]
     public function refMethodFactoryFails(): void
     {
         Expect::exception(BuildError::class)->withMessageContaining('is not callable');
@@ -875,7 +821,6 @@ final readonly class DicTest
         });
     }
 
-    #[Test]
     public function duplicateBindRejected(): void
     {
         Expect::exception(BuildError::class)->withMessageContaining('already bound');
@@ -888,7 +833,6 @@ final readonly class DicTest
         });
     }
 
-    #[Test]
     public function bindUnsupportedTypeRejected(): void
     {
         Expect::exception(BuildError::class)->withMessageContaining('is not supported for binding');
@@ -900,7 +844,6 @@ final readonly class DicTest
         });
     }
 
-    #[Test]
     public function combinedAutowireAndDoNotAutowireRejected(): void
     {
         Expect::exception(BuildError::class)->withMessageContaining('combine #[Autowire] and #[DoNotAutowire]');

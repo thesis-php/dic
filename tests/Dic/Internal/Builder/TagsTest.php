@@ -14,10 +14,10 @@ use Thesis\Fixture\ApcuCache;
 use Thesis\Fixture\CacheTag;
 use function Thesis\Fixture\ref;
 
+#[Test]
 #[Covers(Tags::class)]
 final class TagsTest
 {
-    #[Test]
     public function onResolveListenerReceivesCollectedTags(): void
     {
         $tags = new Tags();
@@ -34,7 +34,6 @@ final class TagsTest
         Assert::count($found, 1);
     }
 
-    #[Test]
     public function addingTagAfterResolveIsRejected(): void
     {
         $tags = new Tags();

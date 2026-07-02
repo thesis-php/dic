@@ -10,10 +10,10 @@ use Testo\Test;
 use Thesis\Dic\Internal\Dependency;
 use function Thesis\Fixture\ref;
 
+#[Test]
 #[Covers(LifetimeStrategy::class)]
 final class ScopedStrategyTest
 {
-    #[Test]
     public function resolvesToScopedWithAnEmptyPath(): void
     {
         $resolution = LifetimeStrategy::Scoped->resolve(ref(), self::empty());
@@ -23,7 +23,6 @@ final class ScopedStrategyTest
         Assert::same($resolution->scopedPath, []);
     }
 
-    #[Test]
     public function ignoresDependencies(): void
     {
         $dependencies = (static function (): \Generator {

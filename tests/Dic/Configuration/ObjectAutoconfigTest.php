@@ -14,10 +14,10 @@ use Thesis\Dic\Location;
 use Thesis\Fixture\ApcuCache;
 use Thesis\Fixture\Cache;
 
+#[Test]
 #[Covers(ObjectAutoconfig::class)]
 final class ObjectAutoconfigTest
 {
-    #[Test]
     public function isReturnsTrueForExactClass(): void
     {
         $autoconfig = self::autoconfig(ApcuCache::class);
@@ -25,7 +25,6 @@ final class ObjectAutoconfigTest
         Assert::true($autoconfig->is(ApcuCache::class));
     }
 
-    #[Test]
     public function isReturnsTrueForImplementedInterface(): void
     {
         $autoconfig = self::autoconfig(ApcuCache::class);
@@ -33,7 +32,6 @@ final class ObjectAutoconfigTest
         Assert::true($autoconfig->is(Cache::class));
     }
 
-    #[Test]
     public function isReturnsFalseForUnrelatedClass(): void
     {
         $autoconfig = self::autoconfig(ApcuCache::class);

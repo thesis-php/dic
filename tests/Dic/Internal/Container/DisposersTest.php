@@ -10,10 +10,10 @@ use Testo\Test;
 use Thesis\Fixture\Counter;
 use function Thesis\Fixture\ref;
 
+#[Test]
 #[Covers(Disposers::class)]
 final class DisposersTest
 {
-    #[Test]
     public function disposeCallsDisposerWithValueAndError(): void
     {
         $disposers = new Disposers();
@@ -30,7 +30,6 @@ final class DisposersTest
         Assert::same($received, ['value', $error]);
     }
 
-    #[Test]
     public function disposersRunInRegistrationOrder(): void
     {
         $disposers = new Disposers();
@@ -49,7 +48,6 @@ final class DisposersTest
         Assert::same($log, ['a', 'b']);
     }
 
-    #[Test]
     public function disposeOnlyRunsDisposersForTheGivenRef(): void
     {
         $disposers = new Disposers();
@@ -66,7 +64,6 @@ final class DisposersTest
         Assert::same($log, []);
     }
 
-    #[Test]
     public function disposeReturnsNoErrorsWithoutDisposers(): void
     {
         $disposers = new Disposers();
@@ -74,7 +71,6 @@ final class DisposersTest
         Assert::same($disposers->dispose(ref(), 'value', null), []);
     }
 
-    #[Test]
     public function disposeCollectsThrowablesAndKeepsGoing(): void
     {
         $disposers = new Disposers();
@@ -95,7 +91,6 @@ final class DisposersTest
         Assert::same($errors, [$boom]);
     }
 
-    #[Test]
     public function disposeSkipsUninitializedLazyObject(): void
     {
         $disposers = new Disposers();

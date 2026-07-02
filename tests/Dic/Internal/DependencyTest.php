@@ -9,10 +9,10 @@ use Testo\Codecov\Covers;
 use Testo\Test;
 use function Thesis\Fixture\ref;
 
+#[Test]
 #[Covers(Dependency::class)]
 final class DependencyTest
 {
-    #[Test]
     public function ofHasEmptyPath(): void
     {
         $ref = ref();
@@ -23,7 +23,6 @@ final class DependencyTest
         Assert::same($dependency->ref, $ref);
     }
 
-    #[Test]
     public function factoryHasFactoryPath(): void
     {
         $dependency = Dependency::factory(ref());
@@ -31,7 +30,6 @@ final class DependencyTest
         Assert::same($dependency->path, 'factory');
     }
 
-    #[Test]
     public function argPrependsParameterName(): void
     {
         $dependency = Dependency::of(ref())->arg('value');
@@ -39,14 +37,12 @@ final class DependencyTest
         Assert::same($dependency->path, '$value');
     }
 
-    #[Test]
     public function keyPrependsBrackets(): void
     {
         Assert::same(Dependency::of(ref())->key(0)->path, '[0]');
         Assert::same(Dependency::of(ref())->key('name')->path, '[name]');
     }
 
-    #[Test]
     public function methodWrapsPath(): void
     {
         $dependency = Dependency::of(ref())->method('setLogger');
@@ -54,7 +50,6 @@ final class DependencyTest
         Assert::same($dependency->path, '->setLogger()');
     }
 
-    #[Test]
     public function buildersNestFromInnerToOuter(): void
     {
         $ref = ref();
@@ -63,7 +58,6 @@ final class DependencyTest
         Assert::same(Dependency::of($ref)->arg('logger')->method('setLogger')->path, '->setLogger($logger)');
     }
 
-    #[Test]
     public function buildersPreserveRef(): void
     {
         $ref = ref();

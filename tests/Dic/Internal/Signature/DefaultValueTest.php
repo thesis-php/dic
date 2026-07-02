@@ -8,11 +8,11 @@ use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Test;
 
+#[Test]
 #[Covers(ReflectionDefaultValue::class)]
 #[Covers(ClosureDefaultValue::class)]
 final class DefaultValueTest
 {
-    #[Test]
     public function reflectionDefaultValueCreatesScalar(): void
     {
         $defaultValue = new ReflectionDefaultValue(self::parameter(static fn(int $x = 42) => null));
@@ -21,7 +21,6 @@ final class DefaultValueTest
         Assert::same($defaultValue->print(), '42');
     }
 
-    #[Test]
     public function reflectionDefaultValuePrintsString(): void
     {
         $defaultValue = new ReflectionDefaultValue(self::parameter(static fn(string $x = 'hi') => null));
@@ -30,7 +29,6 @@ final class DefaultValueTest
         Assert::same($defaultValue->print(), "'hi'");
     }
 
-    #[Test]
     public function reflectionDefaultValuePrintsNull(): void
     {
         $defaultValue = new ReflectionDefaultValue(self::parameter(static fn(?int $x = null) => null));
@@ -39,7 +37,6 @@ final class DefaultValueTest
         Assert::same($defaultValue->print(), 'NULL');
     }
 
-    #[Test]
     public function signatureDefaultValueCreatesItself(): void
     {
         $defaultValue = ClosureDefaultValue::Value;

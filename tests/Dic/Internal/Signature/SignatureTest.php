@@ -17,6 +17,7 @@ use function Typhoon\Type\closureT;
 use function Typhoon\Type\param;
 use const Typhoon\Type\intT;
 
+#[Test]
 #[Covers(Signature::class)]
 #[Covers(ReflectionFunctionSignature::class)]
 #[Covers(ImplicitConstructorSignature::class)]
@@ -25,7 +26,6 @@ use const Typhoon\Type\intT;
 #[Covers(ClosureParameter::class)]
 final class SignatureTest
 {
-    #[Test]
     public function constructorParametersAreReflected(): void
     {
         $info = Signature::ofConstructor(new \ReflectionClass(Consumer::class));
@@ -42,7 +42,6 @@ final class SignatureTest
         Assert::same($parameter->bindingType->string, strtolower(Cache::class));
     }
 
-    #[Test]
     public function classWithoutConstructorHasNoParameters(): void
     {
         $info = Signature::ofConstructor(new \ReflectionClass(Holder::class));
@@ -50,7 +49,6 @@ final class SignatureTest
         Assert::same($info->parameters, []);
     }
 
-    #[Test]
     public function variadicParameterIsDetected(): void
     {
         $info = Signature::ofConstructor(new \ReflectionClass(Numbers::class));
@@ -64,7 +62,6 @@ final class SignatureTest
         Assert::same($variadicParameter->name, 'numbers');
     }
 
-    #[Test]
     public function defaultValueIsReflected(): void
     {
         $info = Signature::ofConstructor(new \ReflectionClass(WithDefault::class));
@@ -80,7 +77,6 @@ final class SignatureTest
         Assert::same($defaultValue->create(), 42);
     }
 
-    #[Test]
     public function findParameterByNameAndPosition(): void
     {
         $info = Signature::ofConstructor(new \ReflectionClass(Consumer::class));
@@ -91,7 +87,6 @@ final class SignatureTest
         Assert::null($info->findParameter(5));
     }
 
-    #[Test]
     public function ofCallableReflectsClosureParameters(): void
     {
         $info = Signature::ofCallable(static fn(int $a, string $b) => null);
@@ -104,7 +99,6 @@ final class SignatureTest
         Assert::same($parameters[1]->name, 'b');
     }
 
-    #[Test]
     public function ofSignatureReflectsTyphoonSignature(): void
     {
         $info = Signature::ofClosure(closureT([param(intT, name: 'x')], intT));
