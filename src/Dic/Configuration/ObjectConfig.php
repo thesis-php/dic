@@ -39,7 +39,7 @@ final class ObjectConfig extends Config
      * @internal
      *
      * @param \ReflectionClass<covariant T> $reflection
-     * @param ?Config<callable(): T> $factory
+     * @param ?Ref<callable(): T> $factory
      */
     public function __construct(
         Builder $builder,

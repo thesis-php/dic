@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Thesis;
 
-use Thesis\Dic\Configuration\Config;
 use Thesis\Dic\Configuration\FunctionAutoconfig;
 use Thesis\Dic\Configuration\FunctionConfig;
 use Thesis\Dic\Configuration\ObjectAutoconfig;
@@ -194,7 +193,7 @@ final readonly class Dic
     {
         $declaredAt = Location::caller();
 
-        if ($factory !== null && !$factory instanceof Config) {
+        if (!($factory === null || $factory instanceof Ref)) {
             /** @var ValueConfig<callable(): T> */
             $factory = new ValueConfig(
                 builder: $this->builder,
