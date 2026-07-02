@@ -8,7 +8,7 @@ use Testo\Application\Config\SuiteConfig;
 return new ApplicationConfig(
     suites: [
         new SuiteConfig(
-            name: 'Unit',
+            name: 'All',
             location: ['tests'],
         ),
     ],
