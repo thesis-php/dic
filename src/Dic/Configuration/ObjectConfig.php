@@ -129,7 +129,7 @@ final class ObjectConfig extends Config
             builder: $this->builder,
             autoconfiguration: $this->autoconfiguration,
             autowiring: $this->autowiring,
-            value: $value,
+            function: $value,
             declaredAt: caller(),
         );
     }

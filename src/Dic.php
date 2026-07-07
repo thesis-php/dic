@@ -18,6 +18,7 @@ use Thesis\Dic\Internal\Builder;
 use Thesis\Dic\Internal\Builder\Autoconfiguration;
 use Thesis\Dic\Internal\Factory\ValueFactory;
 use Thesis\Dic\Internal\NonCopyable;
+use Thesis\Dic\Location;
 use Thesis\Dic\Module;
 use Thesis\Dic\Ref;
 use Thesis\Dic\Tag;
@@ -161,22 +162,13 @@ final readonly class Dic
     {
         $declaredAt = caller();
 
-        if (!$function instanceof Ref) {
-            /** @var ValueConfig<callable> */
-            $function = new ValueConfig(
-                builder: $this->builder,
-                autowiring: $this->autowiring,
-                value: $function,
-                declaredAt: $declaredAt,
-            );
-        }
-
         /** @var FunctionConfig<callable> */
         return new FunctionConfig(
             builder: $this->builder,
             autoconfiguration: $this->autoconfiguration,
             autowiring: $this->autowiring,
-            value: $function,
+            /** @phpstan-ignore argument.type */
+            function: $this->toRef($function, $declaredAt),
             declaredAt: $declaredAt,
         );
     }
@@ -194,13 +186,8 @@ final readonly class Dic
         $declaredAt = caller();
 
         if (!($factory === null || $factory instanceof Ref)) {
-            /** @var ValueConfig<callable(): T> */
-            $factory = new ValueConfig(
-                builder: $this->builder,
-                autowiring: $this->autowiring,
-                value: $factory,
-                declaredAt: $declaredAt,
-            );
+            /** @var Ref<callable(): T> */
+            $factory = $this->toRef($factory, $declaredAt);
         }
 
         return new ObjectConfig(
@@ -217,16 +204,19 @@ final readonly class Dic
      * Declares a Scoped<T> handle that opens a fresh scope, resolves $ref inside it, and disposes on exit.
      *
      * @template T
-     * @param Ref<T> $ref
+     * @param T|Ref<T> $value
      * @return ScopedConfig<T>
      */
-    public function scoped(Ref $ref): ScopedConfig
+    public function scoped(mixed $value): ScopedConfig
     {
+        $declaredAt = caller();
+
+        /** @var ValueConfig<T> $value */
         return new ScopedConfig(
             builder: $this->builder,
             autowiring: $this->autowiring,
-            ref: $ref,
-            declaredAt: caller(),
+            ref: $this->toRef($value, $declaredAt),
+            declaredAt: $declaredAt,
         );
     }
 
@@ -241,20 +231,31 @@ final readonly class Dic
     {
         $declaredAt = caller();
 
-        if (!$value instanceof Ref) {
-            $value = new ValueConfig(
-                builder: $this->builder,
-                autowiring: $this->autowiring,
-                value: $value,
-                declaredAt: $declaredAt,
-            );
-        }
-
         /** @var Ref<T> $value */
         return new ProviderConfig(
             builder: $this->builder,
             autowiring: $this->autowiring,
-            ref: $value,
+            ref: $this->toRef($value, $declaredAt),
+            declaredAt: $declaredAt,
+        );
+    }
+
+    /**
+     * @template T
+     * @param T|Ref<T> $value
+     * @return Ref<T>
+     */
+    private function toRef(mixed $value, Location $declaredAt): Ref
+    {
+        if ($value instanceof Ref) {
+            return $value;
+        }
+
+        /** @var ValueConfig<T> */
+        return new ValueConfig(
+            builder: $this->builder,
+            autowiring: $this->autowiring,
+            value: $value,
             declaredAt: $declaredAt,
         );
     }

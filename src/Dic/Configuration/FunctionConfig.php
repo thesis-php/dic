@@ -31,16 +31,16 @@ final class FunctionConfig extends Config
     /**
      * @internal
      *
-     * @param Ref<callable> $value
+     * @param Ref<callable> $function
      */
     public function __construct(
         Builder $builder,
         private readonly Autoconfiguration $autoconfiguration,
         Autowiring $autowiring,
-        private readonly Ref $value,
+        private readonly Ref $function,
         Location $declaredAt,
     ) {
-        $reflection = $value->reflectionFunction ?? throw BuildError::notCallable($value);
+        $reflection = $function->reflectionFunction ?? throw BuildError::notCallable($function);
 
         if ($reflection instanceof \ReflectionMethod && !$reflection->isPublic()) {
             throw BuildError::factoryMethodNotPublic($reflection);
@@ -60,7 +60,7 @@ final class FunctionConfig extends Config
     }
 
     protected ?Signature $signature {
-        get => $this->value->signature;
+        get => $this->function->signature;
     }
 
     protected null|\ReflectionFunction|\ReflectionMethod $reflectionFunction {
@@ -68,7 +68,7 @@ final class FunctionConfig extends Config
     }
 
     protected ?\ReflectionClass $reflectionClass {
-        get => $this->value->reflectionClass;
+        get => $this->function->reflectionClass;
     }
 
     /**
@@ -101,6 +101,6 @@ final class FunctionConfig extends Config
 
     protected function createFactory(): Factory
     {
-        return ValueFactory::from($this->value);
+        return ValueFactory::from($this->function);
     }
 }
