@@ -15,6 +15,7 @@ use Thesis\Dic\Internal\Signature;
 use Thesis\Dic\Location;
 use Thesis\Dic\Ref;
 use Typhoon\Type\ClosureT;
+use function Thesis\Dic\Internal\caller;
 use function Thesis\Formatter\formatReflectedFunction;
 
 /**
@@ -94,7 +95,7 @@ final class FunctionConfig extends Config
             autowiring: $this->autowiring,
             type: $type,
             function: $this,
-            declaredAt: Location::caller(),
+            declaredAt: caller(),
         );
     }
 

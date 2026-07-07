@@ -11,26 +11,6 @@ use Composer\Autoload\ClassLoader;
  */
 final class Location
 {
-    public static function caller(): self
-    {
-        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
-
-        $trace = $backtrace[1] ?? throw new \OutOfRangeException('Invalid trace index');
-
-        $file = $trace['file'] ?? '';
-        $line = $trace['line'] ?? 0;
-
-        if (preg_match('/^(.+)\((\d+)\) : eval\(\)\'d code$/', $file, $matches) === 1) {
-            $file = $matches[1];
-            $line = (int) $matches[2];
-        }
-
-        \assert($file !== '', 'debug_backtrace() should almost never return an empty file name');
-        \assert($line >= 1, 'debug_backtrace() should almost never return a non-positive line number');
-
-        return new self($file, $line);
-    }
-
     public string $shortFile {
         get {
             /** @var ?non-falsy-string */

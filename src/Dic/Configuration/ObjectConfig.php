@@ -20,6 +20,7 @@ use Thesis\Dic\Internal\Signature;
 use Thesis\Dic\Internal\Signature\ReflectionFunctionSignature;
 use Thesis\Dic\Location;
 use Thesis\Dic\Ref;
+use function Thesis\Dic\Internal\caller;
 use function Thesis\Formatter\formatReflectedClass;
 
 /**
@@ -120,7 +121,7 @@ final class ObjectConfig extends Config
             builder: $this->builder,
             autowiring: $this->autowiring,
             value: [$this, $name],
-            declaredAt: Location::caller(),
+            declaredAt: caller(),
         );
 
         /** @var FunctionConfig<callable-array> */
@@ -129,7 +130,7 @@ final class ObjectConfig extends Config
             autoconfiguration: $this->autoconfiguration,
             autowiring: $this->autowiring,
             value: $value,
-            declaredAt: Location::caller(),
+            declaredAt: caller(),
         );
     }
 

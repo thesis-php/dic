@@ -18,12 +18,12 @@ use Thesis\Dic\Internal\Builder;
 use Thesis\Dic\Internal\Builder\Autoconfiguration;
 use Thesis\Dic\Internal\Factory\ValueFactory;
 use Thesis\Dic\Internal\NonCopyable;
-use Thesis\Dic\Location;
 use Thesis\Dic\Module;
 use Thesis\Dic\Ref;
 use Thesis\Dic\Tag;
 use Thesis\Dic\TaggedRef;
 use Thesis\Dic\TaggedRefs;
+use function Thesis\Dic\Internal\caller;
 
 /**
  * @api
@@ -147,7 +147,7 @@ final readonly class Dic
             builder: $this->builder,
             autowiring: $this->autowiring,
             value: $value,
-            declaredAt: Location::caller(),
+            declaredAt: caller(),
         );
     }
 
@@ -159,7 +159,7 @@ final readonly class Dic
      */
     public function function(callable|array|Ref $function): FunctionConfig
     {
-        $declaredAt = Location::caller();
+        $declaredAt = caller();
 
         if (!$function instanceof Ref) {
             /** @var ValueConfig<callable> */
@@ -191,7 +191,7 @@ final readonly class Dic
      */
     public function object(string $class, null|callable|array|Ref $factory = null): ObjectConfig
     {
-        $declaredAt = Location::caller();
+        $declaredAt = caller();
 
         if (!($factory === null || $factory instanceof Ref)) {
             /** @var ValueConfig<callable(): T> */
@@ -226,7 +226,7 @@ final readonly class Dic
             builder: $this->builder,
             autowiring: $this->autowiring,
             ref: $ref,
-            declaredAt: Location::caller(),
+            declaredAt: caller(),
         );
     }
 
@@ -239,7 +239,7 @@ final readonly class Dic
      */
     public function provider(mixed $value): ProviderConfig
     {
-        $declaredAt = Location::caller();
+        $declaredAt = caller();
 
         if (!$value instanceof Ref) {
             $value = new ValueConfig(
@@ -275,7 +275,7 @@ final readonly class Dic
             autowiring: $this->autowiring,
             tag: $tag,
             sort: $sort,
-            declaredAt: Location::caller(),
+            declaredAt: caller(),
         );
     }
 

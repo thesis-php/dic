@@ -12,32 +12,6 @@ use Testo\Test;
 #[Covers(Location::class)]
 final class LocationTest
 {
-    public function caller(): void
-    {
-        (static function (): void {
-            $location = Location::caller();
-
-            Assert::same($location->file, __FILE__);
-            Assert::same($location->line, __LINE__ + 1);
-        })(); // the expected line
-    }
-
-    public function callerInsideEval(): void
-    {
-        $location = eval(
-            // the expected line is below
-            <<<'PHP'
-                $fn = static fn() => \Thesis\Dic\Location::caller();
-
-                return $fn();
-                PHP
-        );
-
-        Assert::instanceOf($location, Location::class);
-        Assert::same($location->file, __FILE__);
-        Assert::same($location->line, __LINE__ - 8);
-    }
-
     public function shortFileStripsProjectPrefix(): void
     {
         $location = new Location(__FILE__, 1);

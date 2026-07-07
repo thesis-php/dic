@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.3] - 2026-07-07
+
+### Fixed
+
+- A service registered through an autoconfiguration wrapper (`FunctionAutoconfig::closure()`,
+  `MethodAutoconfig::register()`) now records its `declaredAt` at the user's call site instead of the internal
+  wrapper, so error messages point at your code rather than the library.
+
 ## [0.5.2] - 2026-07-07
 
 ### Fixed

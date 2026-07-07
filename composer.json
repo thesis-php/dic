@@ -33,7 +33,8 @@
         },
         "files": [
             "src/Dic/Autowire.php",
-            "src/Dic/DoNotAutowire.php"
+            "src/Dic/DoNotAutowire.php",
+            "src/Dic/Internal/caller.php"
         ]
     },
     "autoload-dev": {

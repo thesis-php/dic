@@ -7,16 +7,19 @@ namespace Thesis\Dic\Internal\Builder;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Test;
+use Thesis\Dic\Configuration\ClosureConfig;
 use Thesis\Dic\Configuration\FunctionAutoconfig;
 use Thesis\Dic\Configuration\FunctionConfig;
 use Thesis\Dic\Configuration\ObjectAutoconfig;
 use Thesis\Dic\Configuration\ObjectConfig;
 use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\Builder;
-use Thesis\Dic\Location;
 use Thesis\Dic\Ref;
 use Thesis\Fixture\Counter;
 use Thesis\TestService;
+use function Thesis\Dic\Internal\caller;
+use function Typhoon\Type\closureT;
+use const Typhoon\Type\intT;
 
 #[Test]
 #[Covers(Autoconfiguration::class)]
@@ -44,6 +47,23 @@ final class AutoconfigurationTest
         Assert::count($seen, 2);
         Assert::contains($seen, $object);
         Assert::contains($seen, $function);
+    }
+
+    public function declaredAtClimbsPastTheAutoconfigWrapperToTheUserCallback(): void
+    {
+        $autoconfiguration = self::autoconfiguration();
+
+        $closure = null;
+        $autoconfiguration->onFunction(static function (FunctionAutoconfig $config) use (&$closure): void {
+            $closure = $config->closure(closureT([], intT)); // the expected line
+        });
+
+        $autoconfiguration->schedule(self::functionConfig());
+        $autoconfiguration->start();
+
+        Assert::instanceOf($closure, ClosureConfig::class);
+        Assert::same($closure->declaredAt->file, __FILE__);
+        Assert::same($closure->declaredAt->line, __LINE__ - 8);
     }
 
     public function autoconfiguresConfigScheduledDuringTheRun(): void
@@ -130,7 +150,7 @@ final class AutoconfigurationTest
             autowiring: new Autowiring(),
             reflection: new \ReflectionClass(Counter::class),
             factory: null,
-            declaredAt: Location::caller(),
+            declaredAt: caller(),
         );
     }
 
@@ -145,7 +165,7 @@ final class AutoconfigurationTest
             autowiring: new Autowiring(),
             reflection: new \ReflectionClass(TestService::class),
             factory: null,
-            declaredAt: Location::caller(),
+            declaredAt: caller(),
         );
 
         return $object->method('with');

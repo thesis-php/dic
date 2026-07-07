@@ -10,9 +10,9 @@ use Testo\Test;
 use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\Builder;
 use Thesis\Dic\Internal\Builder\Autoconfiguration;
-use Thesis\Dic\Location;
 use Thesis\Fixture\ApcuCache;
 use Thesis\Fixture\Cache;
+use function Thesis\Dic\Internal\caller;
 
 #[Test]
 #[Covers(ObjectAutoconfig::class)]
@@ -51,7 +51,7 @@ final class ObjectAutoconfigTest
             autowiring: new Autowiring(),
             reflection: new \ReflectionClass($class),
             factory: null,
-            declaredAt: Location::caller(),
+            declaredAt: caller(),
         );
 
         return new ObjectAutoconfig($builder, $config);
