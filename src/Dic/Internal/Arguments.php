@@ -209,6 +209,11 @@ final class Arguments
                 ?? autowire;
         }
 
+        if ($argument instanceof ClosureParameter) {
+            /** @var TClosureParameter */
+            return $argument;
+        }
+
         if ($argument instanceof Autowire) {
             return $this->autowire($parameter, $argument);
         }
