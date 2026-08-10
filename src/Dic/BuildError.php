@@ -52,13 +52,36 @@ final class BuildError extends \LogicException
      * @param Ref<*> $ref
      * @param Tag<*> $tag
      */
-    public static function taggedDuringResolution(Ref $ref, Tag $tag): self
+    public static function cannotAddAlreadyRequestedTag(Ref $ref, Tag $tag): self
     {
         return new self(\sprintf(
-            'Cannot tag %s with "%s" during tag resolution',
+            'Cannot tag %s with "%s": this tag was already requested during tag resolution',
             $ref,
             $tag::class,
         ));
+    }
+
+    /**
+     * @internal
+     *
+     * @param Ref<*> $ref
+     * @param Tag<*> $tag
+     */
+    public static function cannotAddResolvedTag(Ref $ref, Tag $tag): self
+    {
+        return new self(\sprintf(
+            'Cannot tag %s with "%s": tag resolution is already finished',
+            $ref,
+            $tag::class,
+        ));
+    }
+
+    /**
+     * @internal
+     */
+    public static function cannotListenResolvedTags(): self
+    {
+        return new self('Cannot listen to tag resolution: tag resolution is already finished');
     }
 
     /**
