@@ -100,8 +100,10 @@ $dic->onTagResolution(static function (TaggedRefs $tags) use ($logger): void {
 });
 ```
 
-You can read and rewire during resolution, but you cannot add new tags then —
-tagging a service inside a resolution listener fails the build.
+You can read, rewire, and add tags during resolution, but every tag query is stabilized when it is first read.
+After `$tags->find(CacheTag::class)`, adding another `CacheTag` fails the build because earlier consumers would have
+already observed the list. Tags that have not been requested yet may still be added and picked up by later listeners.
+After tag resolution finishes, no more listeners or tags may be added.
 
 [`thesis/symfony-console-module`](https://github.com/thesis-php/symfony-console-module) ships two tags built this way:
 `CommandTag` carries the command `name`, `description`, and `aliases` for invokable commands and functions;
