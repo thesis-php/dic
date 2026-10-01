@@ -93,8 +93,9 @@ final class SingletonStrategyTest
             LifetimeStrategy::Singleton->resolve(ref(), $dependencies);
             Assert::fail('Expected a BuildError to be thrown.');
         } catch (BuildError $error) {
-            Assert::true(str_contains($error->getMessage(), '$first'));
-            Assert::false(str_contains($error->getMessage(), '$second'));
+            Assert::string($error->getMessage())
+                ->contains('$first')
+                ->notContains('$second');
         }
     }
 
