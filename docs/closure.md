@@ -50,7 +50,7 @@ So a single implementation can mix injected services with per-call input:
 
 ```php
 use function Typhoon\Type\nullOrT;
-use function Typhoon\Type\stringT;
+use const Typhoon\Type\stringT;
 
 $dic
     ->object(RedisCache::class)
@@ -58,7 +58,7 @@ $dic
 
 $lookup = $dic
     ->function(static fn(Cache $cache, string $key): ?string => $cache->get($key))
-    ->closure(closureT(params: [stringT()], return: nullOrT(stringT())));
+    ->closure(closureT(params: [stringT], return: nullOrT(stringT)));
 // Ref<\Closure(string): ?string>
 ```
 
@@ -68,6 +68,41 @@ while `$key` is the one runtime parameter the caller passes:
 ```php
 $value = $lookup('user:1');
 ```
+
+### Matching is exact
+
+The declared parameters act as a binding table local to the closure, so they follow the same rule as
+[bindings](autowiring.md#types-match-exactly): a type matches only itself.
+Three consequences are worth knowing:
+
+- A type that differs in any way is not a match.
+  Against a declared `\Closure(string)`, an implementation parameter `?string $key = null` is a dependency,
+  not a runtime parameter: it quietly keeps its default, and the caller's argument never reaches it.
+  Declare the same type on both sides — here `nullOrT(stringT)`.
+- An unnamed declared parameter feeds **every** implementation parameter of its type,
+  just as a binding answers every parameter of its type.
+  Name it to target a single one; two declared parameters of the same type must be named,
+  or the build fails with *multiple autowiring candidates*.
+- A declared parameter that no implementation parameter matches is accepted and ignored,
+  as PHP itself ignores extra arguments.
+
+```php
+use function Typhoon\Type\param;
+use const Typhoon\Type\intT;
+
+$dic
+    ->function(static fn(int $a, int $b): int => $a + $b)
+    ->closure(closureT(
+        params: [
+            param(intT, name: 'a'),
+            param(intT, name: 'b'),
+        ],
+        return: intT,
+    ));
+// Ref<\Closure(int $a, int $b): int>
+```
+
+## Setting dependencies
 
 Dependencies take arguments exactly like an object service —
 `arg()`, `args()`, `variadic()` and `doNotAutowire()` all apply,

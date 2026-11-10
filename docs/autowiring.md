@@ -46,6 +46,34 @@ Without a matching binding, autowiring finds no candidate and the build fails wi
 (unless the parameter has a default value, which is then used).
 Each type can be bound once: a second binding to the same type within the same module fails with *already bound*.
 
+## Types match exactly
+
+A binding answers only the exact type it was declared with.
+Nothing is widened or narrowed: no subtypes, no supertypes, no nullability.
+
+In particular `?Cache` is a different type from `Cache`, so a `Cache` binding does not satisfy a `?Cache` parameter.
+Such a parameter has no candidate: with a default value it quietly keeps that default, without one the build fails.
+
+```php
+final readonly class ProductRepository
+{
+    public function __construct(
+        public ?Cache $cache = null, // stays null even though Cache is bound
+    ) {}
+}
+```
+
+To inject into a nullable parameter, bind the nullable type as well, or pass the service explicitly with `arg()`:
+
+```php
+use function Typhoon\Type\nullOrT;
+
+$dic
+    ->object(RedisCache::class)
+    ->bind(objectT(Cache::class))
+    ->bind(nullOrT(objectT(Cache::class)));
+```
+
 ## Bindings are module-local
 
 Bindings live on the module's `Dic`, not on the container as a whole.
