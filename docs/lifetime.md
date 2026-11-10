@@ -129,6 +129,7 @@ so the singleton rule above is not violated.
 
 Disposing a scope runs the [disposers](disposal.md) of every scoped instance it created;
 disposing the container does the same for singletons.
+Either way a service is disposed before the services it depends on — see [Disposal order](disposal.md#disposal-order).
 
 - `Dic::run()` disposes its scope and then the container when `main` returns — and also if it throws.
 - `Scoped::run()` disposes its scope after the callback, or on throw.

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Thesis\Dic\Internal\Builder;
 
 use Thesis\Dic\BuildError;
+use Thesis\Dic\Internal\Container\DependencyOrder;
 use Thesis\Dic\Internal\Container\Factories;
 use Thesis\Dic\Internal\Dependency;
 use Thesis\Dic\Internal\Factory;
@@ -36,6 +37,7 @@ final class Services
     public function __construct(
         private readonly Factories $singletonFactories,
         private readonly Factories $scopedFactories,
+        private readonly DependencyOrder $dependencyOrder,
     ) {
         $this->defaultLifetimeStrategies = new \WeakMap();
         $this->lifetimeStrategies = new \WeakMap();
@@ -127,6 +129,8 @@ final class Services
             $this->scopedFactories->register($ref, $factory);
         }
 
+        $this->dependencyOrder->append($ref, $dependencies->getReturn());
+
         $this->resolution->offsetSet($ref, $resolution);
 
         return $resolution;
@@ -135,11 +139,15 @@ final class Services
     /**
      * @param Ref<mixed> $ref
      * @param iterable<Dependency> $dependencies
-     * @return \Generator<Dependency, Resolution>
+     * @return \Generator<Dependency, Resolution, mixed, list<Ref<mixed>>> returns the refs $ref depends on
      */
     private function resolveDependencies(Ref $ref, iterable $dependencies): \Generator
     {
+        $refs = [];
+
         foreach ($dependencies as $dependency) {
+            $refs[] = $dependency->ref;
+
             try {
                 yield $dependency => $this->resolveService($dependency->ref);
             } catch (Cycle $cycle) {
@@ -152,6 +160,8 @@ final class Services
                 throw $cycle;
             }
         }
+
+        return $refs;
     }
 
     /**

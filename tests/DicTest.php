@@ -565,6 +565,84 @@ final readonly class DicTest
         Assert::true($disposed);
     }
 
+    public function dependentIsDisposedBeforeItsDependency(): void
+    {
+        $log = [];
+
+        Dic::run(
+            new ClosureModule(static function (Dic $dic) use (&$log) {
+                $counter = $dic
+                    ->object(Counter::class)
+                    ->disposer(static function () use (&$log): void {
+                        $log[] = 'counter';
+                    });
+
+                return $dic
+                    ->object(CounterHolder::class)
+                    ->arg('counter', $counter)
+                    ->disposer(static function () use (&$log): void {
+                        $log[] = 'holder';
+                    });
+            }),
+            static fn(CounterHolder $holder) => null,
+        );
+
+        Assert::same($log, ['holder', 'counter']);
+    }
+
+    public function lazyServiceIsDisposedBeforeTheDependencyCreatedOnItsInitialization(): void
+    {
+        $log = [];
+
+        Dic::run(
+            new ClosureModule(static function (Dic $dic) use (&$log) {
+                $counter = $dic
+                    ->object(Counter::class)
+                    ->disposer(static function () use (&$log): void {
+                        $log[] = 'counter';
+                    });
+
+                return $dic
+                    ->object(CounterHolder::class)
+                    ->arg('counter', $counter)
+                    ->lazy()
+                    ->disposer(static function () use (&$log): void {
+                        $log[] = 'holder';
+                    });
+            }),
+            // Reading a property initializes the lazy proxy, creating the counter after the holder that depends on it.
+            static fn(CounterHolder $holder) => $holder->counter,
+        );
+
+        Assert::same($log, ['holder', 'counter']);
+    }
+
+    public function scopedServiceIsDisposedBeforeTheSingletonItDependsOn(): void
+    {
+        $log = [];
+
+        Dic::run(
+            new ClosureModule(static function (Dic $dic) use (&$log) {
+                $counter = $dic
+                    ->object(Counter::class)
+                    ->disposer(static function () use (&$log): void {
+                        $log[] = 'singleton';
+                    });
+
+                return $dic
+                    ->object(CounterHolder::class)
+                    ->scoped()
+                    ->arg('counter', $counter)
+                    ->disposer(static function () use (&$log): void {
+                        $log[] = 'scoped';
+                    });
+            }),
+            static fn(CounterHolder $holder) => null,
+        );
+
+        Assert::same($log, ['scoped', 'singleton']);
+    }
+
     public function taggedListCollectsTaggedServices(): void
     {
         $caches = self::build(static function (Dic $dic) {

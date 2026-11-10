@@ -36,6 +36,28 @@ Disposal follows the [lifetime](lifetime.md):
 Only instances that were actually created are disposed.
 A service never built — for example a [lazy](object.md) one that was never used — has no disposer call.
 
+## Disposal order
+
+A service is disposed **before** the services it depends on, so its disposer can still use them:
+
+```php
+$connection = $dic
+    ->object(Connection::class)
+    ->disposer(static fn(Connection $connection) => $connection->close());
+
+$dic
+    ->object(Consumer::class)
+    ->arg('connection', $connection)
+    ->disposer(static fn(Consumer $consumer) => $consumer->stop()); // runs first, the connection is still open
+```
+
+The order comes from the dependency graph resolved at build, not from the order instances happened to be created in,
+so it holds for [lazy](object.md) services too.
+Services that do not depend on each other are disposed in no particular order.
+
+Scoped instances are disposed with their scope, which always ends before the container does —
+a scoped service is therefore disposed before any singleton it depends on.
+
 ## Multiple disposers
 
 A service may register several disposers; they run in registration order.

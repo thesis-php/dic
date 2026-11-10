@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Disposers now run in reverse dependency order: a service is disposed before the services it depends on,
+  so its disposer can still use them. Previously instances were disposed in the order they were created,
+  dependencies first.
 - `Dic::scoped()` now accepts a plain value in addition to a `Ref`, wrapping it as a value service just like
   `provider()` does.
 - `Dic::object()` now types `$factory` as a plain `callable`, so factories with parameters pass static analysis.

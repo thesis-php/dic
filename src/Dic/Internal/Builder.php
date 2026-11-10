@@ -8,6 +8,7 @@ use Thesis\Dic\Configuration\Config;
 use Thesis\Dic\Internal\Builder\LifetimeStrategy;
 use Thesis\Dic\Internal\Builder\Services;
 use Thesis\Dic\Internal\Builder\Tags;
+use Thesis\Dic\Internal\Container\DependencyOrder;
 use Thesis\Dic\Internal\Container\Disposers;
 use Thesis\Dic\Internal\Container\Factories;
 use Thesis\Dic\Internal\Container\Singletons;
@@ -28,6 +29,8 @@ final readonly class Builder
 
     private Factories $scopedFactories;
 
+    private DependencyOrder $dependencyOrder;
+
     private Tags $tags;
 
     private Disposers $disposers;
@@ -36,9 +39,11 @@ final readonly class Builder
     {
         $this->singletonFactories = new Factories();
         $this->scopedFactories = new Factories();
+        $this->dependencyOrder = new DependencyOrder();
         $this->services = new Services(
             singletonFactories: $this->singletonFactories,
             scopedFactories: $this->scopedFactories,
+            dependencyOrder: $this->dependencyOrder,
         );
         $this->tags = new Tags();
         $this->disposers = new Disposers();
@@ -107,6 +112,7 @@ final readonly class Builder
         return new Singletons(
             singletonFactories: $this->singletonFactories,
             scopedFactories: $this->scopedFactories,
+            dependencyOrder: $this->dependencyOrder,
             disposers: $this->disposers,
         );
     }

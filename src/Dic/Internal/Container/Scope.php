@@ -15,9 +15,10 @@ final readonly class Scope extends Container
     public function __construct(
         private Singletons $singletons,
         private Factories $factories,
+        DependencyOrder $dependencyOrder,
         Disposers $disposers,
     ) {
-        parent::__construct($disposers);
+        parent::__construct($dependencyOrder, $disposers);
     }
 
     public function get(Ref $ref): mixed
@@ -41,6 +42,7 @@ final readonly class Scope extends Container
         return new self(
             singletons: $this->singletons,
             factories: $this->factories,
+            dependencyOrder: $this->dependencyOrder,
             disposers: $this->disposers,
         );
     }
