@@ -33,12 +33,13 @@ Only non-native types are rejected: a generic such as `objectT(ArrayObject::clas
 fails with *is not supported for binding*.
 
 A service is **not** bound to its own class automatically.
-If a concrete class is injected by its own type, bind it to itself:
+If a concrete class is injected by its own type, bind it to itself with `bindSelf()`,
+a shorthand for `bind(objectT(RedisCache::class))`:
 
 ```php
 $dic
     ->object(RedisCache::class)
-    ->bind(objectT(RedisCache::class));
+    ->bindSelf();
 ```
 
 Without a matching binding, autowiring finds no candidate and the build fails with *cannot autowire*

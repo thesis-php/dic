@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `ObjectConfig::bindSelf()` — binds an object service to its declared class:
+  `$dic->object(Foo::class)->bindSelf()` is equivalent to `$dic->object(Foo::class)->bind(objectT(Foo::class))`.
+
 ### Changed
 
 - `Dic::scoped()` now accepts a plain value in addition to a `Ref`, wrapping it as a value service just like
