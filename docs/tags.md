@@ -163,6 +163,10 @@ Two more details worth knowing:
   Only the object callback offers them, since a `function()` always infers its lifetime from what it carries.
 - Services scheduled *by* a callback are visited too, but the loop terminates: a function callback only ever
   produces `closure()`s, which are not introspectable and so are never visited.
+- Autoconfiguration currently runs once, when the module's `configure()` returns.
+  A service declared on that `Dic` later — for example inside an `onTagResolution()` listener — is **not** visited:
+  letting autoconfiguration and tag resolution feed each other would make the build order hard to reason about.
+  Configure such a service by hand where you declare it.
 
 [`thesis/symfony-console-module`](https://github.com/thesis-php/symfony-console-module) ships this pattern as
 `AutoconfigureCommands`: call `$dic->apply(new AutoconfigureCommands())` once, and every class and method annotated
