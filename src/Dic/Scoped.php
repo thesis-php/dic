@@ -34,12 +34,11 @@ final readonly class Scoped
     public function run(callable $function): mixed
     {
         $scope = $this->container->startScope();
-
-        $value = $scope->get($this->ref);
         $error = null;
 
         try {
-            return $function($value);
+            // Resolved inside the try: if it fails halfway, the services already created in the scope are still disposed.
+            return $function($scope->get($this->ref));
         } catch (\Throwable $error) {
             throw $error;
         } finally {

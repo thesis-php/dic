@@ -852,6 +852,44 @@ final readonly class DicTest
         Assert::same($captured, $thrown);
     }
 
+    public function scopedRunDisposesCreatedServicesWhenResolutionFails(): void
+    {
+        $thrown = new \RuntimeException('boom');
+        $captured = null;
+        $rethrown = null;
+        $called = false;
+
+        $scoped = self::build(
+            static function (Dic $dic) use ($thrown, &$captured) {
+                $counter = $dic
+                    ->object(Counter::class)
+                    ->scoped()
+                    ->disposer(static function (Counter $counter, ?\Throwable $error) use (&$captured): void {
+                        $captured = $error;
+                    });
+
+                return $dic->scoped(
+                    $dic
+                        ->object(CounterHolder::class, static fn(Counter $counter): never => throw $thrown)
+                        ->scoped()
+                        ->arg('counter', $counter),
+                );
+            },
+        );
+
+        try {
+            $scoped->run(static function (CounterHolder $holder) use (&$called): void {
+                $called = true;
+            });
+        } catch (\RuntimeException $error) {
+            $rethrown = $error;
+        }
+
+        Assert::false($called);
+        Assert::same($rethrown, $thrown);
+        Assert::same($captured, $thrown);
+    }
+
     public function taggedListFindsByTagInstance(): void
     {
         $tag = new CacheTag();

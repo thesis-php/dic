@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `provider()` does.
 - `Dic::object()` now types `$factory` as a plain `callable`, so factories with parameters pass static analysis.
 
+### Fixed
+
+- `Scoped::run()` now disposes its scope when resolving the wrapped service fails halfway:
+  the scoped services created before the failure used to be left without a disposer call.
+
 ## [0.5.3] - 2026-07-07
 
 ### Fixed
