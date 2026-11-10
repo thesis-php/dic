@@ -22,6 +22,7 @@ use Thesis\Dic\Location;
 use Thesis\Dic\Ref;
 use function Thesis\Dic\Internal\caller;
 use function Thesis\Formatter\formatReflectedClass;
+use function Typhoon\Type\objectT;
 
 /**
  * @api
@@ -177,6 +178,14 @@ final class ObjectConfig extends Config
         $this->arguments->doNotAutowire();
 
         return $this;
+    }
+
+    /**
+     * Binds this service to its declared class so it is injected wherever that class is required.
+     */
+    public function bindSelf(): static
+    {
+        return $this->bind(objectT($this->reflection->name));
     }
 
     /**

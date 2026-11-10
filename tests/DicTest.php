@@ -323,6 +323,17 @@ final readonly class DicTest
         Assert::same($pair->first, $pair->second);
     }
 
+    public function bindSelfAutowiresByDeclaredClass(): void
+    {
+        $pair = self::build(static function (Dic $dic) {
+            $dic->object(Holder::class)->bindSelf();
+
+            return $dic->object(Pair::class);
+        });
+
+        Assert::same($pair->first, $pair->second);
+    }
+
     public function defaultValueIsUsedWhenNotAutowirable(): void
     {
         $object = self::build(
