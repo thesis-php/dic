@@ -21,11 +21,11 @@
     },
     "require-dev": {
         "symfony/var-dumper": "^8.1.0",
-        "testo/assert": "^0.1.9",
-        "testo/codecov": "^0.1.11",
-        "testo/data": "^0.1.6",
-        "testo/test": "^0.1.4",
-        "testo/testo": "^0.10.29"
+        "testo/assert": "^0.1.17",
+        "testo/codecov": "^0.2.3",
+        "testo/data": "^0.1.10",
+        "testo/test": "^0.1.8",
+        "testo/testo": "^0.10.54"
     },
     "autoload": {
         "psr-4": {
