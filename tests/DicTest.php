@@ -11,7 +11,6 @@ use Testo\Test;
 use Thesis\Dic\BuildError;
 use Thesis\Dic\ClosureModule;
 use Thesis\Dic\DisposalFailed;
-use Thesis\Dic\Ref;
 use Thesis\Dic\TaggedRef;
 use Thesis\Dic\TaggedRefs;
 use Thesis\Fixture\ApcuCache;
@@ -24,6 +23,7 @@ use Thesis\Fixture\Counter;
 use Thesis\Fixture\CounterAndNumbers;
 use Thesis\Fixture\CounterHolder;
 use Thesis\Fixture\Holder;
+use Thesis\Fixture\InvokableModule;
 use Thesis\Fixture\Numbers;
 use Thesis\Fixture\OptionalConsumer;
 use Thesis\Fixture\Pair;
@@ -42,14 +42,14 @@ final readonly class DicTest
 {
     public function value(): void
     {
-        $value = self::build(static fn(Dic $dic) => $dic->value(1));
+        $value = Dic::build(static fn(Dic $dic) => $dic->value(1));
 
         Assert::same($value, 1);
     }
 
     public function valueRef(): void
     {
-        $value = self::build(static function (Dic $dic) {
+        $value = Dic::build(static function (Dic $dic) {
             $ref = $dic->value(1);
 
             return $dic->value($ref);
@@ -60,7 +60,7 @@ final readonly class DicTest
 
     public function valueArrayRef(): void
     {
-        $value = self::build(static function (Dic $dic) {
+        $value = Dic::build(static function (Dic $dic) {
             $ref1 = $dic->value(1);
             $ref2 = $dic->value(2);
 
@@ -72,7 +72,7 @@ final readonly class DicTest
 
     public function object(): void
     {
-        $object = self::build(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic->object(TestService::class),
         );
 
@@ -81,7 +81,7 @@ final readonly class DicTest
 
     public function objectStaticFactory(): void
     {
-        $object = self::build(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic->object(TestService::class, TestService::new(...)),
         );
 
@@ -90,7 +90,7 @@ final readonly class DicTest
 
     public function objectMethodFactory(): void
     {
-        $object = self::build(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic->object(
                 class: TestService::class,
                 factory: $dic->object(TestService::class)->method('new'),
@@ -102,7 +102,7 @@ final readonly class DicTest
 
     public function objectCallableArrayClassMethodFactory(): void
     {
-        $object = self::build(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic->object(
                 class: TestService::class,
                 /** @phpstan-ignore argument.type */
@@ -118,7 +118,7 @@ final readonly class DicTest
 
     public function objectCallableArrayObjectMethodFactory(): void
     {
-        $object = self::build(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic->object(
                 class: TestService::class,
                 /** @phpstan-ignore argument.type */
@@ -134,7 +134,7 @@ final readonly class DicTest
 
     public function objectRefMethodArrayFactory(): void
     {
-        $object = self::build(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic->object(
                 class: TestService::class,
                 factory: [$dic->object(TestService::class), 'new'],
@@ -148,7 +148,7 @@ final readonly class DicTest
     {
         $value = 123;
 
-        $object = self::build(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic
                 ->object(TestService::class)
                 ->call('set', [$value]),
@@ -159,7 +159,7 @@ final readonly class DicTest
 
     public function objectCallWithVariadic(): void
     {
-        $object = self::build(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic
                 ->object(TestService::class)
                 ->call('setAll', variadic: [1, 2, 3]),
@@ -170,7 +170,7 @@ final readonly class DicTest
 
     public function dependencyDeclaredAfterDependent(): void
     {
-        $object = self::build(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic
                 ->object(TestService::class)
                 ->arg('value', $dic->object(TestService::class)),
@@ -200,7 +200,7 @@ final readonly class DicTest
                 $line + 22,
             ));
 
-        self::build(static function (Dic $dic) {
+        Dic::build(static function (Dic $dic) {
             $a = $dic->object(TestService::class);
             $b = $dic->object(TestService::class);
             $c = $dic->object(TestService::class);
@@ -216,7 +216,7 @@ final readonly class DicTest
     #[ExpectException(\LogicException::class)]
     public function selfDependency(): void
     {
-        self::build(static function (Dic $dic) {
+        Dic::build(static function (Dic $dic) {
             $service = $dic->object(TestService::class);
 
             return $service->arg('value', $service);
@@ -226,7 +226,7 @@ final readonly class DicTest
     #[ExpectException(\LogicException::class)]
     public function scopedCircularDependency(): void
     {
-        self::build(static function (Dic $dic) {
+        Dic::build(static function (Dic $dic) {
             $a = $dic->object(TestService::class)->scoped();
             $b = $dic->object(TestService::class)->scoped();
 
@@ -241,7 +241,7 @@ final readonly class DicTest
     {
         $value = 123;
 
-        $object = self::build(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic
                 ->object(TestService::class)
                 ->chain('with', [$value]),
@@ -252,7 +252,7 @@ final readonly class DicTest
 
     public function objectChainWithVariadic(): void
     {
-        $object = self::build(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic
                 ->object(TestService::class)
                 ->chain('withAll', variadic: [1, 2, 3]),
@@ -279,7 +279,7 @@ final readonly class DicTest
                 $line + 17,
             ));
 
-        self::build(static function (Dic $dic) {
+        Dic::build(static function (Dic $dic) {
             $scoped = $dic->object(TestService::class)->scoped();
 
             return $dic
@@ -290,7 +290,7 @@ final readonly class DicTest
 
     public function autowiresConstructorByBoundType(): void
     {
-        $consumer = self::build(static function (Dic $dic) {
+        $consumer = Dic::build(static function (Dic $dic) {
             $dic->object(RedisCache::class)->bind(objectT(Cache::class));
 
             return $dic->object(Consumer::class);
@@ -302,7 +302,7 @@ final readonly class DicTest
 
     public function bindWithQualifierSelectsImplementation(): void
     {
-        $consumer = self::build(static function (Dic $dic) {
+        $consumer = Dic::build(static function (Dic $dic) {
             $dic->object(RedisCache::class)->bind(objectT(Cache::class), 'redis');
             $dic->object(ApcuCache::class)->bind(objectT(Cache::class), 'apcu');
 
@@ -314,7 +314,7 @@ final readonly class DicTest
 
     public function singletonInstanceIsSharedBetweenDependents(): void
     {
-        $pair = self::build(static function (Dic $dic) {
+        $pair = Dic::build(static function (Dic $dic) {
             $dic->object(Holder::class)->bind(objectT(Holder::class));
 
             return $dic->object(Pair::class);
@@ -325,7 +325,7 @@ final readonly class DicTest
 
     public function bindSelfAutowiresByDeclaredClass(): void
     {
-        $pair = self::build(static function (Dic $dic) {
+        $pair = Dic::build(static function (Dic $dic) {
             $dic->object(Holder::class)->bindSelf();
 
             return $dic->object(Pair::class);
@@ -336,7 +336,7 @@ final readonly class DicTest
 
     public function defaultValueIsUsedWhenNotAutowirable(): void
     {
-        $object = self::build(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic->object(WithDefault::class),
         );
 
@@ -345,7 +345,7 @@ final readonly class DicTest
 
     public function argOverridesDefaultValue(): void
     {
-        $object = self::build(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic->object(WithDefault::class)->arg('number', 7),
         );
 
@@ -354,7 +354,7 @@ final readonly class DicTest
 
     public function variadicArguments(): void
     {
-        $object = self::build(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic->object(Numbers::class)->variadic([1, 2, 3]),
         );
 
@@ -363,7 +363,7 @@ final readonly class DicTest
 
     public function emptyVariadicDefaultsToEmptyArray(): void
     {
-        $object = self::build(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic->object(Numbers::class),
         );
 
@@ -372,7 +372,7 @@ final readonly class DicTest
 
     public function requireComposesSubmodule(): void
     {
-        $value = self::build(
+        $value = Dic::build(
             static fn(Dic $dic) => $dic->import(
                 new ClosureModule(static fn(Dic $inner) => $inner->value(42)),
             ),
@@ -381,9 +381,33 @@ final readonly class DicTest
         Assert::same($value, 42);
     }
 
+    public function buildAcceptsModule(): void
+    {
+        $value = Dic::build(new ClosureModule(static fn(Dic $dic) => $dic->value(42)));
+
+        Assert::same($value, 42);
+    }
+
+    public function buildPrefersModuleConfigureOverInvoke(): void
+    {
+        $value = Dic::build(new InvokableModule());
+
+        Assert::same($value, 'configure');
+    }
+
+    public function runPrefersModuleConfigureOverInvoke(): void
+    {
+        $value = Dic::run(
+            new InvokableModule(),
+            static fn(string $value) => $value,
+        );
+
+        Assert::same($value, 'configure');
+    }
+
     public function lazyObjectIsUsable(): void
     {
-        $counter = self::build(
+        $counter = Dic::build(
             static fn(Dic $dic) => $dic->object(Counter::class)->lazy(),
         );
 
@@ -398,7 +422,7 @@ final readonly class DicTest
     {
         Expect::exception(BuildError::class)->withMessageContaining('cannot be made lazy');
 
-        self::build(
+        Dic::build(
             static fn(Dic $dic) => $dic
                 ->object(Cache::class, static fn(): Cache => new RedisCache())
                 ->lazy(),
@@ -407,7 +431,7 @@ final readonly class DicTest
 
     public function scopedWrapperProducesFreshInstancePerRun(): void
     {
-        $scoped = self::build(
+        $scoped = Dic::build(
             static fn(Dic $dic) => $dic->scoped(
                 $dic->object(Counter::class)->scoped(),
             ),
@@ -424,13 +448,13 @@ final readonly class DicTest
         $disposed = [];
 
         $result = Dic::run(
-            new ClosureModule(static function (Dic $dic) use (&$disposed) {
+            static function (Dic $dic) use (&$disposed) {
                 return $dic->object(Counter::class)->disposer(
                     static function (Counter $counter) use (&$disposed): void {
                         $disposed[] = $counter;
                     },
                 );
-            }),
+            },
             static fn(Counter $counter) => $counter->value = 1,
         );
 
@@ -446,13 +470,13 @@ final readonly class DicTest
 
         try {
             Dic::run(
-                new ClosureModule(static function (Dic $dic) use (&$captured) {
+                static function (Dic $dic) use (&$captured) {
                     return $dic->object(Counter::class)->disposer(
                         static function (Counter $counter, ?\Throwable $error) use (&$captured): void {
                             $captured = $error;
                         },
                     );
-                }),
+                },
                 static function (Counter $counter) use ($thrown): never {
                     throw $thrown;
                 },
@@ -473,7 +497,7 @@ final readonly class DicTest
 
         try {
             Dic::run(
-                new ClosureModule(static function (Dic $dic) use ($boom, &$secondRan) {
+                static function (Dic $dic) use ($boom, &$secondRan) {
                     return $dic
                         ->object(Counter::class)
                         ->disposer(static function () use ($boom): never {
@@ -482,7 +506,7 @@ final readonly class DicTest
                         ->disposer(static function () use (&$secondRan): void {
                             $secondRan = true;
                         });
-                }),
+                },
                 static fn(Counter $counter) => null,
             );
         } catch (DisposalFailed $error) {
@@ -502,13 +526,11 @@ final readonly class DicTest
 
         try {
             Dic::run(
-                new ClosureModule(
-                    static fn(Dic $dic) => $dic
-                        ->object(Counter::class)
-                        ->disposer(static function () use ($disposerError): never {
-                            throw $disposerError;
-                        }),
-                ),
+                static fn(Dic $dic) => $dic
+                    ->object(Counter::class)
+                    ->disposer(static function () use ($disposerError): never {
+                        throw $disposerError;
+                    }),
                 static function (Counter $counter) use ($mainError): never {
                     throw $mainError;
                 },
@@ -526,7 +548,7 @@ final readonly class DicTest
         $disposed = false;
 
         Dic::run(
-            new ClosureModule(static function (Dic $dic) use (&$disposed) {
+            static function (Dic $dic) use (&$disposed) {
                 $counter = $dic
                     ->object(Counter::class)
                     ->lazy()
@@ -535,7 +557,7 @@ final readonly class DicTest
                     });
 
                 return $dic->object(CounterHolder::class)->arg('counter', $counter);
-            }),
+            },
             static fn(CounterHolder $holder) => null,
         );
 
@@ -547,7 +569,7 @@ final readonly class DicTest
         $disposed = false;
 
         Dic::run(
-            new ClosureModule(static function (Dic $dic) use (&$disposed) {
+            static function (Dic $dic) use (&$disposed) {
                 $counter = $dic
                     ->object(Counter::class)
                     ->lazy()
@@ -556,7 +578,7 @@ final readonly class DicTest
                     });
 
                 return $dic->object(CounterHolder::class)->arg('counter', $counter);
-            }),
+            },
             static function (CounterHolder $holder): void {
                 $holder->counter->value = 1; // touch the lazy proxy to initialize it
             },
@@ -570,7 +592,7 @@ final readonly class DicTest
         $log = [];
 
         Dic::run(
-            new ClosureModule(static function (Dic $dic) use (&$log) {
+            static function (Dic $dic) use (&$log) {
                 $counter = $dic
                     ->object(Counter::class)
                     ->disposer(static function () use (&$log): void {
@@ -583,7 +605,7 @@ final readonly class DicTest
                     ->disposer(static function () use (&$log): void {
                         $log[] = 'holder';
                     });
-            }),
+            },
             static fn(CounterHolder $holder) => null,
         );
 
@@ -595,7 +617,7 @@ final readonly class DicTest
         $log = [];
 
         Dic::run(
-            new ClosureModule(static function (Dic $dic) use (&$log) {
+            static function (Dic $dic) use (&$log) {
                 $counter = $dic
                     ->object(Counter::class)
                     ->disposer(static function () use (&$log): void {
@@ -609,7 +631,7 @@ final readonly class DicTest
                     ->disposer(static function () use (&$log): void {
                         $log[] = 'holder';
                     });
-            }),
+            },
             // Reading a property initializes the lazy proxy, creating the counter after the holder that depends on it.
             static fn(CounterHolder $holder) => $holder->counter,
         );
@@ -622,7 +644,7 @@ final readonly class DicTest
         $log = [];
 
         Dic::run(
-            new ClosureModule(static function (Dic $dic) use (&$log) {
+            static function (Dic $dic) use (&$log) {
                 $counter = $dic
                     ->object(Counter::class)
                     ->disposer(static function () use (&$log): void {
@@ -636,7 +658,7 @@ final readonly class DicTest
                     ->disposer(static function () use (&$log): void {
                         $log[] = 'scoped';
                     });
-            }),
+            },
             static fn(CounterHolder $holder) => null,
         );
 
@@ -645,7 +667,7 @@ final readonly class DicTest
 
     public function taggedListCollectsTaggedServices(): void
     {
-        $caches = self::build(static function (Dic $dic) {
+        $caches = Dic::build(static function (Dic $dic) {
             $dic->object(RedisCache::class)->tag(new CacheTag());
             $dic->object(ApcuCache::class)->tag(new CacheTag());
 
@@ -661,7 +683,7 @@ final readonly class DicTest
 
     public function taggedListRespectsSort(): void
     {
-        $caches = self::build(static function (Dic $dic) {
+        $caches = Dic::build(static function (Dic $dic) {
             $dic->object(RedisCache::class)->tag(new PriorityTag(2));
             $dic->object(ApcuCache::class)->tag(new PriorityTag(1));
 
@@ -681,7 +703,7 @@ final readonly class DicTest
     {
         $found = null;
 
-        self::build(static function (Dic $dic) use (&$found) {
+        Dic::build(static function (Dic $dic) use (&$found) {
             $dic->object(RedisCache::class)->tag(new CacheTag());
 
             $dic->onTagResolution(static function (TaggedRefs $taggedRefs) use (&$found): void {
@@ -699,7 +721,7 @@ final readonly class DicTest
     {
         $signature = closureT([param(intT, name: 'n')], intT);
 
-        $function = self::build(static function (Dic $dic) use ($signature) {
+        $function = Dic::build(static function (Dic $dic) use ($signature) {
             $dic->object(RedisCache::class)->bind(objectT(Cache::class));
 
             return $dic
@@ -714,7 +736,7 @@ final readonly class DicTest
     {
         $signature = closureT([param(intT, variadic: true, name: 'numbers')], intT);
 
-        $function = self::build(
+        $function = Dic::build(
             static fn(Dic $dic) => $dic
                 ->function(static fn(int ...$numbers): int => array_sum($numbers))
                 ->closure($signature),
@@ -725,7 +747,7 @@ final readonly class DicTest
 
     public function attributeAutowireQualifierSelectsImplementation(): void
     {
-        $consumer = self::build(static function (Dic $dic) {
+        $consumer = Dic::build(static function (Dic $dic) {
             $dic->object(RedisCache::class)->bind(objectT(Cache::class), 'redis');
             $dic->object(ApcuCache::class)->bind(objectT(Cache::class), 'apcu');
 
@@ -737,7 +759,7 @@ final readonly class DicTest
 
     public function attributeDoNotAutowireFallsBackToDefault(): void
     {
-        $consumer = self::build(
+        $consumer = Dic::build(
             static fn(Dic $dic) => $dic->object(OptionalConsumer::class),
         );
 
@@ -746,7 +768,7 @@ final readonly class DicTest
 
     public function bindWithEnumQualifier(): void
     {
-        $consumer = self::build(static function (Dic $dic) {
+        $consumer = Dic::build(static function (Dic $dic) {
             $dic->object(RedisCache::class)->bind(objectT(Cache::class), CacheStore::Redis);
             $dic->object(ApcuCache::class)->bind(objectT(Cache::class), CacheStore::Apcu);
 
@@ -758,7 +780,7 @@ final readonly class DicTest
 
     public function canBeScopedStaysSingletonWithoutScopedDependencies(): void
     {
-        $scoped = self::build(
+        $scoped = Dic::build(
             static fn(Dic $dic) => $dic->scoped(
                 $dic->object(Counter::class)->canBeScoped(),
             ),
@@ -772,7 +794,7 @@ final readonly class DicTest
 
     public function canBeScopedBecomesScopedWithScopedDependency(): void
     {
-        $scoped = self::build(
+        $scoped = Dic::build(
             static fn(Dic $dic) => $dic->scoped(
                 $dic
                     ->object(CounterHolder::class)
@@ -789,7 +811,7 @@ final readonly class DicTest
 
     public function positionalArgument(): void
     {
-        $object = self::build(
+        $object = Dic::build(
             static fn(Dic $dic) => $dic->object(WithDefault::class)->arg(0, 7),
         );
 
@@ -798,7 +820,7 @@ final readonly class DicTest
 
     public function positionalFactoryWiresDependencyAndVariadic(): void
     {
-        $object = self::build(static function (Dic $dic) {
+        $object = Dic::build(static function (Dic $dic) {
             $dic->object(Counter::class)->bind(objectT(Counter::class));
 
             return $dic->object(CounterAndNumbers::class)->variadic([1, 2]);
@@ -810,7 +832,7 @@ final readonly class DicTest
 
     public function eagerObjectIsUsable(): void
     {
-        $counter = self::build(
+        $counter = Dic::build(
             static fn(Dic $dic) => $dic->object(Counter::class)->lazy()->eager(),
         );
 
@@ -827,7 +849,7 @@ final readonly class DicTest
         $captured = null;
         $rethrown = null;
 
-        $scoped = self::build(
+        $scoped = Dic::build(
             static function (Dic $dic) use (&$captured) {
                 return $dic->scoped(
                     $dic
@@ -859,7 +881,7 @@ final readonly class DicTest
         $rethrown = null;
         $called = false;
 
-        $scoped = self::build(
+        $scoped = Dic::build(
             static function (Dic $dic) use ($thrown, &$captured) {
                 $counter = $dic
                     ->object(Counter::class)
@@ -894,7 +916,7 @@ final readonly class DicTest
     {
         $tag = new CacheTag();
 
-        $caches = self::build(static function (Dic $dic) use ($tag) {
+        $caches = Dic::build(static function (Dic $dic) use ($tag) {
             $dic->object(RedisCache::class)->tag($tag);
             $dic->object(ApcuCache::class)->tag(new CacheTag());
 
@@ -906,7 +928,7 @@ final readonly class DicTest
 
     public function emptyTaggedListIsEmptyArray(): void
     {
-        $caches = self::build(
+        $caches = Dic::build(
             static fn(Dic $dic) => $dic->taggedList(CacheTag::class),
         );
 
@@ -917,21 +939,21 @@ final readonly class DicTest
     {
         Expect::exception(BuildError::class)->withMessageContaining('cannot autowire');
 
-        self::build(static fn(Dic $dic) => $dic->object(Consumer::class));
+        Dic::build(static fn(Dic $dic) => $dic->object(Consumer::class));
     }
 
     public function nonInstantiableClassRejected(): void
     {
         Expect::exception(BuildError::class)->withMessageContaining('is not instantiable');
 
-        self::build(static fn(Dic $dic) => $dic->object(Cache::class));
+        Dic::build(static fn(Dic $dic) => $dic->object(Cache::class));
     }
 
     public function factoryRefThatIsNotCallableRejected(): void
     {
         Expect::exception(BuildError::class)->withMessageContaining('is not callable');
 
-        self::build(
+        Dic::build(
             /** @phpstan-ignore argument.type */
             static fn(Dic $dic) => $dic->object(Counter::class, factory: $dic->value(42)),
         );
@@ -941,7 +963,7 @@ final readonly class DicTest
     {
         Expect::exception(BuildError::class)->withMessageContaining('is not callable');
 
-        self::build(static function (Dic $dic) {
+        Dic::build(static function (Dic $dic) {
             $factory = $dic->object(TestService::class);
 
             return $dic->object(TestService::class, factory: [$factory, '__toString']);
@@ -952,7 +974,7 @@ final readonly class DicTest
     {
         Expect::exception(BuildError::class)->withMessageContaining('already bound');
 
-        self::build(static function (Dic $dic) {
+        Dic::build(static function (Dic $dic) {
             $dic->object(RedisCache::class)->bind(objectT(Cache::class));
             $dic->object(ApcuCache::class)->bind(objectT(Cache::class));
 
@@ -964,7 +986,7 @@ final readonly class DicTest
     {
         Expect::exception(BuildError::class)->withMessageContaining('is not supported for binding');
 
-        self::build(static function (Dic $dic) {
+        Dic::build(static function (Dic $dic) {
             $dic->value(new \ArrayObject())->bind(objectT(\ArrayObject::class, [intT]));
 
             return $dic->value(null);
@@ -975,16 +997,6 @@ final readonly class DicTest
     {
         Expect::exception(BuildError::class)->withMessageContaining('combine #[Autowire] and #[DoNotAutowire]');
 
-        self::build(static fn(Dic $dic) => $dic->object(ConflictingConsumer::class));
-    }
-
-    /**
-     * @template T
-     * @param \Closure(Dic): Ref<T> $app
-     * @return T
-     */
-    private static function build(\Closure $app): mixed
-    {
-        return Dic::build(new ClosureModule($app));
+        Dic::build(static fn(Dic $dic) => $dic->object(ConflictingConsumer::class));
     }
 }

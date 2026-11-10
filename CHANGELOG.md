@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `ObjectConfig::bindSelf()` — binds an object service to its declared class:
   `$dic->object(Foo::class)->bindSelf()` is equivalent to `$dic->object(Foo::class)->bind(objectT(Foo::class))`.
+- `Dic::run()` and `Dic::build()` accept a plain `callable(Dic): T` as the root module,
+  so `Dic::build(new ClosureModule($closure))` becomes `Dic::build($closure)`.
 
 ### Changed
 

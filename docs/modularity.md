@@ -24,6 +24,15 @@ final readonly class CacheModule implements Module
 ```
 
 The root module is the one you hand to `Dic::run()` or `Dic::build()`.
+Both also accept a plain `callable(Dic): T` as the root module, so a one-off module needs no class:
+
+```php
+$repository = Dic::build(static fn (Dic $dic) => $dic->object(ProductRepository::class));
+```
+
+A `Module` that also defines `__invoke()` is still treated as a module: its `configure()` is called.
+`import()` takes only a `Module`: wrap a closure in `ClosureModule` there,
+so an isolated import is never mistaken for a shared-scope `apply()`.
 
 ## `import()`: isolated bindings
 

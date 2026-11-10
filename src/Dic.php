@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Thesis;
 
+use Thesis\Dic\ClosureModule;
 use Thesis\Dic\Configuration\FunctionAutoconfig;
 use Thesis\Dic\Configuration\FunctionConfig;
 use Thesis\Dic\Configuration\ObjectAutoconfig;
@@ -39,15 +40,15 @@ final readonly class Dic
      *
      * @template T
      * @template R
-     * @param Module<T|Ref<T>> $module
+     * @param Module<T|Ref<T>>|callable(self): (T|Ref<T>) $module
      * @param callable(T): R $main
      * @return R
      */
-    public static function run(Module $module, callable $main): mixed
+    public static function run(Module|callable $module, callable $main): mixed
     {
         $builder = new Builder();
 
-        $result = new self($builder)->import($module);
+        $result = new self($builder)->import(self::module($module));
 
         $container = $builder->build();
 
@@ -80,19 +81,35 @@ final readonly class Dic
      * Meant for tests and debugging modules; otherwise prefer {@see self::run()}.
      *
      * @template T
-     * @param Module<T|Ref<T>> $module
+     * @param Module<T|Ref<T>>|callable(self): (T|Ref<T>) $module
      * @return T
      */
-    public static function build(Module $module): mixed
+    public static function build(Module|callable $module): mixed
     {
         $builder = new Builder();
 
-        $result = new self($builder)->import($module);
+        $result = new self($builder)->import(self::module($module));
 
         // a scope is used to resolve a service of any lifetime: singleton or scoped
         $scope = $builder->build()->startScope();
 
         return ValueFactory::from($result)->create($scope);
+    }
+
+    /**
+     * A {@see Module} wins over its own __invoke(): only a non-module callable is wrapped.
+     *
+     * @template T
+     * @param Module<T>|callable(self): T $module
+     * @return Module<T>
+     */
+    private static function module(Module|callable $module): Module
+    {
+        if ($module instanceof Module) {
+            return $module;
+        }
+
+        return new ClosureModule($module(...));
     }
 
     private Autoconfiguration $autoconfiguration;

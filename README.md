@@ -162,6 +162,12 @@ $cli = Dic::build(new MyApp());
 Assert::instanceOf($cli, ConsoleApplication::class);
 ```
 
+Both accept a plain `callable(Dic)` in place of a `Module`, which is handy for one-off root modules in tests:
+
+```php
+$counter = Dic::build(static fn (Dic $dic) => $dic->object(Counter::class));
+```
+
 ## Documentation
 
 - [Objects](docs/object.md) — declaring object services, factories, post-construction calls, lazy instantiation
