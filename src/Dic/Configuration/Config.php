@@ -11,6 +11,7 @@ use Thesis\Dic\Internal\Autowiring\UnsupportedBindingType;
 use Thesis\Dic\Internal\Builder;
 use Thesis\Dic\Internal\Builder\LifetimeStrategy;
 use Thesis\Dic\Internal\Factory;
+use Thesis\Dic\Internal\NonCopyable;
 use Thesis\Dic\Location;
 use Thesis\Dic\Ref;
 use Thesis\Dic\Tag;
@@ -26,6 +27,8 @@ use Typhoon\Type;
  */
 abstract class Config extends Ref
 {
+    use NonCopyable;
+
     /**
      * @param non-empty-string $label
      */

@@ -17,7 +17,6 @@ use Thesis\Dic\DisposalFailed;
 use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\Builder;
 use Thesis\Dic\Internal\Builder\Autoconfiguration;
-use Thesis\Dic\Internal\Factory\ValueFactory;
 use Thesis\Dic\Internal\NonCopyable;
 use Thesis\Dic\Location;
 use Thesis\Dic\Module;
@@ -48,7 +47,7 @@ final readonly class Dic
     {
         $builder = new Builder();
 
-        $result = new self($builder)->import(self::module($module));
+        $root = self::root($builder, $module);
 
         $container = $builder->build();
 
@@ -57,9 +56,7 @@ final readonly class Dic
         $error = null;
 
         try {
-            $value = ValueFactory::from($result)->create($scope);
-
-            return $main($value);
+            return $main($scope->get($root));
         } catch (\Throwable $error) {
             throw $error;
         } finally {
@@ -88,12 +85,28 @@ final readonly class Dic
     {
         $builder = new Builder();
 
-        $result = new self($builder)->import(self::module($module));
+        $root = self::root($builder, $module);
 
         // a scope is used to resolve a service of any lifetime: singleton or scoped
-        $scope = $builder->build()->startScope();
+        return $builder
+            ->build()
+            ->startScope()
+            ->get($root);
+    }
 
-        return ValueFactory::from($result)->create($scope);
+    /**
+     * Declares whatever the module returns as a service of its own, so the refs it carries are validated at build
+     * with the rest of the graph.
+     *
+     * @template T
+     * @param Module<T|Ref<T>>|callable(self): (T|Ref<T>) $module
+     * @return Ref<T>
+     */
+    private static function root(Builder $builder, Module|callable $module): Ref
+    {
+        $dic = new self($builder);
+
+        return $dic->value($dic->import(self::module($module)));
     }
 
     /**

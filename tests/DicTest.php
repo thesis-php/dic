@@ -22,6 +22,7 @@ use Thesis\Fixture\Consumer;
 use Thesis\Fixture\Counter;
 use Thesis\Fixture\CounterAndNumbers;
 use Thesis\Fixture\CounterHolder;
+use Thesis\Fixture\CounterList;
 use Thesis\Fixture\Holder;
 use Thesis\Fixture\InvokableModule;
 use Thesis\Fixture\Numbers;
@@ -32,6 +33,7 @@ use Thesis\Fixture\QualifiedConsumer;
 use Thesis\Fixture\RedisCache;
 use Thesis\Fixture\WithDefault;
 use function Thesis\Dic\autowire;
+use function Thesis\Fixture\ref;
 use function Typhoon\Type\closureT;
 use function Typhoon\Type\objectT;
 use function Typhoon\Type\param;
@@ -427,6 +429,108 @@ final readonly class DicTest
                 ->object(Cache::class, static fn(): Cache => new RedisCache())
                 ->lazy(),
         );
+    }
+
+    public function lazyOnInternalClassRejected(): void
+    {
+        Expect::exception(BuildError::class)
+            ->withMessageContaining('cannot be made lazy because it is an internal class');
+
+        Dic::build(
+            static fn(Dic $dic) => $dic
+                ->object(\ArrayObject::class)
+                ->lazy(),
+        );
+    }
+
+    public function lazyOnClassExtendingInternalRejected(): void
+    {
+        Expect::exception(BuildError::class)
+            ->withMessageContaining('cannot be made lazy because it extends the internal class "ArrayObject"');
+
+        Dic::build(
+            static fn(Dic $dic) => $dic
+                ->object(CounterList::class)
+                ->lazy(),
+        );
+    }
+
+    public function lazyStdClassIsUsable(): void
+    {
+        $object = Dic::build(
+            static fn(Dic $dic) => $dic
+                ->object(\stdClass::class)
+                ->lazy(),
+        );
+
+        Assert::instanceOf($object, \stdClass::class);
+    }
+
+    public function callOfUnknownMethodRejected(): void
+    {
+        Expect::exception(BuildError::class)
+            ->withMessageContaining('::missing()" does not exist and cannot be called on the service');
+
+        Dic::build(
+            static fn(Dic $dic) => $dic
+                ->object(Counter::class)
+                ->call('missing'),
+        );
+    }
+
+    public function chainOfUnknownMethodRejected(): void
+    {
+        Expect::exception(BuildError::class)
+            ->withMessageContaining('::missing()" does not exist and cannot be called on the service');
+
+        Dic::build(
+            static fn(Dic $dic) => $dic
+                ->object(Counter::class)
+                ->chain('missing'),
+        );
+    }
+
+    public function declaringServiceAfterBuildRejected(): void
+    {
+        $declare = Dic::build(
+            static fn(Dic $dic) => $dic->value(static fn() => $dic->object(Counter::class)),
+        );
+
+        Expect::exception(BuildError::class)->withMessageContaining('configuration is frozen');
+
+        $declare();
+    }
+
+    public function refFromAnotherBuildRejectedAsDependency(): void
+    {
+        $foreign = ref(new Counter());
+
+        Expect::exception(BuildError::class)
+            ->withMessageContaining('depends on a ref that is not registered in this container')
+            ->withMessageContaining('$counter → ');
+
+        Dic::build(
+            static fn(Dic $dic) => $dic
+                ->object(CounterHolder::class)
+                ->arg('counter', $foreign),
+        );
+    }
+
+    public function refFromAnotherBuildRejectedAsModuleResult(): void
+    {
+        $foreign = ref(new Counter());
+
+        Expect::exception(BuildError::class)
+            ->withMessageContaining('depends on a ref that is not registered in this container');
+
+        Dic::build(static fn(Dic $dic) => $foreign);
+    }
+
+    public function configIsNotCloneable(): void
+    {
+        Expect::exception(\BadMethodCallException::class)->withMessageContaining('is not cloneable');
+
+        Dic::build(static fn(Dic $dic) => clone $dic->object(Counter::class));
     }
 
     public function scopedWrapperProducesFreshInstancePerRun(): void

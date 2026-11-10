@@ -52,7 +52,7 @@ final class Services
     public function register(Ref $ref, \Closure $createFactory, LifetimeStrategy $defaultLifetimeStrategy): void
     {
         if ($this->resolving) {
-            throw new ShouldNotHappen("Cannot register {$ref}: service resolution has already started");
+            throw BuildError::configurationFrozen();
         }
 
         if ($this->resolution->offsetExists($ref)) {
@@ -147,6 +147,10 @@ final class Services
 
         foreach ($dependencies as $dependency) {
             $refs[] = $dependency->ref;
+
+            if (!$this->resolution->offsetExists($dependency->ref)) {
+                throw BuildError::unregisteredDependency($ref, $dependency);
+            }
 
             try {
                 yield $dependency => $this->resolveService($dependency->ref);

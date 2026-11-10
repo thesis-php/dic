@@ -98,9 +98,8 @@ final class BuildError extends \LogicException
 
         foreach ($dependencies as $step => $dependency) {
             $indent = str_repeat(' ', 2 + 3 * $step);
-            $edge = $dependency->path === '' ? '' : "{$dependency->path} → ";
             $marker = $step === $lastStep ? '  ← cycle' : '';
-            $lines[] = "{$indent}└─ {$edge}{$dependency->ref}{$marker}";
+            $lines[] = \sprintf('%s└─ %s%s', $indent, self::describeEdge($dependency), $marker);
         }
 
         return new self(\sprintf(
@@ -130,9 +129,8 @@ final class BuildError extends \LogicException
 
         foreach ($chain as $depth => $edge) {
             $indent = str_repeat(' ', 2 + 3 * $depth);
-            $path = $edge->path === '' ? '' : "{$edge->path} → ";
             $marker = $depth === $lastEdge ? "  ← {$lifetime->name}" : '';
-            $lines[] = "{$indent}└─ {$path}{$edge->ref}{$marker}";
+            $lines[] = \sprintf('%s└─ %s%s', $indent, self::describeEdge($edge), $marker);
         }
 
         return new self(\sprintf(
@@ -145,6 +143,28 @@ final class BuildError extends \LogicException
                 TEXT,
             $singleton,
             implode("\n", $lines),
+        ));
+    }
+
+    /**
+     * @internal
+     *
+     * @param Ref<mixed> $ref
+     * @param Dependency $dependency edge from $ref to a ref this container does not know
+     */
+    public static function unregisteredDependency(Ref $ref, Dependency $dependency): self
+    {
+        return new self(\sprintf(
+            <<<'TEXT'
+                %s depends on a ref that is not registered in this container:
+
+                  %1$s
+                  └─ %s  ← not registered
+
+                A ref belongs to the build that declared it and cannot be reused in another one.
+                TEXT,
+            $ref,
+            self::describeEdge($dependency),
         ));
     }
 
@@ -189,6 +209,23 @@ final class BuildError extends \LogicException
     /**
      * @internal
      *
+     * @param \ReflectionClass<*> $class
+     * @param \ReflectionClass<*> $internal $class itself or the internal ancestor that rules lazy objects out
+     */
+    public static function lazyClassInternal(\ReflectionClass $class, \ReflectionClass $internal): self
+    {
+        return new self(\sprintf(
+            'Class "%s" cannot be made lazy because %s',
+            formatReflectedClass($class),
+            $class->name === $internal->name
+                ? 'it is an internal class'
+                : \sprintf('it extends the internal class "%s"', formatReflectedClass($internal)),
+        ));
+    }
+
+    /**
+     * @internal
+     *
      * @param Ref<mixed> $factory
      */
     public static function factoryNotCallable(Ref $factory): self
@@ -225,6 +262,20 @@ final class BuildError extends \LogicException
         return new self(\sprintf(
             'Method "%s" is not public and cannot be called on the service',
             formatReflectedFunction($method),
+        ));
+    }
+
+    /**
+     * @internal
+     *
+     * @param \ReflectionClass<*> $class
+     */
+    public static function calledMethodNotFound(\ReflectionClass $class, string $method): self
+    {
+        return new self(\sprintf(
+            'Method "%s::%s()" does not exist and cannot be called on the service',
+            formatReflectedClass($class),
+            $method,
         ));
     }
 
@@ -359,6 +410,18 @@ final class BuildError extends \LogicException
     private static function invalidSignatureArgument(Parameter $parameter, string $reason): self
     {
         return new self(\sprintf('Invalid argument "%s": %s', $parameter, $reason));
+    }
+
+    /**
+     * The atom of a dependency path: `{path} → {node}`, or just the node when the ref is the value itself.
+     */
+    private static function describeEdge(Dependency $dependency): string
+    {
+        if ($dependency->path === '') {
+            return (string) $dependency->ref;
+        }
+
+        return "{$dependency->path} → {$dependency->ref}";
     }
 
     /**

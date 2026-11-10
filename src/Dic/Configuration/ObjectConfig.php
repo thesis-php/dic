@@ -233,6 +233,13 @@ final class ObjectConfig extends Config
             throw BuildError::lazyClassNotInstantiable($this->reflection);
         }
 
+        // PHP cannot make an internal class lazy, nor a class extending one; \stdClass is the only exception.
+        for ($class = $this->reflection; $class !== false; $class = $class->getParentClass()) {
+            if ($class->isInternal() && $class->name !== \stdClass::class) {
+                throw BuildError::lazyClassInternal($this->reflection, $class);
+            }
+        }
+
         $this->lazy = true;
 
         return $this;
@@ -299,6 +306,10 @@ final class ObjectConfig extends Config
      */
     private function createMethodArguments(string $name, array $args, iterable|Ref $variadic): Arguments
     {
+        if (!$this->reflection->hasMethod($name)) {
+            throw BuildError::calledMethodNotFound($this->reflection, $name);
+        }
+
         $reflection = $this->reflection->getMethod($name);
 
         if (!$reflection->isPublic()) {

@@ -80,3 +80,5 @@ $dic
 
 This relies on PHP 8.4 [lazy objects](https://www.php.net/manual/en/language.oop5.lazy-objects.php),
 so the class passed to `object()` must be instantiable and support them.
+PHP cannot make an internal class lazy, nor a class extending one (`stdClass` aside),
+so `lazy()` rejects those with *cannot be made lazy*.

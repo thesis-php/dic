@@ -7,7 +7,9 @@ namespace Thesis\Dic;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Test;
+use Thesis\Dic\Internal\Dependency;
 use Thesis\Dic\Internal\Signature;
+use Thesis\Fixture\CounterList;
 use function Thesis\Fixture\ref;
 
 #[Test]
@@ -42,6 +44,65 @@ final class BuildErrorTest
 
         Assert::same($error->getPrevious(), $previous);
         Assert::same($error->getMessage(), \sprintf('Invalid factory for %s: %s', $ref, lcfirst($previous->getMessage())));
+    }
+
+    public function unregisteredDependencyRendersTheEdge(): void
+    {
+        $ref = ref();
+        $foreign = ref();
+
+        $error = BuildError::unregisteredDependency($ref, Dependency::of($foreign)->arg('logger'));
+
+        Assert::same($error->getMessage(), <<<TEXT
+            {$ref} depends on a ref that is not registered in this container:
+
+              {$ref}
+              └─ \$logger → {$foreign}  ← not registered
+
+            A ref belongs to the build that declared it and cannot be reused in another one.
+            TEXT);
+    }
+
+    public function unregisteredDependencyWithEmptyPathRendersJustTheNode(): void
+    {
+        $ref = ref();
+        $foreign = ref();
+
+        $error = BuildError::unregisteredDependency($ref, Dependency::of($foreign));
+
+        Assert::same($error->getMessage(), <<<TEXT
+            {$ref} depends on a ref that is not registered in this container:
+
+              {$ref}
+              └─ {$foreign}  ← not registered
+
+            A ref belongs to the build that declared it and cannot be reused in another one.
+            TEXT);
+    }
+
+    public function lazyClassInternalMessages(): void
+    {
+        $internal = new \ReflectionClass(\ArrayObject::class);
+        $extending = new \ReflectionClass(CounterList::class);
+
+        Assert::same(
+            BuildError::lazyClassInternal($internal, $internal)->getMessage(),
+            'Class "ArrayObject" cannot be made lazy because it is an internal class',
+        );
+        Assert::same(
+            BuildError::lazyClassInternal($extending, $internal)->getMessage(),
+            'Class "Thesis\Fixture\CounterList" cannot be made lazy because it extends the internal class "ArrayObject"',
+        );
+    }
+
+    public function calledMethodNotFoundMessage(): void
+    {
+        $error = BuildError::calledMethodNotFound(new \ReflectionClass(CounterList::class), 'missing');
+
+        Assert::same(
+            $error->getMessage(),
+            'Method "Thesis\Fixture\CounterList::missing()" does not exist and cannot be called on the service',
+        );
     }
 
     public function fileAndLinePointAtFactoryCallSite(): void

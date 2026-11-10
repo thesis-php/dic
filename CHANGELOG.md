@@ -27,6 +27,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `Scoped::run()` now disposes its scope when resolving the wrapped service fails halfway:
   the scoped services created before the failure used to be left without a disposer call.
+- Misconfigurations that used to surface as a foreign exception, or only once the container was already running,
+  now fail with a `BuildError`:
+  - `lazy()` on an internal class or a class extending one — previously a PHP `Error` on first resolution;
+  - `call()` / `chain()` with a method that does not exist — previously a `ReflectionException`;
+  - declaring a service once the container has started building — previously an internal `ShouldNotHappen`;
+  - a `Ref` declared for another build, used as a dependency or returned by the root module —
+    previously an internal `ShouldNotHappen`, for the root module only on resolution.
+- A service config can no longer be cloned: a clone was never registered and only failed on resolution.
 
 ## [0.5.3] - 2026-07-07
 
