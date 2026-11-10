@@ -178,7 +178,7 @@ final readonly class Dic
      *
      * @template T of object
      * @param class-string<T> $class
-     * @param null|callable(): T|array{Ref<class-string|object>, string}|Ref<callable(): T> $factory
+     * @param null|callable|array{Ref<class-string|object>, string}|Ref<callable> $factory
      * @return ObjectConfig<T>
      */
     public function object(string $class, null|callable|array|Ref $factory = null): ObjectConfig
@@ -186,10 +186,10 @@ final readonly class Dic
         $declaredAt = caller();
 
         if (!($factory === null || $factory instanceof Ref)) {
-            /** @var Ref<callable(): T> */
             $factory = $this->toRef($factory, $declaredAt);
         }
 
+        /** @var ?Ref<callable(): T> $factory */
         return new ObjectConfig(
             builder: $this->builder,
             autoconfiguration: $this->autoconfiguration,

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `Dic::scoped()` now accepts a plain value in addition to a `Ref`, wrapping it as a value service just like
   `provider()` does.
+- `Dic::object()` now types `$factory` as a plain `callable`, so factories with parameters pass static analysis.
 
 ## [0.5.3] - 2026-07-07
 
