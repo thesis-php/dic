@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.5.4] - 2026-11-11
 
 ### Added
 
@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Dic::scoped()` now accepts a plain value in addition to a `Ref`, wrapping it as a value service just like
   `provider()` does.
 - `Dic::object()` now types `$factory` as a plain `callable`, so factories with parameters pass static analysis.
+- An `onTagResolution()` listener may now tag services, as long as that tag has not been requested yet:
+  once `TaggedRefs::find()` has returned a tag's list, adding the same tag still fails the build.
+  Previously any tagging during resolution failed the build.
 
 ### Fixed
 
