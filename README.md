@@ -8,6 +8,7 @@ A fresh take on the PHP dependency injection container, with all the features yo
 - **Autoconfiguration** — plug in your attributes or autoconfigure by type
 - **Tags** with flexible resolution
 - **Lifetimes** — singleton / canBeScoped / scoped
+- **Fiber-safe** — concurrent fibers share one instance instead of racing to create their own
 - **Callable** services — functions and methods as first-class services
 - **Variadic parameters** supported
 
@@ -177,5 +178,5 @@ $counter = Dic::build(static fn (Dic $dic) => $dic->object(Counter::class));
 - [Autowiring](docs/autowiring.md) — binding services to types and qualifiers
 - [Tags](docs/tags.md) — tagging, collecting tagged services, tag resolution and autoconfiguration
 - [Modularity](docs/modularity.md) — `Module` interface, `import()` and `apply()`
-- [Lifetimes](docs/lifetime.md) — singleton, scoped and canBeScoped lifetimes, and the `Scoped<T>` handle
+- [Lifetimes](docs/lifetime.md) — singleton, scoped and canBeScoped lifetimes, the `Scoped<T>` handle, fiber safety
 - [Disposal](docs/disposal.md) — releasing resources when a scope or the container is disposed

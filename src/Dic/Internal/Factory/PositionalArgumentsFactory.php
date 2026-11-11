@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Thesis\Dic\Internal\Factory;
 
 use Thesis\Dic\Internal\Container;
-use Thesis\Dic\Internal\Container\Scope;
 use Thesis\Dic\Internal\Factory;
 use Thesis\Dic\Internal\Signature\DefaultValue;
 
@@ -40,7 +39,7 @@ final readonly class PositionalArgumentsFactory extends ArgumentsFactory
         }
     }
 
-    public function create(Container|Scope $container): array
+    public function create(Container $container): array
     {
         return [
             ...array_map(

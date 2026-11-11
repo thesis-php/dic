@@ -31,8 +31,14 @@ use Thesis\Fixture\Pair;
 use Thesis\Fixture\PriorityTag;
 use Thesis\Fixture\QualifiedConsumer;
 use Thesis\Fixture\RedisCache;
+use Thesis\Fixture\Suspending;
 use Thesis\Fixture\WithDefault;
+use Thesis\Fixture\Wrapper;
+use function Amp\async;
+use function Amp\delay;
+use function Amp\Future\awaitAll;
 use function Thesis\Dic\autowire;
+use function Thesis\Fixture\concurrently;
 use function Thesis\Fixture\ref;
 use function Typhoon\Type\closureT;
 use function Typhoon\Type\objectT;
@@ -236,6 +242,24 @@ final readonly class DicTest
             $b->arg('value', $a);
 
             return $a;
+        });
+    }
+
+    public function circularDependencyThroughScopedHandle(): void
+    {
+        Expect::exception(BuildError::class)
+            ->withMessageContaining('Circular dependency detected');
+
+        Dic::build(static function (Dic $dic) {
+            $scoped = $dic
+                ->object(TestService::class)
+                ->scoped();
+            $singleton = $dic
+                ->object(TestService::class)
+                ->arg('value', $dic->scoped($scoped));
+            $scoped->arg('value', $singleton);
+
+            return $singleton;
         });
     }
 
@@ -1102,5 +1126,113 @@ final readonly class DicTest
         Expect::exception(BuildError::class)->withMessageContaining('combine #[Autowire] and #[DoNotAutowire]');
 
         Dic::build(static fn(Dic $dic) => $dic->object(ConflictingConsumer::class));
+    }
+
+    public function concurrentFibersShareOneSingletonCreatedByFactory(): void
+    {
+        $provide = Dic::build(
+            static fn(Dic $dic) => $dic->provider(
+                $dic->object(Suspending::class, Suspending::create(...)),
+            ),
+        );
+
+        [$first, $second] = concurrently($provide);
+
+        Assert::same($first, $second);
+    }
+
+    public function concurrentFibersShareOneSingletonCreatedByConstructor(): void
+    {
+        $provide = Dic::build(
+            static fn(Dic $dic) => $dic->provider(
+                $dic->object(Suspending::class),
+            ),
+        );
+
+        [$first, $second] = concurrently($provide);
+
+        Assert::same($first, $second);
+    }
+
+    public function concurrentFibersShareOneScopedInstanceWithinAScope(): void
+    {
+        $scoped = Dic::build(
+            static fn(Dic $dic) => $dic->scoped(
+                $dic->provider(
+                    $dic
+                        ->object(Suspending::class)
+                        ->scoped(),
+                ),
+            ),
+        );
+
+        [$first, $second] = $scoped->run(concurrently(...));
+
+        Assert::same($first, $second);
+    }
+
+    public function failedConcurrentCreationIsSharedAndThenRetried(): void
+    {
+        $created = 0;
+        $error = new \RuntimeException('transient');
+
+        $scoped = Dic::build(
+            static function (Dic $dic) use (&$created, $error) {
+                $singleton = $dic->object(Counter::class, static function () use (&$created, $error): Counter {
+                    delay(0);
+
+                    if (++$created === 1) {
+                        throw $error;
+                    }
+
+                    return new Counter();
+                });
+
+                return $dic->scoped(
+                    $dic
+                        ->object(Wrapper::class)
+                        ->args([$singleton])
+                        ->scoped(),
+                );
+            },
+        );
+
+        [$errors] = awaitAll([
+            async(static fn() => $scoped->run(static fn(Wrapper $wrapper) => $wrapper->value)),
+            async(static fn() => $scoped->run(static fn(Wrapper $wrapper) => $wrapper->value)),
+        ]);
+
+        Assert::same($errors, [$error, $error]);
+        Assert::instanceOf($scoped->run(static fn(Wrapper $wrapper) => $wrapper->value), Counter::class);
+        Assert::same($created, 2);
+    }
+
+    public function scopeDisposalAwaitsCreationStillInProgress(): void
+    {
+        $disposed = [];
+
+        $scoped = Dic::build(
+            static function (Dic $dic) use (&$disposed) {
+                return $dic->scoped(
+                    $dic->provider(
+                        $dic
+                            ->object(Suspending::class)
+                            ->scoped()
+                            ->disposer(static function (Suspending $instance) use (&$disposed): void {
+                                $disposed[] = $instance;
+                            }),
+                    ),
+                );
+            },
+        );
+
+        $creation = $scoped->run(static function (\Closure $provide) {
+            $creation = async($provide);
+            delay(0); // lets the creation start and suspend, so it outlives the scope
+
+            return $creation;
+        });
+
+        Assert::same($disposed, [$creation->await()]);
     }
 }

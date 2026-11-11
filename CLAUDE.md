@@ -13,7 +13,7 @@ Public behavior is documented in `docs/` — consult it (and `README.md`) before
 - [Autowiring](docs/autowiring.md) — `bind()`, qualifiers, per-parameter markers/attributes
 - [Tags](docs/tags.md) — `tag()`, `taggedList()`, `onTagResolution()`, `onObject()` / `onFunction()`
 - [Modularity](docs/modularity.md) — `Module` interface, `import()` (isolated) vs. `apply()` (shared scope)
-- [Lifetimes](docs/lifetime.md) — singleton, scoped, `canBeScoped`
+- [Lifetimes](docs/lifetime.md) — singleton, scoped, `canBeScoped`, concurrent creation under fibers
 - [Disposal](docs/disposal.md) — `disposer()`
 
 ## Commands (everything runs in Docker via `make`)

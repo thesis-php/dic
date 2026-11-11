@@ -20,12 +20,20 @@
         "typhoon/type": "^0.8.1"
     },
     "require-dev": {
+        "amphp/amp": "^3.1",
+        "revolt/event-loop": "^1.0",
         "symfony/var-dumper": "^8.1.10",
         "testo/assert": "^0.1.17",
         "testo/codecov": "^0.2.5",
         "testo/data": "^0.1.10",
         "testo/test": "^0.1.8",
         "testo/testo": "^0.10.56"
+    },
+    "conflict": {
+        "revolt/event-loop": "<1.0 || >=2.0"
+    },
+    "suggest": {
+        "revolt/event-loop": "Lets concurrent fibers share one instance of a service instead of each creating its own"
     },
     "autoload": {
         "psr-4": {
@@ -42,6 +50,7 @@
             "Thesis\\": "tests/"
         },
         "files": [
+            "tests/Fixture/concurrently.php",
             "tests/Fixture/ref.php"
         ]
     },

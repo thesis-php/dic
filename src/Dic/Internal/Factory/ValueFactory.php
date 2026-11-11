@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Thesis\Dic\Internal\Factory;
 
 use Thesis\Dic\Internal\Container;
-use Thesis\Dic\Internal\Container\Scope;
 use Thesis\Dic\Internal\Dependency;
 use Thesis\Dic\Internal\Factory;
 use Thesis\Dic\Ref;
@@ -70,7 +69,7 @@ final readonly class ValueFactory implements Factory
         return $this->value;
     }
 
-    private static function createRecursively(mixed $value, Container|Scope $container): mixed
+    private static function createRecursively(mixed $value, Container $container): mixed
     {
         if ($value instanceof Ref) {
             return $container->get($value);

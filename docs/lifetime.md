@@ -125,6 +125,33 @@ yet each `run()` gives it a fresh scope with fresh scoped instances.
 A singleton may hold a `Scoped<T>` even when `T` is scoped — the handle defers resolution to the scope it opens,
 so the singleton rule above is not violated.
 
+## Concurrency
+
+Creating an instance may suspend the current fiber — for example, on async I/O —
+whether in a factory or in the constructor of an `object()` without one.
+With [revolt/event-loop](https://github.com/revoltphp/event-loop) installed, every other fiber that asks for the same
+instance meanwhile awaits that creation instead of starting its own:
+a singleton is created once per container, a scoped service once per scope.
+This works with amphp and any other library built on the Revolt event loop.
+
+The first fiber creates the instance in place, so there is no extra fiber or event-loop tick
+unless creation is actually contended.
+If creation throws, every waiting fiber receives the same error, and the next request tries again.
+Disposing a container or scope first awaits the instances still being created in other fibers, so they are disposed too.
+
+Waiting suspends the fiber through the Revolt event loop, so fibers wait only while that loop runs —
+once something has handed control to it, as amphp does on the first await.
+Until then, and for coroutines that are not fibers (Swoole), each request creates its own instance;
+the first one stored is kept and returned to every caller, the others are dropped without being disposed.
+While the loop runs, every fiber must be scheduled by it: fibers started and resumed by hand are not supported.
+Without revolt/event-loop, concurrent creation is never awaited and works the same way.
+
+A [lazy](object.md#lazy-instantiation) service is not covered:
+its proxy is created once, but the real instance is created when the proxy is first used, outside the container.
+If that creation suspends, another fiber using the proxy meanwhile sees an uninitialized object
+(reading a typed property throws an `Error`) — a limitation of PHP lazy objects.
+Keep `lazy()` for services whose creation does not suspend.
+
 ## Disposal
 
 Disposing a scope runs the [disposers](disposal.md) of every scoped instance it created;

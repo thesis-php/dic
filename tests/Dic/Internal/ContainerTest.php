@@ -2,13 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Thesis\Dic\Internal\Container;
+namespace Thesis\Dic\Internal;
 
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Test;
-use Thesis\Dic\Internal\Container;
+use Thesis\Dic\Internal\Container\DependencyOrder;
+use Thesis\Dic\Internal\Container\Disposers;
+use Thesis\Dic\Internal\Container\Factories;
 use Thesis\Dic\Internal\Factory\ValueFactory;
+use Thesis\Dic\Ref;
 use function Thesis\Fixture\ref;
 
 #[Test]
@@ -20,8 +23,8 @@ final class ContainerTest
         $factories = new Factories();
         $dependencyOrder = new DependencyOrder();
         $disposers = new Disposers();
-        $container = new Singletons(
-            singletonFactories: $factories,
+        $container = new Container(
+            factories: $factories,
             scopedFactories: new Factories(),
             dependencyOrder: $dependencyOrder,
             disposers: $disposers,
@@ -52,8 +55,8 @@ final class ContainerTest
         $factories = new Factories();
         $dependencyOrder = new DependencyOrder();
         $disposers = new Disposers();
-        $container = new Singletons(
-            singletonFactories: $factories,
+        $container = new Container(
+            factories: $factories,
             scopedFactories: new Factories(),
             dependencyOrder: $dependencyOrder,
             disposers: $disposers,
@@ -78,8 +81,8 @@ final class ContainerTest
         $factories = new Factories();
         $dependencyOrder = new DependencyOrder();
         $disposers = new Disposers();
-        $container = new Singletons(
-            singletonFactories: $factories,
+        $container = new Container(
+            factories: $factories,
             scopedFactories: new Factories(),
             dependencyOrder: $dependencyOrder,
             disposers: $disposers,
@@ -104,5 +107,51 @@ final class ContainerTest
         $container->dispose(null);
 
         Assert::same($log, ['first', 'late']);
+    }
+
+    public function keepsTheFirstStoredInstanceWhenCreationCannotBeAwaited(): void
+    {
+        // A coroutine scheduler without fibers (Swoole) runs every coroutine as the main context,
+        // so a concurrent request looks like the creating fiber asking for its own instance.
+        $factories = new Factories();
+        $container = new Container(
+            factories: $factories,
+            scopedFactories: new Factories(),
+            dependencyOrder: new DependencyOrder(),
+            disposers: new Disposers(),
+        );
+        $factory = new class implements Factory {
+            /**
+             * @var ?Ref<\stdClass>
+             */
+            public ?Ref $ref = null;
+
+            public ?\stdClass $concurrent = null;
+
+            public function dependencies(): iterable
+            {
+                return [];
+            }
+
+            public function create(Container $container): \stdClass
+            {
+                if ($this->ref !== null) {
+                    $ref = $this->ref;
+                    $this->ref = null;
+                    $this->concurrent = $container->get($ref);
+                }
+
+                return new \stdClass();
+            }
+        };
+        $ref = ref(new \stdClass());
+        $factory->ref = $ref;
+        $factories->register($ref, $factory);
+
+        $first = $container->get($ref);
+
+        Assert::instanceOf($factory->concurrent, \stdClass::class);
+        Assert::same($first, $factory->concurrent);
+        Assert::same($container->get($ref), $first);
     }
 }

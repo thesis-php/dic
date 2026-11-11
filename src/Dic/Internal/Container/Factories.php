@@ -54,7 +54,7 @@ final readonly class Factories
      * @param Ref<T> $ref
      * @return T
      */
-    public function create(Ref $ref, Container|Scope $container): mixed
+    public function create(Ref $ref, Container $container): mixed
     {
         return ($this->factories[$ref] ?? throw new ShouldNotHappen("No factory registered for {$ref}"))->create($container);
     }

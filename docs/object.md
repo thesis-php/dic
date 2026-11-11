@@ -82,3 +82,6 @@ This relies on PHP 8.4 [lazy objects](https://www.php.net/manual/en/language.oop
 so the class passed to `object()` must be instantiable and support them.
 PHP cannot make an internal class lazy, nor a class extending one (`stdClass` aside),
 so `lazy()` rejects those with *cannot be made lazy*.
+
+Lazy initialization is not guarded against concurrent fibers:
+if creating the real instance suspends the fiber, keep the service eager (see [Concurrency](lifetime.md#concurrency)).

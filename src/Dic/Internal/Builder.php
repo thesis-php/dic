@@ -11,7 +11,6 @@ use Thesis\Dic\Internal\Builder\Tags;
 use Thesis\Dic\Internal\Container\DependencyOrder;
 use Thesis\Dic\Internal\Container\Disposers;
 use Thesis\Dic\Internal\Container\Factories;
-use Thesis\Dic\Internal\Container\Singletons;
 use Thesis\Dic\Ref;
 use Thesis\Dic\Tag;
 use Thesis\Dic\TaggedRefs;
@@ -109,8 +108,8 @@ final readonly class Builder
 
         $this->services->resolve();
 
-        return new Singletons(
-            singletonFactories: $this->singletonFactories,
+        return new Container(
+            factories: $this->singletonFactories,
             scopedFactories: $this->scopedFactories,
             dependencyOrder: $this->dependencyOrder,
             disposers: $this->disposers,
