@@ -65,7 +65,7 @@ final class ReflectionParameter extends Parameter
     public null|Autowire|DoNotAutowire $autowiringMode = null {
         get {
             if (!$this->isAutowiringModeSet) {
-                $this->autowiringMode = self::reflectAutowiringMode();
+                $this->autowiringMode = $this->reflectAutowiringMode();
                 $this->isAutowiringModeSet = true;
             }
 

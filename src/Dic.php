@@ -241,7 +241,7 @@ final readonly class Dic
     {
         $declaredAt = caller();
 
-        /** @var ValueConfig<T> $value */
+        /** @var ScopedConfig<T> */
         return new ScopedConfig(
             builder: $this->builder,
             autowiring: $this->autowiring,
