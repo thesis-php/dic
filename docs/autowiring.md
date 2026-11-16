@@ -74,6 +74,9 @@ $dic
     ->bind(nullOrT(objectT(Cache::class)));
 ```
 
+Exact still means the same type, however it is spelled: `?Cache` and `Cache|null` are one type,
+and so are `iterable` and `Traversable|array`, which PHP treats as aliases.
+
 ## Bindings are module-local
 
 Bindings live on the module's `Dic`, not on the container as a whole.

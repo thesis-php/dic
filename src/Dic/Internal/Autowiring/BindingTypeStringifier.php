@@ -58,7 +58,7 @@ final class BindingTypeStringifier extends Fallback
             $types = array_values($type->getTypes());
             \assert($types !== []);
 
-            return self::join('|', array_map(
+            return self::stringifyUnion(array_map(
                 static fn(\ReflectionType $type) => self::stringifyReflectionType($type, $self),
                 $types,
             ));
@@ -202,13 +202,30 @@ final class BindingTypeStringifier extends Fallback
     #[\Override]
     public function unionT(UnionT $type): string
     {
-        return self::join('|', array_map(fn(Type $t) => $t->accept($this), $type->types));
+        return self::stringifyUnion(array_map(fn(Type $t) => $t->accept($this), $type->types));
     }
 
     #[\Override]
     public function intersectionT(IntersectionT $type): string
     {
         return self::join('&', array_map(fn(Type $t) => $t->accept($this), $type->types));
+    }
+
+    /**
+     * `iterable` is an alias of `Traversable|array`, and PHP expands it inside a union (`iterable|int` reflects as
+     * `Traversable|array|int`), while a Typhoon type keeps it: the pair is folded back, so every spelling of the type
+     * gets one string.
+     *
+     * @param non-empty-list<non-empty-lowercase-string> $members
+     * @return non-empty-lowercase-string
+     */
+    private static function stringifyUnion(array $members): string
+    {
+        if (\in_array('array', $members, true) && \in_array('traversable', $members, true)) {
+            $members = [...array_diff($members, ['array', 'traversable']), 'iterable'];
+        }
+
+        return \count($members) === 1 ? $members[0] : self::join('|', $members);
     }
 
     /**

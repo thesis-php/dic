@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- An `iterable` inside a union now autowires and maps to a `closure()` parameter: `iterable|int` used to miss its match,
+  because PHP reflects it as `Traversable|array|int`. `iterable` and `Traversable|array` are now the same binding type.
 - A service whose factory or constructor suspends the fiber is no longer created twice by concurrent fibers:
   they now await the same instance, and disposal awaits instances still being created.
   Requires `revolt/event-loop` 1.x; lazy services are not covered.
