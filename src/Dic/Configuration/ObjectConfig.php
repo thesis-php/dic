@@ -8,6 +8,7 @@ use Thesis\Dic\BuildError;
 use Thesis\Dic\Internal\Arguments;
 use Thesis\Dic\Internal\Arguments\ClosureArguments;
 use Thesis\Dic\Internal\Autowiring;
+use Thesis\Dic\Internal\Autowiring\ClassAcceptance;
 use Thesis\Dic\Internal\Builder;
 use Thesis\Dic\Internal\Builder\Autoconfiguration;
 use Thesis\Dic\Internal\Builder\LifetimeStrategy;
@@ -20,6 +21,7 @@ use Thesis\Dic\Internal\Signature;
 use Thesis\Dic\Internal\Signature\ReflectionFunctionSignature;
 use Thesis\Dic\Location;
 use Thesis\Dic\Ref;
+use Typhoon\Type;
 use function Thesis\Dic\Internal\caller;
 use function Thesis\Formatter\formatReflectedClass;
 use function Typhoon\Type\objectT;
@@ -325,6 +327,13 @@ final class ObjectConfig extends Config
         $arguments->variadic($variadic);
 
         return $arguments;
+    }
+
+    protected function checkBindingType(Type $type): void
+    {
+        if (!ClassAcceptance::accepts($type, $this->reflection)) {
+            throw BuildError::bindingTypeMismatch($this, $type, $this->reflection);
+        }
     }
 
     protected function createFactory(): Factory

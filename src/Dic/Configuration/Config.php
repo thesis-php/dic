@@ -61,10 +61,16 @@ abstract class Config extends Ref
             throw BuildError::unsupportedBindingType($type, $error);
         }
 
+        $this->checkBindingType($type);
         $this->autowiring->bind($this, $bindingType, $qualifier);
 
         return $this;
     }
+
+    /**
+     * Fails the build if this service cannot satisfy $type; services whose type is unknown until creation accept any.
+     */
+    protected function checkBindingType(Type $type): void {}
 
     /**
      * Attaches $tag to this service so it appears in every taggedList() that collects by that tag.

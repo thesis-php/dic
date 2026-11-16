@@ -41,6 +41,7 @@ use function Thesis\Dic\autowire;
 use function Thesis\Fixture\concurrently;
 use function Thesis\Fixture\ref;
 use function Typhoon\Type\closureT;
+use function Typhoon\Type\nullOrT;
 use function Typhoon\Type\objectT;
 use function Typhoon\Type\param;
 use const Typhoon\Type\intT;
@@ -1108,6 +1109,45 @@ final readonly class DicTest
 
             return $dic->value(null);
         });
+    }
+
+    public function bindToTypeTheClassDoesNotSatisfyRejected(): void
+    {
+        Expect::exception(BuildError::class)->withMessageContaining('class "Thesis\Fixture\Counter" does not satisfy it');
+
+        Dic::build(static function (Dic $dic) {
+            $dic
+                ->object(Counter::class)
+                /** @phpstan-ignore argument.type */
+                ->bind(objectT(Cache::class));
+
+            return $dic->value(null);
+        });
+    }
+
+    public function bindToTypeTheFactoryClassDoesNotSatisfyRejected(): void
+    {
+        Expect::exception(BuildError::class)->withMessageContaining('does not satisfy it');
+
+        Dic::build(static function (Dic $dic) {
+            $dic
+                ->object(Counter::class, static fn(): Counter => new Counter())
+                /** @phpstan-ignore argument.type */
+                ->bind(objectT(Cache::class));
+
+            return $dic->value(null);
+        });
+    }
+
+    public function bindToNullableInterfaceTheClassImplementsAccepted(): void
+    {
+        $cache = Dic::build(
+            static fn(Dic $dic) => $dic
+                ->object(RedisCache::class)
+                ->bind(nullOrT(objectT(Cache::class))),
+        );
+
+        Assert::instanceOf($cache, RedisCache::class);
     }
 
     public function bindUnsupportedTypeRejected(): void
