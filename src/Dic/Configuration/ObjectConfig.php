@@ -11,18 +11,22 @@ use Thesis\Dic\Internal\Autowiring;
 use Thesis\Dic\Internal\Builder;
 use Thesis\Dic\Internal\Builder\Autoconfiguration;
 use Thesis\Dic\Internal\Builder\LifetimeStrategy;
+use Thesis\Dic\Internal\ClosureReturnType;
 use Thesis\Dic\Internal\Factory;
 use Thesis\Dic\Internal\Factory\ArgumentsFactory;
 use Thesis\Dic\Internal\Factory\LazyObjectFactory;
 use Thesis\Dic\Internal\Factory\NewFactory;
 use Thesis\Dic\Internal\Factory\RefFactory;
+use Thesis\Dic\Internal\FactoryReturnType;
 use Thesis\Dic\Internal\Signature;
+use Thesis\Dic\Internal\Signature\ClosureSignature;
 use Thesis\Dic\Internal\Signature\ReflectionFunctionSignature;
 use Thesis\Dic\Location;
 use Thesis\Dic\Ref;
 use function Thesis\Dic\Internal\caller;
 use function Thesis\Formatter\formatReflectedClass;
 use function Typhoon\Type\objectT;
+use function Typhoon\Type\stringify;
 
 /**
  * @api
@@ -53,14 +57,16 @@ final class ObjectConfig extends Config
     ) {
         $this->reflection = $reflection;
 
-        $this->arguments = new Arguments(
-            signature: match ($factory) {
-                null => match ($reflection->isInstantiable()) {
-                    true => Signature::ofConstructor($reflection),
-                    false => throw BuildError::classNotInstantiable($reflection),
-                },
-                default => $factory->signature ?? throw BuildError::factoryNotCallable($factory),
+        $signature = match ($factory) {
+            null => match ($reflection->isInstantiable()) {
+                true => Signature::ofConstructor($reflection),
+                false => throw BuildError::classNotInstantiable($reflection),
             },
+            default => $factory->signature ?? throw BuildError::factoryNotCallable($factory),
+        };
+
+        $this->arguments = new Arguments(
+            signature: $signature,
             autowiring: $autowiring,
             closureArguments: ClosureArguments::empty(),
         );
@@ -72,6 +78,10 @@ final class ObjectConfig extends Config
             declaredAt: $declaredAt,
             defaultLifetimeStrategy: LifetimeStrategy::Singleton,
         );
+
+        if ($factory !== null && ($returnType = self::contradictingReturnType($signature, $reflection)) !== null) {
+            throw BuildError::factoryReturnTypeMismatch($this, $factory, $returnType, $reflection);
+        }
 
         $autoconfiguration->schedule($this);
     }
@@ -325,6 +335,25 @@ final class ObjectConfig extends Config
         $arguments->variadic($variadic);
 
         return $arguments;
+    }
+
+    /**
+     * The factory's declared return type when it lets the factory return something that is not an instance of $class.
+     *
+     * @param \ReflectionClass<*> $class
+     */
+    private static function contradictingReturnType(Signature $factory, \ReflectionClass $class): ?string
+    {
+        if ($factory instanceof ReflectionFunctionSignature) {
+            return FactoryReturnType::contradicts($factory->reflection, $class) ? (string) $factory->reflection->getReturnType() : null;
+        }
+
+        // A closure() factory: its Typhoon type is checked, its eval'd reflection carries no return type.
+        if ($factory instanceof ClosureSignature) {
+            return ClosureReturnType::admitsOther($factory->returnType, $class) ? stringify($factory->returnType) : null;
+        }
+
+        return null;
     }
 
     protected function createFactory(): Factory

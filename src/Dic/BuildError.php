@@ -237,6 +237,24 @@ final class BuildError extends \LogicException
      * @internal
      *
      * @param Ref<mixed> $ref
+     * @param Ref<mixed> $factory
+     * @param \ReflectionClass<*> $class
+     */
+    public static function factoryReturnTypeMismatch(Ref $ref, Ref $factory, string $returnType, \ReflectionClass $class): self
+    {
+        return new self(\sprintf(
+            'Factory %s of %s returns "%s", which is not an instance of "%s"',
+            $factory,
+            $ref,
+            $returnType,
+            formatReflectedClass($class),
+        ));
+    }
+
+    /**
+     * @internal
+     *
+     * @param Ref<mixed> $ref
      */
     public static function notCallable(Ref $ref): self
     {

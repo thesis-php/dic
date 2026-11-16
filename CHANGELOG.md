@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `object()` with a factory now fails the build when the factory's declared return type allows something
+  that is not an instance of the declared class, instead of returning it as the service.
+
 ### Fixed
 
 - A service whose factory or constructor suspends the fiber is no longer created twice by concurrent fibers:

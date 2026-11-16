@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Thesis\Dic\Internal\Signature;
 
 use Thesis\Dic\Internal\Signature;
+use Typhoon\Type;
 use Typhoon\Type\ClosureT;
 
 /**
@@ -27,7 +28,13 @@ final class ClosureSignature extends Signature
         }
 
         $this->parameters = $parameters;
+        $this->returnType = $signature->returnType;
     }
+
+    /**
+     * What the closure returns: a reflection of the eval'd header would not carry it.
+     */
+    public readonly Type $returnType;
 
     /**
      * @phpstan-ignore property.uninitialized

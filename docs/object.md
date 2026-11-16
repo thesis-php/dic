@@ -41,6 +41,12 @@ $dic->object(
 );
 ```
 
+The factory must return an instance of the declared class.
+Its declared return type is checked at build: a union like `RedisCache|ApcuCache` is fine for `Cache`,
+but if any part of it can be something else — another class, `null`, a scalar — the build fails with
+*which is not an instance of*.
+A factory without a return type, or returning `mixed`, `object` or `static`, is not checked.
+
 ## Post-construction calls
 
 Use `call()` for a setter or any side-effecting method invoked after construction:
