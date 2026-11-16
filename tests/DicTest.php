@@ -23,6 +23,7 @@ use Thesis\Fixture\Counter;
 use Thesis\Fixture\CounterAndNumbers;
 use Thesis\Fixture\CounterHolder;
 use Thesis\Fixture\CounterList;
+use Thesis\Fixture\Creators;
 use Thesis\Fixture\Holder;
 use Thesis\Fixture\InvokableModule;
 use Thesis\Fixture\Numbers;
@@ -1108,6 +1109,90 @@ final readonly class DicTest
 
             return $dic->value(null);
         });
+    }
+
+    public function factoryReturningAnotherClassRejected(): void
+    {
+        Expect::exception(BuildError::class)->withMessageContaining('which is not an instance of "Thesis\Fixture\Cache"');
+
+        Dic::build(static fn(Dic $dic) => $dic->object(Cache::class, static fn(): Counter => new Counter()));
+    }
+
+    public function factoryReturningAnImplementationAccepted(): void
+    {
+        $cache = Dic::build(static fn(Dic $dic) => $dic->object(Cache::class, static fn(): RedisCache => new RedisCache()));
+
+        Assert::instanceOf($cache, RedisCache::class);
+    }
+
+    public function staticMethodFactoryReturningAnotherClassRejected(): void
+    {
+        Expect::exception(BuildError::class)->withMessageContaining('which is not an instance of');
+
+        Dic::build(static fn(Dic $dic) => $dic->object(Cache::class, Creators::self(...)));
+    }
+
+    public function serviceMethodFactoryReturningAnotherClassRejected(): void
+    {
+        Expect::exception(BuildError::class)->withMessageContaining('which is not an instance of');
+
+        Dic::build(static fn(Dic $dic) => $dic->object(Cache::class, [$dic->object(Creators::class), 'self']));
+    }
+
+    public function configMethodFactoryReturningAnotherClassRejected(): void
+    {
+        Expect::exception(BuildError::class)->withMessageContaining('which is not an instance of');
+
+        Dic::build(
+            static fn(Dic $dic) => $dic->object(
+                class: Cache::class,
+                factory: $dic
+                    ->object(Creators::class)
+                    ->method('self'),
+            ),
+        );
+    }
+
+    public function invokableFactoryReturningAnotherClassRejected(): void
+    {
+        Expect::exception(BuildError::class)->withMessageContaining('which is not an instance of');
+
+        Dic::build(static fn(Dic $dic) => $dic->object(Cache::class, $dic->object(Creators::class)));
+    }
+
+    public function closureFactoryReturningAnotherClassRejected(): void
+    {
+        Expect::exception(BuildError::class)->withMessageContaining('returns "Thesis\Fixture\Counter", which is not an instance of');
+
+        Dic::build(
+            static fn(Dic $dic) => $dic->object(
+                class: Cache::class,
+                factory: $dic
+                    ->function(static fn(): Counter => new Counter())
+                    ->closure(closureT([], objectT(Counter::class))),
+            ),
+        );
+    }
+
+    public function closureFactoryReturningAnImplementationAccepted(): void
+    {
+        $cache = Dic::build(
+            static fn(Dic $dic) => $dic->object(
+                class: Cache::class,
+                factory: $dic
+                    ->function(static fn(): RedisCache => new RedisCache())
+                    ->closure(closureT([], objectT(RedisCache::class))),
+            ),
+        );
+
+        Assert::instanceOf($cache, RedisCache::class);
+    }
+
+    public function factoryWithoutReturnTypeAccepted(): void
+    {
+        $cache = Dic::build(static fn(Dic $dic) => $dic->object(Cache::class, static fn() => new RedisCache()));
+
+        Assert::instanceOf($cache, RedisCache::class);
     }
 
     public function bindUnsupportedTypeRejected(): void

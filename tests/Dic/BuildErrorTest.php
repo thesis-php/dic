@@ -9,6 +9,8 @@ use Testo\Codecov\Covers;
 use Testo\Test;
 use Thesis\Dic\Internal\Dependency;
 use Thesis\Dic\Internal\Signature;
+use Thesis\Fixture\Cache;
+use Thesis\Fixture\Counter;
 use Thesis\Fixture\CounterList;
 use function Thesis\Fixture\ref;
 
@@ -24,6 +26,24 @@ final class BuildErrorTest
         $error = BuildError::cannotAutowireNoCandidate($parameter);
 
         Assert::same($error->getMessage(), \sprintf('Cannot autowire "%s": no autowiring candidate found', $parameter));
+    }
+
+    public function factoryReturnTypeMismatchMessage(): void
+    {
+        $ref = ref();
+        $factory = ref();
+
+        $error = BuildError::factoryReturnTypeMismatch(
+            $ref,
+            $factory,
+            Counter::class,
+            new \ReflectionClass(Cache::class),
+        );
+
+        Assert::same(
+            $error->getMessage(),
+            \sprintf('Factory %s of %s returns "Thesis\Fixture\Counter", which is not an instance of "Thesis\Fixture\Cache"', $factory, $ref),
+        );
     }
 
     public function configurationFrozenMessage(): void
