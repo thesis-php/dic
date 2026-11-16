@@ -10,4 +10,9 @@ final class SelfTyped
     {
         return $other;
     }
+
+    public function withNullableSelf(?self $other): ?self
+    {
+        return $other;
+    }
 }

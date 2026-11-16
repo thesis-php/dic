@@ -14,6 +14,7 @@ use Thesis\Dic\DisposalFailed;
 use Thesis\Dic\TaggedRef;
 use Thesis\Dic\TaggedRefs;
 use Thesis\Fixture\ApcuCache;
+use Thesis\Fixture\Base;
 use Thesis\Fixture\Cache;
 use Thesis\Fixture\CacheStore;
 use Thesis\Fixture\CacheTag;
@@ -25,12 +26,15 @@ use Thesis\Fixture\CounterHolder;
 use Thesis\Fixture\CounterList;
 use Thesis\Fixture\Holder;
 use Thesis\Fixture\InvokableModule;
+use Thesis\Fixture\NextInChain;
 use Thesis\Fixture\Numbers;
 use Thesis\Fixture\OptionalConsumer;
 use Thesis\Fixture\Pair;
+use Thesis\Fixture\ParentTyped;
 use Thesis\Fixture\PriorityTag;
 use Thesis\Fixture\QualifiedConsumer;
 use Thesis\Fixture\RedisCache;
+use Thesis\Fixture\RequiredNextInChain;
 use Thesis\Fixture\Suspending;
 use Thesis\Fixture\WithDefault;
 use Thesis\Fixture\Wrapper;
@@ -41,9 +45,11 @@ use function Thesis\Dic\autowire;
 use function Thesis\Fixture\concurrently;
 use function Thesis\Fixture\ref;
 use function Typhoon\Type\closureT;
+use function Typhoon\Type\nullOrT;
 use function Typhoon\Type\objectT;
 use function Typhoon\Type\param;
 use const Typhoon\Type\intT;
+use const Typhoon\Type\stringT;
 
 #[Test]
 final readonly class DicTest
@@ -1096,6 +1102,56 @@ final readonly class DicTest
 
             return $dic->object(TestService::class, factory: [$factory, '__toString']);
         });
+    }
+
+    public function nullableParentParameterTakesTheNullableBinding(): void
+    {
+        $chain = Dic::build(static function (Dic $dic) {
+            $dic
+                ->object(ParentTyped::class)
+                ->bind(nullOrT(objectT(Base::class)));
+
+            return $dic->object(NextInChain::class);
+        });
+
+        Assert::instanceOf($chain->next, ParentTyped::class);
+    }
+
+    public function nullableParentParameterIgnoresANonNullableBinding(): void
+    {
+        $chain = Dic::build(static function (Dic $dic) {
+            $dic
+                ->object(ParentTyped::class)
+                ->bind(objectT(Base::class));
+
+            return $dic->object(NextInChain::class);
+        });
+
+        Assert::null($chain->next);
+    }
+
+    public function nullableParentParameterWithoutDefaultRejectsANonNullableBinding(): void
+    {
+        Expect::exception(BuildError::class)->withMessageContaining('no autowiring candidate found');
+
+        Dic::build(static function (Dic $dic) {
+            $dic
+                ->object(ParentTyped::class)
+                ->bind(objectT(Base::class));
+
+            return $dic->object(RequiredNextInChain::class);
+        });
+    }
+
+    public function nullableParentClosureParameterMapped(): void
+    {
+        $function = Dic::build(
+            static fn(Dic $dic) => $dic
+                ->function(ParentTyped::describeNullableParent())
+                ->closure(closureT([param(nullOrT(objectT(Base::class)), name: 'other')], stringT)),
+        );
+
+        Assert::same($function(new ParentTyped()), ParentTyped::class);
     }
 
     public function duplicateBindRejected(): void

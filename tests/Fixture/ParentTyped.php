@@ -10,4 +10,17 @@ final class ParentTyped extends Base
     {
         return $other;
     }
+
+    public function withNullableParent(?parent $other): ?parent
+    {
+        return $other;
+    }
+
+    /**
+     * @return \Closure(?Base): string
+     */
+    public static function describeNullableParent(): \Closure
+    {
+        return static fn(?parent $other): string => $other === null ? 'null' : $other::class;
+    }
 }
