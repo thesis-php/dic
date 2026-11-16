@@ -102,6 +102,8 @@ final class AutowiringTypeTest
         yield [static fn(Holder $p) => null, strtolower(Holder::class)];
         yield [new SelfTyped()->withSelf(...), strtolower(SelfTyped::class)];
         yield [new ParentTyped()->withParent(...), strtolower(Base::class)];
+        yield [new SelfTyped()->withNullableSelf(...), \sprintf('(null|%s)', strtolower(SelfTyped::class))];
+        yield [new ParentTyped()->withNullableParent(...), \sprintf('(null|%s)', strtolower(Base::class))];
     }
 
     #[DataProvider('unsupportedParameters')]

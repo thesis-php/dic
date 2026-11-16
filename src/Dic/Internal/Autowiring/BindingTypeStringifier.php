@@ -85,10 +85,9 @@ final class BindingTypeStringifier extends Fallback
                 throw new UnsupportedBindingType('Cannot resolve "self" type outside the class context');
             }
 
-            return strtolower($self->name);
-        }
-
-        if ($name === 'parent') {
+            // Not returned yet: a nullable `?self` still has to go through the nullability check below.
+            $name = strtolower($self->name);
+        } elseif ($name === 'parent') {
             if ($self === null) {
                 throw new UnsupportedBindingType('Cannot resolve "parent" type outside the class context');
             }
@@ -99,10 +98,8 @@ final class BindingTypeStringifier extends Fallback
                 throw new UnsupportedBindingType(\sprintf('Class "%s" does not have a parent', formatReflectedClass($self)));
             }
 
-            return strtolower($parent->name);
-        }
-
-        if ($name === 'static') {
+            $name = strtolower($parent->name);
+        } elseif ($name === 'static') {
             throw new UnsupportedBindingType('The "static" type cannot be safely autowired');
         }
 
