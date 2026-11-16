@@ -9,8 +9,11 @@ use Testo\Codecov\Covers;
 use Testo\Test;
 use Thesis\Dic\Internal\Dependency;
 use Thesis\Dic\Internal\Signature;
+use Thesis\Fixture\Cache;
+use Thesis\Fixture\Counter;
 use Thesis\Fixture\CounterList;
 use function Thesis\Fixture\ref;
+use function Typhoon\Type\objectT;
 
 #[Test]
 #[Covers(BuildError::class)]
@@ -24,6 +27,18 @@ final class BuildErrorTest
         $error = BuildError::cannotAutowireNoCandidate($parameter);
 
         Assert::same($error->getMessage(), \sprintf('Cannot autowire "%s": no autowiring candidate found', $parameter));
+    }
+
+    public function bindingTypeMismatchMessage(): void
+    {
+        $ref = ref();
+
+        $error = BuildError::bindingTypeMismatch($ref, objectT(Cache::class), new \ReflectionClass(Counter::class));
+
+        Assert::same(
+            $error->getMessage(),
+            \sprintf('Cannot bind %s to type "Thesis\Fixture\Cache": class "Thesis\Fixture\Counter" does not satisfy it', $ref),
+        );
     }
 
     public function configurationFrozenMessage(): void

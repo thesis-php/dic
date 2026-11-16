@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `bind()` on an `object()` service now fails the build when the class does not satisfy the bound type.
+  Such a binding used to build and fail later with a `TypeError` in the constructor of the service receiving it.
+  A binding to a type that does not exist fails the build too.
+
 ### Fixed
 
 - A service whose factory or constructor suspends the fiber is no longer created twice by concurrent fibers:

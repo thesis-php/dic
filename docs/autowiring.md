@@ -46,6 +46,12 @@ Without a matching binding, autowiring finds no candidate and the build fails wi
 (unless the parameter has a default value, which is then used).
 Each type can be bound once: a second binding to the same type within the same module fails with *already bound*.
 
+An `object()` service can only be bound to a type its class satisfies.
+Binding `object(SmtpMailer::class)` to `objectT(PdfGenerator::class)` it does not implement fails the build
+with *does not satisfy it*, pointing at the service, instead of a `TypeError` in the constructor of whoever receives it.
+A binding to a type that does not exist fails the same way, since no object can be an instance of it.
+The check uses the declared class, so a [factory](object.md#custom-factory) must still return an instance of it.
+
 ## Types match exactly
 
 A binding answers only the exact type it was declared with.

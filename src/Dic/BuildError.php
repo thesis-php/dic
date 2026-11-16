@@ -188,6 +188,22 @@ final class BuildError extends \LogicException
     /**
      * @internal
      *
+     * @param Ref<mixed> $ref
+     * @param \ReflectionClass<*> $class
+     */
+    public static function bindingTypeMismatch(Ref $ref, Type $type, \ReflectionClass $class): self
+    {
+        return new self(\sprintf(
+            'Cannot bind %s to type "%s": class "%s" does not satisfy it',
+            $ref,
+            Type\stringify($type),
+            formatReflectedClass($class),
+        ));
+    }
+
+    /**
+     * @internal
+     *
      * @param \ReflectionClass<*> $class
      */
     public static function classNotInstantiable(\ReflectionClass $class): self
