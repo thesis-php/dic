@@ -1040,6 +1040,245 @@ final readonly class DicTest
         Assert::same($captured, $thrown);
     }
 
+    public function openKeepsTheScopeUntilDisposed(): void
+    {
+        $disposed = [];
+
+        $scoped = Dic::build(
+            static function (Dic $dic) use (&$disposed) {
+                return $dic->scoped(
+                    $dic
+                        ->object(Counter::class)
+                        ->scoped()
+                        ->disposer(static function (Counter $counter) use (&$disposed): void {
+                            $disposed[] = $counter;
+                        }),
+                );
+            },
+        );
+
+        $scope = $scoped->open();
+
+        Assert::same($disposed, []);
+
+        $scope->dispose();
+
+        Assert::same($disposed, [$scope->value]);
+    }
+
+    public function openProducesFreshInstancePerScope(): void
+    {
+        $scoped = Dic::build(
+            static fn(Dic $dic) => $dic->scoped(
+                $dic
+                    ->object(Counter::class)
+                    ->scoped(),
+            ),
+        );
+
+        $first = $scoped->open();
+        $second = $scoped->open();
+
+        Assert::notSame($first->value, $second->value);
+
+        $first->dispose();
+        $second->dispose();
+    }
+
+    public function servicesResolvedLaterShareTheOpenScope(): void
+    {
+        $scoped = Dic::build(
+            static fn(Dic $dic) => $dic->scoped(
+                $dic->provider(
+                    $dic
+                        ->object(Counter::class)
+                        ->scoped(),
+                ),
+            ),
+        );
+
+        $first = $scoped->open();
+        $second = $scoped->open();
+
+        Assert::same(($first->value)(), ($first->value)());
+        Assert::notSame(($first->value)(), ($second->value)());
+
+        $first->dispose();
+        $second->dispose();
+    }
+
+    public function scopeHandleDisposesOnce(): void
+    {
+        $disposed = 0;
+
+        $scoped = Dic::build(
+            static function (Dic $dic) use (&$disposed) {
+                return $dic->scoped(
+                    $dic
+                        ->object(Counter::class)
+                        ->scoped()
+                        ->disposer(static function () use (&$disposed): void {
+                            ++$disposed;
+                        }),
+                );
+            },
+        );
+
+        $scope = $scoped->open();
+        $scope->dispose();
+        $scope->dispose();
+
+        Assert::same($disposed, 1);
+    }
+
+    public function scopeHandlePassesErrorToDisposer(): void
+    {
+        $thrown = new \RuntimeException('boom');
+        $captured = null;
+
+        $scoped = Dic::build(
+            static function (Dic $dic) use (&$captured) {
+                return $dic->scoped(
+                    $dic
+                        ->object(Counter::class)
+                        ->scoped()
+                        ->disposer(static function (Counter $counter, ?\Throwable $error) use (&$captured): void {
+                            $captured = $error;
+                        }),
+                );
+            },
+        );
+
+        $scoped
+            ->open()
+            ->dispose($thrown);
+
+        Assert::same($captured, $thrown);
+    }
+
+    public function scopeHandleCollectsDisposerFailures(): void
+    {
+        $failure = new \RuntimeException('disposer failed');
+        $thrown = new \RuntimeException('boom');
+        $caught = null;
+
+        $scoped = Dic::build(
+            static fn(Dic $dic) => $dic->scoped(
+                $dic
+                    ->object(Counter::class)
+                    ->scoped()
+                    ->disposer(static fn(): never => throw $failure),
+            ),
+        );
+
+        try {
+            $scoped
+                ->open()
+                ->dispose($thrown);
+        } catch (DisposalFailed $error) {
+            $caught = $error;
+        }
+
+        Assert::notNull($caught);
+        Assert::same($caught->errors, [$failure]);
+        Assert::same($caught->getPrevious(), $thrown);
+    }
+
+    public function openDisposesCreatedServicesWhenResolutionFails(): void
+    {
+        $thrown = new \RuntimeException('boom');
+        $captured = null;
+        $rethrown = null;
+
+        $scoped = Dic::build(
+            static function (Dic $dic) use ($thrown, &$captured) {
+                $counter = $dic
+                    ->object(Counter::class)
+                    ->scoped()
+                    ->disposer(static function (Counter $counter, ?\Throwable $error) use (&$captured): void {
+                        $captured = $error;
+                    });
+
+                return $dic->scoped(
+                    $dic
+                        ->object(CounterHolder::class, static fn(Counter $counter): never => throw $thrown)
+                        ->scoped()
+                        ->arg('counter', $counter),
+                );
+            },
+        );
+
+        try {
+            $scoped->open();
+        } catch (\RuntimeException $error) {
+            $rethrown = $error;
+        }
+
+        Assert::same($rethrown, $thrown);
+        Assert::same($captured, $thrown);
+    }
+
+    public function openReportsDisposerFailureWhenResolutionFails(): void
+    {
+        $thrown = new \RuntimeException('boom');
+        $failure = new \RuntimeException('disposer failed');
+        $caught = null;
+
+        $scoped = Dic::build(
+            static function (Dic $dic) use ($thrown, $failure) {
+                $counter = $dic
+                    ->object(Counter::class)
+                    ->scoped()
+                    ->disposer(static fn(): never => throw $failure);
+
+                return $dic->scoped(
+                    $dic
+                        ->object(CounterHolder::class, static fn(Counter $counter): never => throw $thrown)
+                        ->scoped()
+                        ->arg('counter', $counter),
+                );
+            },
+        );
+
+        try {
+            $scoped->open();
+        } catch (DisposalFailed $error) {
+            $caught = $error;
+        }
+
+        Assert::notNull($caught);
+        Assert::same($caught->errors, [$failure]);
+        Assert::same($caught->getPrevious(), $thrown);
+    }
+
+    public function concurrentDisposeCallsDisposeTheScopeOnce(): void
+    {
+        $disposed = 0;
+
+        $scoped = Dic::build(
+            static function (Dic $dic) use (&$disposed) {
+                return $dic->scoped(
+                    $dic
+                        ->object(Counter::class)
+                        ->scoped()
+                        ->disposer(static function () use (&$disposed): void {
+                            delay(0); // suspends mid-disposal, as closing a connection would
+                            ++$disposed;
+                        }),
+                );
+            },
+        );
+
+        $scope = $scoped->open();
+
+        awaitAll([
+            async($scope->dispose(...)),
+            async($scope->dispose(...)),
+        ]);
+
+        Assert::same($disposed, 1);
+    }
+
     public function taggedListFindsByTagInstance(): void
     {
         $tag = new CacheTag();

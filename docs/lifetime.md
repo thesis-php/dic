@@ -125,6 +125,68 @@ yet each `run()` gives it a fresh scope with fresh scoped instances.
 A singleton may hold a `Scoped<T>` even when `T` is scoped — the handle defers resolution to the scope it opens,
 so the singleton rule above is not violated.
 
+## Keeping a scope open: `open()`
+
+`run()` ends the scope when the callback returns.
+Some units of work do not fit into one callback: they start in one call and end in another.
+A PHPUnit test is one example — `setUp()`, the test method and `tearDown()` are separate calls that must share a scope.
+A message-bus attempt is another — it begins when the transaction scope is created and ends on commit or rollback.
+
+For these, `open()` opens a fresh scope, resolves the wrapped service in it and returns a `ScopeHandle`.
+The scope stays open until `dispose()` is called:
+
+```php
+final class TransferTest extends TestCase
+{
+    /**
+     * @var Scoped<TestKit>
+     */
+    private static Scoped $app;
+
+    /**
+     * @var ScopeHandle<TestKit>
+     */
+    private ScopeHandle $scope;
+
+    public static function setUpBeforeClass(): void
+    {
+        self::$app = Dic::build(new TestModule()); // built once, TestKit and the DB transaction are scoped
+    }
+
+    protected function setUp(): void
+    {
+        $this->scope = self::$app->open();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->scope->dispose(); // the transaction's disposer rolls back everything the test wrote
+    }
+
+    public function testTransfersMoney(): void
+    {
+        $kit = $this->scope->value;
+
+        $kit->transfer->execute(from: 'alice', to: 'bob', amount: 100);
+
+        self::assertSame(100, $kit->balances->of('bob'));
+    }
+}
+```
+
+Each test gets a fresh scope with fresh scoped instances, and `setUp()`/`tearDown()` usually live once in a base test
+case, so test methods and helpers keep reaching the scope through `$this`.
+
+The guarantees are the same as with `run()`:
+if resolving the wrapped service fails, the scope is disposed right away and nothing is returned;
+`dispose()` runs the disposers of everything created in the scope,
+including services resolved later through a provider held by the wrapped service.
+Pass the error in flight to `dispose($error)` to hand it to the disposers, as `run()` does when the callback throws.
+Only the first `dispose()` call disposes; the next ones do nothing.
+
+Forgetting to call `dispose()` leaves the scoped instances undisposed, like any resource that is never closed.
+Prefer `run()` whenever the unit of work fits into one callback.
+
 ## Concurrency
 
 Creating an instance may suspend the current fiber — for example, on async I/O —

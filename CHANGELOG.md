@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `Scoped::open()` — opens a scope that stays open until `ScopeHandle::dispose()` is called,
+  for units of work that start in one call and end in another (PHPUnit `setUp()`/`tearDown()`, a message-bus attempt).
+  `Scoped::run()` is now built on top of it.
+
 ### Fixed
 
 - A service whose factory or constructor suspends the fiber is no longer created twice by concurrent fibers:
