@@ -25,6 +25,7 @@ use Thesis\Fixture\CounterHolder;
 use Thesis\Fixture\CounterList;
 use Thesis\Fixture\Holder;
 use Thesis\Fixture\InvokableModule;
+use Thesis\Fixture\IterableOrInt;
 use Thesis\Fixture\Numbers;
 use Thesis\Fixture\OptionalConsumer;
 use Thesis\Fixture\Pair;
@@ -41,9 +42,14 @@ use function Thesis\Dic\autowire;
 use function Thesis\Fixture\concurrently;
 use function Thesis\Fixture\ref;
 use function Typhoon\Type\closureT;
+use function Typhoon\Type\nullOrT;
 use function Typhoon\Type\objectT;
 use function Typhoon\Type\param;
+use function Typhoon\Type\unionT;
+use const Typhoon\Type\arrayT;
 use const Typhoon\Type\intT;
+use const Typhoon\Type\iterableT;
+use const Typhoon\Type\stringT;
 
 #[Test]
 final readonly class DicTest
@@ -1095,6 +1101,61 @@ final readonly class DicTest
             $factory = $dic->object(TestService::class);
 
             return $dic->object(TestService::class, factory: [$factory, '__toString']);
+        });
+    }
+
+    public function iterableUnionParameterAutowired(): void
+    {
+        $consumer = Dic::build(static function (Dic $dic) {
+            $dic
+                ->value([1, 2])
+                ->bind(unionT(iterableT, intT));
+
+            return $dic->object(IterableOrInt::class);
+        });
+
+        Assert::same($consumer->value, [1, 2]);
+    }
+
+    public function iterableUnionClosureParameterMapped(): void
+    {
+        $function = Dic::build(
+            static fn(Dic $dic) => $dic
+                ->function(static fn(iterable|int $value): string => get_debug_type($value))
+                ->closure(closureT([param(unionT(iterableT, intT), name: 'value')], stringT)),
+        );
+
+        Assert::same($function([1]), 'array');
+    }
+
+    public function iterableOrNullClosureParameterMapped(): void
+    {
+        // Built from a string: the coding standard rewrites `iterable|null` into `?iterable`, which reflects differently.
+        /** @var \Closure(iterable<mixed>|null): string $iterableOrNull */
+        $iterableOrNull = eval('return static fn(iterable|null $value): string => get_debug_type($value);');
+
+        $function = Dic::build(
+            static fn(Dic $dic) => $dic
+                ->function($iterableOrNull)
+                ->closure(closureT([param(nullOrT(iterableT), name: 'value')], stringT)),
+        );
+
+        Assert::same($function([1]), 'array');
+    }
+
+    public function iterableBoundAsTraversableOrArrayIsTheSameType(): void
+    {
+        Expect::exception(BuildError::class)->withMessageContaining('already bound');
+
+        Dic::build(static function (Dic $dic) {
+            $dic
+                ->value([1])
+                ->bind(iterableT);
+            $dic
+                ->value([2])
+                ->bind(unionT(objectT(\Traversable::class), arrayT));
+
+            return $dic->value(null);
         });
     }
 

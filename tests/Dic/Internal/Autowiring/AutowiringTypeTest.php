@@ -15,6 +15,7 @@ use Thesis\Fixture\ParentTyped;
 use Thesis\Fixture\SelfTyped;
 use Typhoon\Type;
 use function Typhoon\Type\intersectionT;
+use function Typhoon\Type\nullOrT;
 use function Typhoon\Type\objectT;
 use function Typhoon\Type\unionT;
 use const Typhoon\Type\arrayT;
@@ -59,6 +60,10 @@ final class AutowiringTypeTest
         yield [trueT, 'true'];
         yield [falseT, 'false'];
         yield [iterableT, 'iterable'];
+        yield [nullOrT(iterableT), '(iterable|null)'];
+        yield [unionT(iterableT, intT), '(int|iterable)'];
+        yield [unionT(objectT(\Traversable::class), arrayT), 'iterable'];
+        yield [unionT(intersectionT(objectT(\Countable::class), objectT(\ArrayAccess::class)), iterableT), '((arrayaccess&countable)|iterable)'];
         yield [objectT(Holder::class), strtolower(Holder::class)];
         yield [unionT(intT, nullT), '(int|null)'];
         yield [unionT(stringT, intT), '(int|string)'];
@@ -99,6 +104,19 @@ final class AutowiringTypeTest
         yield [static fn(?int $p) => null, '(int|null)'];
         yield [static fn(int|string $p) => null, '(int|string)'];
         yield [static fn(\Countable&\ArrayAccess $p) => null, '(arrayaccess&countable)'];
+        yield [static fn(iterable $p) => null, 'iterable'];
+        yield [static fn(?iterable $p) => null, '(iterable|null)'];
+
+        // Built from a string: the coding standard rewrites `iterable|null` into `?iterable`, which reflects differently.
+        /** @var \Closure $iterableOrNull */
+        $iterableOrNull = eval('return static fn(iterable|null $p) => null;');
+
+        yield [$iterableOrNull, '(iterable|null)'];
+        yield [static fn(iterable|int $p) => null, '(int|iterable)'];
+        yield [static fn(\Traversable|array $p) => null, 'iterable'];
+        yield [static fn(array|int $p) => null, '(array|int)'];
+        yield [static fn(\Traversable|int $p) => null, '(int|traversable)'];
+        yield [static fn((\Countable&\ArrayAccess)|iterable $p) => null, '((arrayaccess&countable)|iterable)'];
         yield [static fn(Holder $p) => null, strtolower(Holder::class)];
         yield [new SelfTyped()->withSelf(...), strtolower(SelfTyped::class)];
         yield [new ParentTyped()->withParent(...), strtolower(Base::class)];
